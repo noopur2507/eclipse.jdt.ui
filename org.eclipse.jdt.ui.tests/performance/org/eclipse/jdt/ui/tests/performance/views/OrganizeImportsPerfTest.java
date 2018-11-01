@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -32,10 +35,9 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.manipulation.OrganizeImportsOperation;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.OrganizeImportsOperation;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.tests.performance.JdtPerformanceTestCase;
 
 public class OrganizeImportsPerfTest extends JdtPerformanceTestCase {
@@ -92,7 +94,7 @@ public class OrganizeImportsPerfTest extends JdtPerformanceTestCase {
 	private CompilationUnit[] createASTs(ICompilationUnit[] cus) {
 		CompilationUnit[] result= new CompilationUnit[cus.length];
 		for (int i= 0; i < cus.length; i++) {
-			result[i]= SharedASTProvider.getAST(cus[i], SharedASTProvider.WAIT_YES, new NullProgressMonitor());
+			result[i]= SharedASTProviderCore.getAST(cus[i], SharedASTProviderCore.WAIT_YES, new NullProgressMonitor());
 		}
 		return result;
 	}

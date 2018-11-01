@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -60,7 +63,7 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 	private String displayString(String inputString, String indentation, String delimiter, boolean escapeNonAscii) {
 
 		int length = inputString.length();
-		StringBuffer buffer = new StringBuffer(length);
+		StringBuilder buffer = new StringBuilder(length);
 		StringTokenizer tokenizer= new StringTokenizer(inputString, "\n\r", true); //$NON-NLS-1$
 		while (tokenizer.hasMoreTokens()){
 
@@ -91,7 +94,7 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 				continue;
 			}
 
-			StringBuffer tokenBuffer = new StringBuffer();
+			StringBuilder tokenBuffer = new StringBuilder();
 			for (int i = 0; i < token.length(); i++){
 				char c = token.charAt(i);
 				switch (c) {

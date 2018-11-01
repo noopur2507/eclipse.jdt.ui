@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2003, 2005 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -44,17 +47,20 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 		fResultCollector= new JspTranslatorResultCollector(fDeclarations, fLocalDeclarations, fContent, fDeclarationLines, fLocalDeclarationLines, fContentLines);
 	}
 		
+	@Override
 	protected void startTag(boolean endTag, String name, int startName) {
 
 		fCurrentTagHandler= fTagHandlerFactor.getHandler(name);
 	}
 	
+	@Override
 	protected void tagAttribute(String attrName, String value, int startName, int startValue) {
 
 		if (fCurrentTagHandler != null)
 			fCurrentTagHandler.addAttribute(attrName, value, fLines);
 	}
 	
+	@Override
 	protected void endTag(boolean end) {
 
 		if (fCurrentTagHandler != null)
@@ -65,6 +71,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 			}
 	}
 	
+	@Override
 	protected void java(char ch, String java, int line) {
 
 		if (ch == '!')
@@ -85,6 +92,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 		}
 	}
 	
+	@Override
 	protected void text(String t, int line) {
 		int i= 0;
 		StringBuffer out= new StringBuffer();
@@ -92,7 +100,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 			char c= t.charAt(i++);
 			if (c == '\n') {
 				fContent.append("    System.out.println(\"" + out.toString() + "\");  //$NON-NLS-1$\n");  //$NON-NLS-1$//$NON-NLS-2$
-				fContentLines.add(new Integer(line++));
+				fContentLines.add(Integer.valueOf(line++));
 				out.setLength(0);
 			} else {
 				out.append(c);	
@@ -100,7 +108,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 		}
 		if (out.length() > 0)  {
 			fContent.append("    System.out.print(\"" + out.toString() + "\");  //$NON-NLS-1$\n"); //$NON-NLS-1$ //$NON-NLS-2$
-			fContentLines.add(new Integer(line));
+			fContentLines.add(Integer.valueOf(line));
 		}
 	}
 	
@@ -115,6 +123,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 		
 	}
 
+	@Override
 	public String translate(Reader reader, String name) throws IOException  {
 
 		StringBuffer buffer= new StringBuffer();
@@ -176,6 +185,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 		return buffer.toString();
 	}
 	
+	@Override
 	public int[] getLineMapping()  {
 		return fSmap;
 	}
@@ -183,6 +193,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 	/*
 	 * @see org.eclipse.jface.text.source.ITranslator#setTagHandlerFactory(org.eclipse.jface.text.source.ITagHandlerFactory)
 	 */
+	@Override
 	public void setTagHandlerFactory(ITagHandlerFactory tagHandlerFactory) {
 		fTagHandlerFactor= tagHandlerFactory;
 	}
@@ -190,6 +201,7 @@ public class JspTranslator extends AbstractJspParser implements ITranslator {
 	/*
 	 * @see ITranslator#backTranslateOffsetInLine(String, String, int)
 	 */
+	@Override
 	public int backTranslateOffsetInLine(String originalLine, String translatedLine, int offsetInTranslatedLine, String tag)  {
 
 		ITagHandler handler;

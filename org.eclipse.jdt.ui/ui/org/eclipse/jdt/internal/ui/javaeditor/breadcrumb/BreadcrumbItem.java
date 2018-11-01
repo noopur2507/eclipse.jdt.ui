@@ -1,12 +1,16 @@
 /*******************************************************************************
  * Copyright (c) 2008, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Fabio Zadrozny - Bug 465666
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.javaeditor.breadcrumb;
 
@@ -73,6 +77,8 @@ class BreadcrumbItem extends Item {
 		fDetailsBlock= new BreadcrumbItemDetails(this, fContainer);
 
 		fExpandBlock= new BreadcrumbItemDropDown(this, fContainer);
+
+		fContainer.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemComposite"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/**

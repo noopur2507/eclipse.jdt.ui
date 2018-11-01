@@ -1,18 +1,23 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Stephan Herrmann - Contribution for Bug 463360 - [override method][null] generating method override should not create redundant null annotations
+ *     Red Hat Inc. - removed some methods and put them in StubUtility2Core
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.codemanipulation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -20,8 +25,6 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
-
-import org.eclipse.text.edits.TextEditGroup;
 
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -44,9 +47,7 @@ import org.eclipse.jdt.core.dom.Dimension;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
-import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -70,18 +71,19 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddDelegateMethodsOperation.DelegateEntry;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
 import org.eclipse.jdt.internal.corext.util.JDTUIHelperClasses;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
-import org.eclipse.jdt.ui.CodeGeneration;
-
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 /**
  * Utilities for code generation based on AST rewrite.
@@ -91,51 +93,6 @@ import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
  * @since 3.1
  */
 public final class StubUtility2 {
-
-	/**
-	 * Adds <code>@Override</code> annotation to <code>methodDecl</code> if not already present and
-	 * if requested by code style settings or compiler errors/warnings settings.
-	 * 
-	 * @param settings the code generation style settings, may be <code>null</code>
-	 * @param project the Java project used to access the compiler settings
-	 * @param rewrite the ASTRewrite
-	 * @param imports the ImportRewrite
-	 * @param methodDecl the method declaration to add the annotation to
-	 * @param isDeclaringTypeInterface <code>true</code> if the type declaring the method overridden
-	 *            by <code>methodDecl</code> is an interface
-	 * @param group the text edit group, may be <code>null</code>
-	 */
-	public static void addOverrideAnnotation(CodeGenerationSettings settings, IJavaProject project, ASTRewrite rewrite, ImportRewrite imports, MethodDeclaration methodDecl,
-			boolean isDeclaringTypeInterface, TextEditGroup group) {
-		if (!JavaModelUtil.is50OrHigher(project)) {
-			return;
-		}
-		if (isDeclaringTypeInterface) {
-			String version= project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
-			if (JavaModelUtil.isVersionLessThan(version, JavaCore.VERSION_1_6))
-				return; // not allowed in 1.5
-			if (JavaCore.DISABLED.equals(project.getOption(JavaCore.COMPILER_PB_MISSING_OVERRIDE_ANNOTATION_FOR_INTERFACE_METHOD_IMPLEMENTATION, true)))
-				return; // user doesn't want to use 1.6 style
-		}
-		if ((settings != null && settings.overrideAnnotation) || !JavaCore.IGNORE.equals(project.getOption(JavaCore.COMPILER_PB_MISSING_OVERRIDE_ANNOTATION, true))) {
-			createOverrideAnnotation(rewrite, imports, methodDecl, group);
-		}
-	}
-
-	public static void createOverrideAnnotation(ASTRewrite rewrite, ImportRewrite imports, MethodDeclaration decl, TextEditGroup group) {
-		if (findAnnotation("java.lang.Override", decl.modifiers()) != null) { //$NON-NLS-1$
-			return; // No need to add duplicate annotation
-		}
-		AST ast= rewrite.getAST();
-		ASTNode root= decl.getRoot();
-		ImportRewriteContext context= null;
-		if (root instanceof CompilationUnit) {
-			context= new ContextSensitiveImportRewriteContext((CompilationUnit) root, decl.getStartPosition(), imports);
-		}
-		Annotation marker= ast.newMarkerAnnotation();
-		marker.setTypeName(ast.newName(imports.addImport("java.lang.Override", context))); //$NON-NLS-1$
-		rewrite.getListRewrite(decl, MethodDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, group);
-	}
 
 	/* This method should work with all AST levels. */
 	public static MethodDeclaration createConstructorStub(ICompilationUnit unit, ASTRewrite rewrite, ImportRewrite imports, ImportRewriteContext context, IMethodBinding binding, String type, int modifiers, boolean omitSuperForDefConst, boolean todo, CodeGenerationSettings settings) throws CoreException {
@@ -163,7 +120,7 @@ public final class StubUtility2 {
 				varDecl= iterator.next();
 				invocation.arguments().add(ast.newSimpleName(varDecl.getName().getIdentifier()));
 			}
-			bodyStatement= ASTNodes.asFormattedString(invocation, 0, delimiter, unit.getJavaProject().getOptions(true));
+			bodyStatement= ASTNodes.asFormattedString(invocation, 0, delimiter, FormatterProfileManager.getProjectSettings(unit.getJavaProject()));
 		}
 
 		if (todo) {
@@ -348,12 +305,12 @@ public final class StubUtility2 {
 	}
 
 	public static MethodDeclaration createImplementationStub(ICompilationUnit unit, ASTRewrite rewrite, ImportRewrite imports, ImportRewriteContext context,
-			IMethodBinding binding, ITypeBinding targetType, CodeGenerationSettings settings, boolean inInterface, IBinding contextBinding) throws CoreException {
-		return createImplementationStub(unit, rewrite, imports, context, binding, null, targetType, settings, inInterface, contextBinding);
+			IMethodBinding binding, ITypeBinding targetType, CodeGenerationSettings settings, boolean inInterface, ASTNode astNode) throws CoreException {
+		return createImplementationStub(unit, rewrite, imports, context, binding, null, targetType, settings, inInterface, astNode);
 	}
 
 	public static MethodDeclaration createImplementationStub(ICompilationUnit unit, ASTRewrite rewrite, ImportRewrite imports, ImportRewriteContext context,
-			IMethodBinding binding, String[] parameterNames, ITypeBinding targetType, CodeGenerationSettings settings, boolean inInterface, IBinding contextBinding) throws CoreException {
+			IMethodBinding binding, String[] parameterNames, ITypeBinding targetType, CodeGenerationSettings settings, boolean inInterface, ASTNode astNode) throws CoreException {
 		Assert.isNotNull(imports);
 		Assert.isNotNull(rewrite);
 
@@ -361,9 +318,9 @@ public final class StubUtility2 {
 		String type= Bindings.getTypeQualifiedName(targetType);
 
 		IJavaProject javaProject= unit.getJavaProject();
-		IAnnotationBinding nullnessDefault= null;
-		if (contextBinding != null && JavaCore.ENABLED.equals(javaProject.getOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, true)))
-			nullnessDefault= Bindings.findNullnessDefault(contextBinding, javaProject);
+		EnumSet<TypeLocation> nullnessDefault= null;
+		if (astNode != null && JavaCore.ENABLED.equals(javaProject.getOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, true)))
+			nullnessDefault= RedundantNullnessTypeAnnotationsFilter.determineNonNullByDefaultLocations(astNode, RedundantNullnessTypeAnnotationsFilter.determineNonNullByDefaultNames(javaProject));
 
 		MethodDeclaration decl= ast.newMethodDeclaration();
 		decl.modifiers().addAll(getImplementationModifiers(ast, binding, inInterface, imports, context, nullnessDefault));
@@ -394,7 +351,7 @@ public final class StubUtility2 {
 		if (!inInterface || (declaringType != typeObject && JavaModelUtil.is18OrHigher(javaProject))) {
 			// generate a method body
 
-			Map<String, String> options= javaProject.getOptions(true);
+			Map<String, String> options= FormatterProfileManager.getProjectSettings(javaProject);
 
 			Block body= ast.newBlock();
 			decl.setBody(body);
@@ -457,7 +414,7 @@ public final class StubUtility2 {
 		boolean skipOverride= inInterface && declaringType == typeObject && !Modifier.isPublic(modifiers);
 
 		if (!skipOverride) {
-			addOverrideAnnotation(settings, javaProject, rewrite, imports, decl, binding.getDeclaringClass().isInterface(), null);			
+			StubUtility2Core.addOverrideAnnotation(settings, javaProject, rewrite, imports, decl, binding.getDeclaringClass().isInterface(), null);			
 		}
 
 		return decl;
@@ -485,7 +442,7 @@ public final class StubUtility2 {
 		return createParameters(project, imports, context, ast, binding, paramNames, decl, null);
 	}
 	private static List<SingleVariableDeclaration> createParameters(IJavaProject project, ImportRewrite imports, ImportRewriteContext context, AST ast,
-			IMethodBinding binding, String[] paramNames, MethodDeclaration decl, IAnnotationBinding defaultNullness) {
+			IMethodBinding binding, String[] paramNames, MethodDeclaration decl, EnumSet<TypeLocation> nullnessDefault) {
 		boolean is50OrHigher= JavaModelUtil.is50OrHigher(project);
 		List<SingleVariableDeclaration> parameters= decl.parameters();
 		ITypeBinding[] params= binding.getParameterTypes();
@@ -539,7 +496,7 @@ public final class StubUtility2 {
 			var.setName(ast.newSimpleName(paramNames[i]));
 			IAnnotationBinding[] annotations= binding.getParameterAnnotations(i);
 			for (IAnnotationBinding annotation : annotations) {
-				if (StubUtility2.isCopyOnInheritAnnotation(annotation.getAnnotationType(), project, defaultNullness))
+				if (StubUtility2Core.isCopyOnInheritAnnotation(annotation.getAnnotationType(), project, nullnessDefault, TypeLocation.PARAMETER))
 					var.modifiers().add(imports.addAnnotation(annotation, ast, context));
 			}
 			parameters.add(var);
@@ -715,7 +672,7 @@ public final class StubUtility2 {
 		return allMethods.toArray(new IMethodBinding[allMethods.size()]);
 	}
 
-	private static List<IExtendedModifier> getImplementationModifiers(AST ast, IMethodBinding method, boolean inInterface, ImportRewrite importRewrite, ImportRewriteContext context, IAnnotationBinding defaultNullness) throws JavaModelException {
+	private static List<IExtendedModifier> getImplementationModifiers(AST ast, IMethodBinding method, boolean inInterface, ImportRewrite importRewrite, ImportRewriteContext context, EnumSet<TypeLocation> nullnessDefault) throws JavaModelException {
 		IJavaProject javaProject= importRewrite.getCompilationUnit().getJavaProject();
 		int modifiers= method.getModifiers();
 		if (inInterface) {
@@ -756,7 +713,7 @@ public final class StubUtility2 {
 								ITypeBinding otherAnnotationType= annotation.getAnnotationType();
 								String qn= otherAnnotationType.getQualifiedName();
 								if (qn.endsWith(n) && (qn.length() == n.length() || qn.charAt(qn.length() - n.length() - 1) == '.')) {
-									if (StubUtility2.isCopyOnInheritAnnotation(otherAnnotationType, javaProject, defaultNullness))
+									if (StubUtility2Core.isCopyOnInheritAnnotation(otherAnnotationType, javaProject, nullnessDefault, TypeLocation.RETURN_TYPE))
 										result.add(importRewrite.addAnnotation(annotation, ast, context));
 									break;
 								}
@@ -772,7 +729,7 @@ public final class StubUtility2 {
 		ArrayList<IExtendedModifier> result= new ArrayList<>();
 		
 		for (IAnnotationBinding annotation : annotations) {
-			if (StubUtility2.isCopyOnInheritAnnotation(annotation.getAnnotationType(), javaProject, defaultNullness))
+			if (StubUtility2Core.isCopyOnInheritAnnotation(annotation.getAnnotationType(), javaProject, nullnessDefault, TypeLocation.RETURN_TYPE))
 				result.add(importRewrite.addAnnotation(annotation, ast, context));
 		}
 		
@@ -970,37 +927,6 @@ public final class StubUtility2 {
 	 */
 	private StubUtility2() {
 		// Not for instantiation
-	}
-
-	public static boolean isCopyOnInheritAnnotation(ITypeBinding annotationType, IJavaProject project, IAnnotationBinding defaultNullness) {
-		if (JavaCore.ENABLED.equals(project.getOption(JavaCore.COMPILER_INHERIT_NULL_ANNOTATIONS, true)))
-			return false;
-		if (defaultNullness != null && Bindings.isNonNullAnnotation(annotationType, project)) {
-			IMemberValuePairBinding[] memberValuePairs= defaultNullness.getDeclaredMemberValuePairs();
-			if (memberValuePairs.length == 1) {
-				Object value= memberValuePairs[0].getValue();
-				if (value instanceof Boolean) {
-					return Boolean.FALSE.equals(value); // do copy within @NonNullByDefault(false)
-				}
-			}
-			// missing or unrecognized value
-			return false; // nonnull within the scope of @NonNullByDefault: don't copy
-		}
-		return Bindings.isAnyNullAnnotation(annotationType, project);
-	}
-
-	public static Annotation findAnnotation(String qualifiedTypeName, List<IExtendedModifier> modifiers) {
-		for (int i= 0; i < modifiers.size(); i++) {
-			IExtendedModifier curr= modifiers.get(i);
-			if (curr instanceof Annotation) {
-				Annotation annot= (Annotation) curr;
-				ITypeBinding binding= annot.getTypeName().resolveTypeBinding();
-				if (binding != null && qualifiedTypeName.equals(binding.getQualifiedName())) {
-					return annot;
-				}
-			}
-		}
-		return null;
 	}
 
 	public static ITypeBinding replaceWildcardsAndCaptures(ITypeBinding type) {

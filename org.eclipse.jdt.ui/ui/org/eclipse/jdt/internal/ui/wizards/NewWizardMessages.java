@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -44,6 +47,7 @@ public final class NewWizardMessages extends NLS {
 
 	public static String AddSourceFolderWizardPage_description;
 	public static String AddSourceFolderWizardPage_addSinglePattern;
+	public static String AddSourceFolderWizardPage_dialog_title;
 	public static String AddSourceFolderWizardPage_directory_message;
 	public static String AddSourceFolderWizardPage_conflictWarning;
 	public static String AddSourceFolderWizardPage_error_NotARelativePathName;
@@ -210,6 +214,7 @@ public final class NewWizardMessages extends NLS {
 	public static String NewJavaProjectWizardPage_title;
 	public static String NewJavaProjectWizardPage_description;
 	public static String NewJavaProjectWizardPageTwo_error_message;
+	public static String NewJavaProjectWizardPageOne_dialog_title;
 	public static String NewJavaProjectWizardPageOne_directory_message;
 	public static String NewJavaProjectWizardPageOne_JREGroup_link_description;
 	public static String NewJavaProjectWizardPageOne_JREGroup_default_compliance;
@@ -324,6 +329,7 @@ public final class NewWizardMessages extends NLS {
 	public static String SourceContainerWorkbookPage_folders_edit_button;
 	public static String SourceContainerWorkbookPage_folders_toggle_button;
 	public static String SourceContainerWorkbookPage_folders_check;
+	public static String SourceContainerWorkbookPage_create_moduleinfo_check;
 	public static String SourceContainerWorkbookPage_ExistingSourceFolderDialog_new_title;
 	public static String SourceContainerWorkbookPage_ChangeOutputLocationDialog_title;
 	public static String SourceContainerWorkbookPage_ChangeOutputLocationDialog_project_and_output_message;
@@ -336,6 +342,7 @@ public final class NewWizardMessages extends NLS {
 	public static String ProjectsWorkbookPage_projects_label;
 	public static String ProjectsWorkbookPage_projects_add_button;
 	public static String ProjectsWorkbookPage_projects_edit_button;
+	public static String ProjectsWorkbookPage_projects_toggle_button;
 	public static String ProjectsWorkbookPage_projects_remove_button;
 	public static String ProjectsWorkbookPage_chooseProjects_message;
 	public static String ProjectsWorkbookPage_chooseProjects_title;
@@ -352,6 +359,7 @@ public final class NewWizardMessages extends NLS {
 	public static String LibrariesWorkbookPage_configurecontainer_error_title;
 	public static String LibrariesWorkbookPage_configurecontainer_error_message;
 	public static String LibrariesWorkbookPage_libraries_edit_button;
+	public static String LibrariesWorkbookPage_libraries_toggle_button;
 	public static String LibrariesWorkbookPage_NewClassFolderDialog_new_title;
 	public static String LibrariesWorkbookPage_NewClassFolderDialog_edit_title;
 	public static String LibrariesWorkbookPage_NewClassFolderDialog_description;
@@ -694,6 +702,12 @@ public final class NewWizardMessages extends NLS {
 	public static String NewSourceFolderDialog_usefolder_button;
 	public static String NewSourceFolderDialog_sourcefolder_label;
 
+	public static String CPListLabelProvider_test_sources_label;
+	public static String CPListLabelProvider_test_dependency_label;
+	public static String CPListLabelProvider_without_test_code_label;
+	public static String CPListLabelProvider_test_yes;
+	public static String CPListLabelProvider_test_no;
+	
 	public static String HintTextGroup_NoAction;
 
 	public static String NewSourceContainerWorkbookPage_HintTextGroup_title;
@@ -707,6 +721,8 @@ public final class NewWizardMessages extends NLS {
 	public static String NewSourceContainerWorkbookPage_ToolBar_AddSelSFToCP_label;
 	public static String NewSourceContainerWorkbookPage_ToolBar_AddSelLibToCP_tooltip;
 	public static String NewSourceContainerWorkbookPage_ToolBar_AddSelLibToCP_label;
+	public static String NewSourceContainerWorkbookPage_ToolBar_AddSelLibToTestCP_tooltip;
+	public static String NewSourceContainerWorkbookPage_ToolBar_AddSelLibToTestCP_label;
 
 	public static String NewSourceContainerWorkbookPage_ToolBar_AddJarCP_tooltip;
 	public static String NewSourceContainerWorkbookPage_ToolBar_AddJarCP_label;

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -319,7 +322,7 @@ public class JavaStructureCreator extends StructureCreator {
 			return content;
 
 		// replace whitespace by a single blank
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		char[] b= content.toCharArray();
 
 		// to avoid the trouble when dealing with Unicode
@@ -334,7 +337,7 @@ public class JavaStructureCreator extends StructureCreator {
 					case ITerminalSymbols.TokenNameCOMMENT_LINE:
 					case ITerminalSymbols.TokenNameCOMMENT_BLOCK:
 					case ITerminalSymbols.TokenNameCOMMENT_JAVADOC:
-						StringBuffer tokenStr= new StringBuffer(currentTokenSource.length);
+						StringBuilder tokenStr= new StringBuilder(currentTokenSource.length);
 						tokenStr.append(currentTokenSource);
 						StringTokenizer tokenizer= new StringTokenizer(tokenStr.toString());
 						while (tokenizer.hasMoreTokens()) {

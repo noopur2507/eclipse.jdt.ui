@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2007, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -208,7 +211,7 @@ public class MatchLocations {
 
 			Button button= new Button(parent, SWT.CHECK);
 			button.setText(text);
-			button.setData(new Integer(data));
+			button.setData(Integer.valueOf(data));
 			button.setLayoutData(new GridData());
 			button.setSelection(isSelected);
 			button.addSelectionListener(new SelectionAdapter() {
@@ -327,7 +330,7 @@ public class MatchLocations {
 		if (args.size() == 1) {
 			return args.get(0);
 		}
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		for (int i= 0; i < args.size(); i++) {
 			if (i > 0) {
 				buf.append(JavaElementLabels.COMMA_STRING);

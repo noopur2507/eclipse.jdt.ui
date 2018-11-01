@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -447,7 +450,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 	protected void handleManifestFileBrowseButtonPressed() {
 		ElementTreeSelectionDialog dialog= createWorkspaceFileSelectionDialog(JarPackagerMessages.JarManifestWizardPage_manifestSelectionDialog_title, JarPackagerMessages.JarManifestWizardPage_manifestSelectionDialog_message);
 		if (fJarPackage.isManifestAccessible())
-			dialog.setInitialSelections(new IResource[] {fJarPackage.getManifestFile()});
+			dialog.setInitialSelections(fJarPackage.getManifestFile());
 		if (dialog.open() ==  Window.OK) {
 			Object[] resources= dialog.getResult();
 			if (resources.length != 1)
@@ -511,7 +514,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 		SelectionDialog dialog= createPackageDialog(getPackagesForSelectedResources());
 		dialog.setTitle(JarPackagerMessages.JarManifestWizardPage_sealedPackagesSelectionDialog_title);
 		dialog.setMessage(JarPackagerMessages.JarManifestWizardPage_sealedPackagesSelectionDialog_message);
-		dialog.setInitialSelections(fJarPackage.getPackagesToSeal());
+		dialog.setInitialSelections((Object[]) fJarPackage.getPackagesToSeal());
 		if (dialog.open() == Window.OK)
 			fJarPackage.setPackagesToSeal(getPackagesFromDialog(dialog));
 		updateSealingInfo();
@@ -521,7 +524,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 		SelectionDialog dialog= createPackageDialog(getPackagesForSelectedResources());
 		dialog.setTitle(JarPackagerMessages.JarManifestWizardPage_unsealedPackagesSelectionDialog_title);
 		dialog.setMessage(JarPackagerMessages.JarManifestWizardPage_unsealedPackagesSelectionDialog_message);
-		dialog.setInitialSelections(fJarPackage.getPackagesToUnseal());
+		dialog.setInitialSelections((Object[]) fJarPackage.getPackagesToUnseal());
 		if (dialog.open() == Window.OK)
 			fJarPackage.setPackagesToUnseal(getPackagesFromDialog(dialog));
 		updateSealingInfo();
@@ -569,7 +572,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 			else if (i == 1)
 				fSealJarLabel.setText(JarPackagerMessages.JarManifestWizardPage_jarSealedExceptOne);
 			else
-				fSealJarLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_jarSealedExceptSome, new Integer(i)));
+				fSealJarLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_jarSealedExceptSome, Integer.valueOf(i)));
 
 		}
 		else {
@@ -580,7 +583,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 			else if (i == 1)
 				fSealPackagesLabel.setText(JarPackagerMessages.JarManifestWizardPage_onePackageSealed);
 			else
-				fSealPackagesLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_somePackagesSealed, new Integer(i)));
+				fSealPackagesLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_somePackagesSealed, Integer.valueOf(i)));
 		}
 	}
 	/*

@@ -1,15 +1,19 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Tom Eicher <eclipse@tom.eicher.name> - [formatting] 'Format Element' in JavaDoc does also format method body - https://bugs.eclipse.org/bugs/show_bug.cgi?id=238746
  *     Tom Eicher (Avaloq Evolution AG) - block selection mode
  *     Stefan Xenos (sxenos@gmail.com) - bug 306646, make editor margins follow the java formatter preference
+ *     Angelo Zerr <angelo.zerr@gmail.com> - [CodeMining] Update CodeMinings with IJavaReconcilingListener - Bug 530825
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.javaeditor;
 
@@ -100,6 +104,7 @@ import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.TextUtilities;
+import org.eclipse.jface.text.codemining.ICodeMiningProvider;
 import org.eclipse.jface.text.link.LinkedModeModel;
 import org.eclipse.jface.text.link.LinkedPosition;
 import org.eclipse.jface.text.reconciler.IReconciler;
@@ -113,6 +118,7 @@ import org.eclipse.jface.text.source.ICharacterPairMatcher;
 import org.eclipse.jface.text.source.IOverviewRuler;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.ISourceViewerExtension2;
+import org.eclipse.jface.text.source.ISourceViewerExtension5;
 import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.IVerticalRulerColumn;
 import org.eclipse.jface.text.source.LineChangeHover;
@@ -183,6 +189,7 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 import org.eclipse.jdt.core.util.IModifierConstants;
 
 import org.eclipse.jdt.internal.core.manipulation.search.IOccurrencesFinder;
@@ -193,7 +200,6 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.ui.IContextMenuConstants;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.actions.IJavaEditorActionDefinitionIds;
 import org.eclipse.jdt.ui.actions.JavaSearchActionGroup;
 import org.eclipse.jdt.ui.actions.OpenEditorActionGroup;
@@ -206,6 +212,7 @@ import org.eclipse.jdt.ui.text.folding.IJavaFoldingStructureProviderExtension;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.actions.CompositeActionGroup;
 import org.eclipse.jdt.internal.ui.actions.CopyQualifiedNameAction;
 import org.eclipse.jdt.internal.ui.actions.FoldingActionGroup;
@@ -1212,7 +1219,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 				if (inputJavaElement != null) {
 					IProgressMonitor monitor = getProgressMonitor();
 					try {
-						updateOccurrenceAnnotations((ITextSelection)fForcedMarkOccurrencesSelection, SharedASTProvider.getAST(inputJavaElement, SharedASTProvider.WAIT_NO, monitor));
+						updateOccurrenceAnnotations((ITextSelection)fForcedMarkOccurrencesSelection, SharedASTProviderCore.getAST(inputJavaElement, SharedASTProviderCore.WAIT_NO, monitor));
 					} finally {
 						monitor.done();
 					}
@@ -1756,6 +1763,13 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 	private List<IRegion> fPreviousSelections;
 
 	/**
+	 * Java code mining manager
+	 * 
+	 * @since 3.14
+	 */
+	private JavaCodeMiningManager fJavaCodeMiningManager;
+	
+	/**
 	 * Returns the most narrow java element including the given offset.
 	 *
 	 * @param offset the offset inside of the requested element
@@ -2104,6 +2118,8 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 		// Copy qualified name
 		action= getAction(IJavaEditorActionConstants.COPY_QUALIFIED_NAME);
+		action.setDisabledImageDescriptor(JavaPluginImages.DESC_DLCL_COPY_QUALIFIED_NAME);
+		action.setImageDescriptor(JavaPluginImages.DESC_ELCL_COPY_QUALIFIED_NAME);
 		if (menu.find(ITextEditorActionConstants.COPY) != null)
 			menu.insertAfter(ITextEditorActionConstants.COPY, action);
 		else
@@ -2410,7 +2426,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 		IProgressMonitor monitor = getProgressMonitor();
 		CompilationUnit ast;
 		try {
-			ast= SharedASTProvider.getAST(inputJavaElement, SharedASTProvider.WAIT_NO /* DO NOT USE WAIT_ACTIVE_ONLY */ , monitor);
+			ast= SharedASTProviderCore.getAST(inputJavaElement, SharedASTProviderCore.WAIT_NO /* DO NOT USE WAIT_ACTIVE_ONLY */ , monitor);
 		} finally {
 			monitor.done();
 		}
@@ -2660,6 +2676,8 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			fBreadcrumb.dispose();
 			fBreadcrumb= null;
 		}
+
+		uninstallJavaCodeMining();
 
 		super.dispose();
 		fSelectionProvider= null;
@@ -2929,6 +2947,15 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 				return;
 			}
 
+			if (affectsJavaCodeMining(event)) {
+				if (isJavaCodeMiningEnabled()) {
+					installJavaCodeMining();
+				} else {
+					uninstallJavaCodeMining();
+				}
+				return;
+			}
+
 			if (JavaCore.COMPILER_SOURCE.equals(property)) {
 				if (event.getNewValue() instanceof String)
 					fBracketMatcher.setSourceVersion((String) event.getNewValue());
@@ -3103,6 +3130,10 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 		fIsBreadcrumbVisible= isBreadcrumbShown();
 		if (fIsBreadcrumbVisible)
 			showBreadcrumb();
+
+		if (isJavaCodeMiningEnabled()) {
+			installJavaCodeMining();
+		}
 
 		PlatformUI.getWorkbench().addWindowListener(fActivationListener);
 	}
@@ -3371,7 +3402,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			if (inputJavaElement != null) {
 				IProgressMonitor monitor = getProgressMonitor();
 				try {
-					updateOccurrenceAnnotations((ITextSelection)fForcedMarkOccurrencesSelection, SharedASTProvider.getAST(inputJavaElement, SharedASTProvider.WAIT_NO, monitor));
+					updateOccurrenceAnnotations((ITextSelection)fForcedMarkOccurrencesSelection, SharedASTProviderCore.getAST(inputJavaElement, SharedASTProviderCore.WAIT_NO, monitor));
 				} finally {
 					monitor.done();
 				}
@@ -3497,7 +3528,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			IProgressMonitor monitor = getProgressMonitor();
 			try {
 				SubMonitor subMonitor= SubMonitor.convert(monitor, 2);
-				CompilationUnit ast= SharedASTProvider.getAST(inputElement, SharedASTProvider.WAIT_ACTIVE_ONLY,
+				CompilationUnit ast= SharedASTProviderCore.getAST(inputElement, SharedASTProviderCore.WAIT_ACTIVE_ONLY,
 						subMonitor.newChild(1, SubMonitor.SUPPRESS_NONE));
 				fOverrideIndicatorManager.reconciled(ast, true, subMonitor.newChild(1, SubMonitor.SUPPRESS_NONE));
 			} finally {
@@ -4251,6 +4282,76 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 		public Class<?>[] getClassContext() {
 			return super.getClassContext();
 		}
+	}
+
+	/**
+	 * Install Java code mining.
+	 *
+	 * @since 3.14
+	 */
+	private void installJavaCodeMining() {
+		if (fJavaCodeMiningManager == null) {
+			fJavaCodeMiningManager= new JavaCodeMiningManager();
+			fJavaCodeMiningManager.install(this, (JavaSourceViewer) getSourceViewer(), getPreferenceStore());
+		}
+	}
+
+	/**
+	 * Uninstall Java code mining.
+	 *
+	 * @since 3.14
+	 */
+	private void uninstallJavaCodeMining() {
+		if (fJavaCodeMiningManager != null) {
+			fJavaCodeMiningManager.uninstall();
+			fJavaCodeMiningManager= null;
+		}
+	}
+
+	/**
+	 * @return <code>true</code> if Java code mining is enabled.
+	 *
+	 * @since 3.14
+	 */
+	boolean isJavaCodeMiningEnabled() {
+		// check if there is a registered Java code mining.
+		ISourceViewer viewer= getViewer();
+		if (viewer instanceof ISourceViewerExtension5) {
+			return ((ISourceViewerExtension5) viewer).hasCodeMiningProviders();
+		}
+		return false;
+	}
+
+	/**
+	 * Determines whether the preference change encoded by the given event changes the Java code mining.
+	 *
+	 * @param event the event to be investigated
+	 * @return <code>true</code> if event causes a change
+	 * @since 3.14
+	 */
+	protected boolean affectsJavaCodeMining(PropertyChangeEvent event) {
+		boolean isJavaCodeMiningPreference= isJavaCodeMiningPreference(event.getProperty());
+		if (isJavaCodeMiningPreference) {
+			// It's a code mining preference, recompute the list of code mining providers.
+			installCodeMiningProviders();
+		}
+		return isJavaCodeMiningPreference;
+	}
+
+	/**
+	 * Note that by convention, a Java code mining preference starts with
+	 * {@link PreferenceConstants#EDITOR_JAVA_CODEMINING_PREFIX}. It provides the capability for
+	 * external plug-ins to contribute with a custom {@link ICodeMiningProvider} and refresh the Java
+	 * Editor mining when preferences changed.
+	 * 
+	 * @param property the name of the preference property that changed
+	 * 
+	 * @return <code>true</code> if the given property is a Java code mining preference.
+	 * 
+	 * @since 3.14
+	 */
+	private boolean isJavaCodeMiningPreference(String property) {
+		return property.startsWith(PreferenceConstants.EDITOR_JAVA_CODEMINING_PREFIX);
 	}
 
 }

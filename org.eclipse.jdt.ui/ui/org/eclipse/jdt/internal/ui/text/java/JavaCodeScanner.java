@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -86,9 +89,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 			return false;
 		}
 
-		/*
-		 * @see org.eclipse.jface.text.rules.IRule#evaluate(org.eclipse.jface.text.rules.ICharacterScanner)
-		 */
 		@Override
 		public IToken evaluate(ICharacterScanner scanner) {
 
@@ -141,9 +141,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 			return false;
 		}
 
-		/*
-		 * @see org.eclipse.jface.text.rules.IRule#evaluate(org.eclipse.jface.text.rules.ICharacterScanner)
-		 */
 		@Override
 		public IToken evaluate(ICharacterScanner scanner) {
 
@@ -174,17 +171,11 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 			setSourceVersion(currentVersion);
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.text.ISourceVersionDependent#setSourceVersion(java.lang.String)
-		 */
 		@Override
 		public void setSourceVersion(String version) {
-			fIsVersionMatch= fVersion.compareTo(version) <= 0;
+			fIsVersionMatch= JavaCore.compareJavaVersions(fVersion, version) <= 0;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.text.CombinedWordRule.WordMatcher#evaluate(org.eclipse.jface.text.rules.ICharacterScanner, org.eclipse.jdt.internal.ui.text.CombinedWordRule.CharacterBuffer)
-		 */
 		@Override
 		public IToken evaluate(ICharacterScanner scanner, CombinedWordRule.CharacterBuffer word) {
 			IToken token= super.evaluate(scanner, word);
@@ -226,25 +217,16 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 				mark();
 			}
 
-			/*
-			 * @see org.eclipse.jface.text.rules.ICharacterScanner#getColumn()
-			 */
 			@Override
 			public int getColumn() {
 				return fDelegate.getColumn();
 			}
 
-			/*
-			 * @see org.eclipse.jface.text.rules.ICharacterScanner#getLegalLineDelimiters()
-			 */
 			@Override
 			public char[][] getLegalLineDelimiters() {
 				return fDelegate.getLegalLineDelimiters();
 			}
 
-			/*
-			 * @see org.eclipse.jface.text.rules.ICharacterScanner#read()
-			 */
 			@Override
 			public int read() {
 				int ch= fDelegate.read();
@@ -253,9 +235,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 				return ch;
 			}
 
-			/*
-			 * @see org.eclipse.jface.text.rules.ICharacterScanner#unread()
-			 */
 			@Override
 			public void unread() {
 				if (fReadCount > 0)
@@ -308,9 +287,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 			setSourceVersion(currentVersion);
 		}
 
-		/*
-		 * @see org.eclipse.jface.text.rules.IRule#evaluate(org.eclipse.jface.text.rules.ICharacterScanner)
-		 */
 		@Override
 		public IToken evaluate(ICharacterScanner scanner) {
 			if (!fIsVersionMatch)
@@ -363,12 +339,9 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 			return true;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.text.ISourceVersionDependent#setSourceVersion(java.lang.String)
-		 */
 		@Override
 		public void setSourceVersion(String version) {
-			fIsVersionMatch= fVersion.compareTo(version) <= 0;
+			fIsVersionMatch= JavaCore.compareJavaVersions(fVersion, version) <= 0;
 		}
 
 	}
@@ -396,7 +369,7 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 	private static final String RETURN= "return"; //$NON-NLS-1$
 	private static String[] fgJava14Keywords= { "assert" }; //$NON-NLS-1$
 	private static String[] fgJava15Keywords= { "enum" }; //$NON-NLS-1$
-	private static String[] fgJava9ModuleInfoKeywords= { "module", "requires", "exports", "to", "provides", "with", "uses", "open", "opens", "transitive", "import" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$
+	private static String[] fgJava9ModuleInfoKeywords= { "module", "requires", "exports", "to", "provides", "with", "uses", "open", "opens", "transitive", "import", "static" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$
 
 	private static String[] fgTypes= { "void", "boolean", "char", "byte", "short", "strictfp", "int", "long", "float", "double" }; //$NON-NLS-1$ //$NON-NLS-5$ //$NON-NLS-7$ //$NON-NLS-6$ //$NON-NLS-8$ //$NON-NLS-9$  //$NON-NLS-10$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-2$
 
@@ -442,17 +415,11 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		initialize();
 	}
 
-	/*
-	 * @see AbstractJavaScanner#getTokenProperties()
-	 */
 	@Override
 	protected String[] getTokenProperties() {
 		return fgTokenProperties;
 	}
 
-	/*
-	 * @see AbstractJavaScanner#createRules()
-	 */
 	@Override
 	protected List<IRule> createRules() {
 
@@ -547,9 +514,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		return new ArrayList<>(Arrays.asList(combinedWordRule));
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.AbstractJavaScanner#getBoldKey(java.lang.String)
-	 */
 	@Override
 	protected String getBoldKey(String colorKey) {
 		if ((ANNOTATION_COLOR_KEY).equals(colorKey))
@@ -557,9 +521,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		return super.getBoldKey(colorKey);
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.AbstractJavaScanner#getItalicKey(java.lang.String)
-	 */
 	@Override
 	protected String getItalicKey(String colorKey) {
 		if ((ANNOTATION_COLOR_KEY).equals(colorKey))
@@ -567,9 +528,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		return super.getItalicKey(colorKey);
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.AbstractJavaScanner#getStrikethroughKey(java.lang.String)
-	 */
 	@Override
 	protected String getStrikethroughKey(String colorKey) {
 		if ((ANNOTATION_COLOR_KEY).equals(colorKey))
@@ -577,9 +535,6 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		return super.getStrikethroughKey(colorKey);
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.AbstractJavaScanner#getUnderlineKey(java.lang.String)
-	 */
 	@Override
 	protected String getUnderlineKey(String colorKey) {
 		if ((ANNOTATION_COLOR_KEY).equals(colorKey))
@@ -587,17 +542,11 @@ public final class JavaCodeScanner extends AbstractJavaScanner {
 		return super.getUnderlineKey(colorKey);
 	}
 
-	/*
-	 * @see AbstractJavaScanner#affectsBehavior(PropertyChangeEvent)
-	 */
 	@Override
 	public boolean affectsBehavior(PropertyChangeEvent event) {
 		return event.getProperty().equals(SOURCE_VERSION) || super.affectsBehavior(event);
 	}
 
-	/*
-	 * @see AbstractJavaScanner#adaptToPreferenceChange(PropertyChangeEvent)
-	 */
 	@Override
 	public void adaptToPreferenceChange(PropertyChangeEvent event) {
 

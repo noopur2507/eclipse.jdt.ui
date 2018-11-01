@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2005 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -39,23 +42,28 @@ public class RenameTypeParticipant extends RenameParticipant {
 
 	private IType fType;
 
+	@Override
 	protected boolean initialize(Object element) {
 		fType= (IType)element;
 		return true;
 	}
 
+	@Override
 	public String getName() {
 		return JspMessages.RenameTypeParticipant_name; 
 	}
 	
+	@Override
 	public RefactoringStatus checkConditions(IProgressMonitor pm, CheckConditionsContext context) {
 		return new RefactoringStatus();
 	}
 
+	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException {
 		final Map changes= new HashMap();
 		final String newName= computeNewName();
 		ISearchResultCollector collector= new ISearchResultCollector() {
+			@Override
 			public void accept(IResource resource, int start, int length) throws CoreException {
 				TextFileChange change= (TextFileChange)changes.get(resource);
 				if (change == null) {

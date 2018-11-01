@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -248,7 +251,7 @@ public abstract class History<K, V> {
 		int pos=0;
 		for (Iterator<V> iter= values.iterator(); iter.hasNext();) {
 			V element= iter.next();
-			fPositions.put(getKey(element), new Integer(pos));
+			fPositions.put(getKey(element), Integer.valueOf(pos));
 			pos++;
 		}
 	}

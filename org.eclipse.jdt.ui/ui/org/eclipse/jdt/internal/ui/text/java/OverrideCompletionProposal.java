@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -44,18 +47,17 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.formatter.IndentManipulation;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 
 public class OverrideCompletionProposal extends JavaTypeCompletionProposal implements ICompletionProposalExtension4 {
@@ -76,7 +78,7 @@ public class OverrideCompletionProposal extends JavaTypeCompletionProposal imple
 
 		fJavaProject= jproject;
 
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		buffer.append(completionProposal);
 		buffer.append(" {};"); //$NON-NLS-1$
 
@@ -92,7 +94,7 @@ public class OverrideCompletionProposal extends JavaTypeCompletionProposal imple
 	}
 
 	private CompilationUnit getRecoveredAST(IDocument document, int offset, Document recoveredDocument) {
-		CompilationUnit ast= SharedASTProvider.getAST(fCompilationUnit, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+		CompilationUnit ast= SharedASTProviderCore.getAST(fCompilationUnit, SharedASTProviderCore.WAIT_ACTIVE_ONLY, null);
 		if (ast != null) {
 			recoveredDocument.set(document.get());
 			return ast;
@@ -126,9 +128,12 @@ public class OverrideCompletionProposal extends JavaTypeCompletionProposal imple
 		Document recoveredDocument= new Document();
 		CompilationUnit unit= getRecoveredAST(document, offset, recoveredDocument);
 		ImportRewriteContext context;
+		ASTNode astNode;
 		if (importRewrite != null) {
-			context= new ContextSensitiveImportRewriteContext(unit, offset, importRewrite);
+			astNode= new NodeFinder(unit, offset, 0).getCoveringNode();
+			context= new ContextSensitiveImportRewriteContext(astNode, importRewrite);
 		} else {
+			astNode= null;
 			importRewrite= StubUtility.createImportRewrite(unit, true); // create a dummy import rewriter to have one
 			context= new ImportRewriteContext() { // forces that all imports are fully qualified
 				@Override
@@ -158,7 +163,7 @@ public class OverrideCompletionProposal extends JavaTypeCompletionProposal imple
 			}
 			if (methodToOverride != null) {
 				CodeGenerationSettings settings= JavaPreferencesSettings.getCodeGenerationSettings(fJavaProject);
-				MethodDeclaration stub= StubUtility2.createImplementationStub(fCompilationUnit, rewrite, importRewrite, context, methodToOverride, declaringType, settings, declaringType.isInterface(), declaringType);
+				MethodDeclaration stub= StubUtility2.createImplementationStub(fCompilationUnit, rewrite, importRewrite, context, methodToOverride, declaringType, settings, declaringType.isInterface(), astNode);
 				ListRewrite rewriter= rewrite.getListRewrite(node, descriptor);
 				rewriter.insertFirst(stub, null);
 

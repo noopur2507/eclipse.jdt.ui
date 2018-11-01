@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -18,12 +21,14 @@ import java.util.StringTokenizer;
 import org.eclipse.search.ui.text.Match;
 import org.eclipse.search.ui.text.MatchFilter;
 
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
@@ -79,7 +84,7 @@ abstract class JavaMatchFilter extends MatchFilter {
 	}
 
 	private static String encodeFilters(MatchFilter[] enabledFilters) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		for (int i= 0; i < enabledFilters.length; i++) {
 			MatchFilter matchFilter= enabledFilters[i];
 			buf.append(matchFilter.getID());
@@ -100,6 +105,8 @@ abstract class JavaMatchFilter extends MatchFilter {
 		return result.toArray(new JavaMatchFilter[result.size()]);
 	}
 
+	private static final JavaMatchFilter TESTCODE_FILTER= new TestCodeFilter();
+	private static final JavaMatchFilter MAINCODE_FILTER= new MainCodeFilter();
 	private static final JavaMatchFilter POTENTIAL_FILTER= new PotentialFilter();
 	private static final JavaMatchFilter IMPORT_FILTER= new ImportFilter();
 	private static final JavaMatchFilter JAVADOC_FILTER= new JavadocFilter();
@@ -117,6 +124,8 @@ abstract class JavaMatchFilter extends MatchFilter {
 	private static final JavaMatchFilter NON_DEPRECATED_FILTER= new NonDeprecatedFilter();
 
 	private static final JavaMatchFilter[] ALL_FILTERS= new JavaMatchFilter[] {
+			TESTCODE_FILTER,
+			MAINCODE_FILTER,
 			POTENTIAL_FILTER,
 			IMPORT_FILTER,
 			JAVADOC_FILTER,
@@ -131,7 +140,7 @@ abstract class JavaMatchFilter extends MatchFilter {
 			STATIC_FILTER,
 			NON_STATIC_FILTER,
 			DEPRECATED_FILTER,
-			NON_DEPRECATED_FILTER
+			NON_DEPRECATED_FILTER,
 	};
 
 	public static JavaMatchFilter[] allFilters() {
@@ -190,6 +199,87 @@ class PotentialFilter extends JavaMatchFilter {
 		return "filter_potential"; //$NON-NLS-1$
 	}
 }
+
+abstract class MainOrTestFilter extends JavaMatchFilter {
+	@Override
+	public boolean isApplicable(JavaSearchQuery query) {
+		return true;
+	}
+	
+	protected static IClasspathEntry determineClassPathEntry(JavaElementMatch match) {
+		final Object element= match.getElement();
+		if (element instanceof IJavaElement) {
+			IPackageFragmentRoot packageFragmentRoot= (IPackageFragmentRoot) ((IJavaElement) element).getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+			if (packageFragmentRoot != null) {
+				try {
+					return packageFragmentRoot.getResolvedClasspathEntry();
+				} catch (JavaModelException e) {
+					return null;
+				}
+			}
+		}
+		return null;
+	}
+}
+
+
+class MainCodeFilter extends MainOrTestFilter {
+	@Override
+	public String getName() {
+		return SearchMessages.MatchFilter_MainCodeFilter_name;
+	}
+
+	@Override
+	public String getActionLabel() {
+		return SearchMessages.MatchFilter_MainCodeFilter_actionLabel;
+	}
+
+	@Override
+	public String getDescription() {
+		return SearchMessages.MatchFilter_MainCodeFilter_description;
+	}
+
+	@Override
+	public boolean filters(JavaElementMatch match) {
+		IClasspathEntry determineClasspathEntry= determineClassPathEntry(match);
+		return determineClasspathEntry == null ? false : !determineClasspathEntry.isTest();
+	}
+
+	@Override
+	public String getID() {
+		return "filter_production_code"; //$NON-NLS-1$
+	}
+}
+
+class TestCodeFilter extends MainOrTestFilter {
+	@Override
+	public String getName() {
+		return SearchMessages.MatchFilter_TestCodeFilter_name;
+	}
+
+	@Override
+	public String getActionLabel() {
+		return SearchMessages.MatchFilter_TestCodeFilter_actionLabel;
+	}
+
+	@Override
+	public String getDescription() {
+		return SearchMessages.MatchFilter_TestCodeFilter_description;
+	}
+
+	@Override
+	public boolean filters(JavaElementMatch match) {
+		IClasspathEntry determineClasspathEntry= determineClassPathEntry(match);
+		return determineClasspathEntry == null ? false : determineClasspathEntry.isTest();
+	}
+
+	@Override
+	public String getID() {
+		return "filter_test_code"; //$NON-NLS-1$
+	}
+}
+
+
 
 class ImportFilter extends JavaMatchFilter {
 	@Override

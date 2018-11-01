@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -26,6 +29,7 @@ public final class JavaUIMessages extends NLS {
 
 	public static String FilteredTypesSelectionDialog_TypeFiltersPreferencesAction_label;
 	public static String GenerateHashCodeEqualsDialog_blocks_button;
+	public static String GenerateHashCodeEqualsDialog_j7hashequals_button;
 	public static String GenerateHashCodeEqualsDialog_instanceof_button;
 	public static String JavaPlugin_additionalInfo_affordance;
 	public static String JavaPlugin_internal_error;
@@ -44,6 +48,8 @@ public final class JavaUIMessages extends NLS {
 	public static String OpenTypeAction_label;
 	public static String OpenTypeAction_dialogTitle;
 	public static String OpenTypeAction_dialogMessage;
+	public static String OpenTypeSelectionDialog_open;
+	
 
 	public static String JavaUI_defaultDialogMessage;
 
@@ -113,6 +119,7 @@ public final class JavaUIMessages extends NLS {
 	public static String GenerateHashCodeEqualsDialog_no_entries;
 	public static String GenerateHashCodeEqualsDialog_select_at_least_one_field;
 	public static String GenerateHashCodeEqualsDialog_select_fields_to_include;
+	public static String GenerateHashCodeEqualsDialog_generate;
 
 	public static String GenerateToStringDialog_defaultTemplateName;
 	public static String GenerateToStringDialog_dialog_title;
@@ -153,6 +160,7 @@ public final class JavaUIMessages extends NLS {
 	public static String GenerateToStringDialog_newTemplateNameArg;
 	public static String GenerateToStringDialog_skip_null_button;
 	public static String GenerateToStringDialog_sort_button;
+	public static String GenerateToStringDialog_generate_button;
 	public static String GenerateToStringDialog_template_content;
 	public static String GenerateToStringDialog_template_name;
 	public static String GenerateToStringDialog_templateEdition_NewWindowTitle;
@@ -224,6 +232,8 @@ public final class JavaUIMessages extends NLS {
 
 	public static String JavaOutlineControl_statusFieldText_hideInheritedMembers;
 	public static String JavaOutlineControl_statusFieldText_showInheritedMembers;
+	
+	public static String WithoutTestCodeDecorator_suffix_withoutTestCode;
 
 	public static String RenameSupport_not_available;
 	public static String RenameSupport_dialog_title;

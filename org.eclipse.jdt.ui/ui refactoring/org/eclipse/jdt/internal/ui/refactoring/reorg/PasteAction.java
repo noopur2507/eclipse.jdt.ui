@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -121,11 +124,12 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.BodyDeclarationRewrite;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
@@ -151,7 +155,6 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.environments.IExecutionEnvironment;
 import org.eclipse.jdt.launching.environments.IExecutionEnvironmentsManager;
 
-import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
@@ -363,6 +366,7 @@ public class PasteAction extends SelectionDispatchAction{
 			private final int fKind;
 			private final String fTypeName;
 			private final String fPackageName;
+			private final boolean fIsModuleInfo;
 
 			public static List<ParsedCu> parseCus(IJavaProject javaProject, String compilerCompliance, String text) {
 				ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
@@ -379,6 +383,21 @@ public class PasteAction extends SelectionDispatchAction{
 
 				if (unit.types().size() > 0)
 					return parseAsTypes(text, unit);
+
+				if (javaProject != null) {
+					parser.setProject(javaProject);
+				} else if (compilerCompliance != null) {
+					Map<String, String> options= JavaCore.getOptions();
+					JavaModelUtil.setComplianceOptions(options, compilerCompliance);
+					parser.setCompilerOptions(options);
+				}
+				parser.setSource(text.toCharArray());
+				parser.setStatementsRecovery(true);
+				parser.setUnitName(JavaModelUtil.MODULE_INFO_JAVA);
+				unit= (CompilationUnit) parser.createAST(null);
+				if (unit.getModule() != null) {
+					return Collections.singletonList(new ParsedCu(text, ASTParser.K_COMPILATION_UNIT, null, null, true));
+				}
 
 				parser.setProject(javaProject);
 				parser.setSource(text.toCharArray());
@@ -454,10 +473,15 @@ public class PasteAction extends SelectionDispatchAction{
 			}
 
 			private ParsedCu(String text, int kind, String typeName, String packageName) {
+				this(text, kind, typeName, packageName, false);
+			}
+
+			private ParsedCu(String text, int kind, String typeName, String packageName, boolean isModuleInfo) {
 				fText= text;
 				fTypeName= typeName;
 				fPackageName= packageName;
 				fKind= kind;
+				fIsModuleInfo= isModuleInfo;
 			}
 
 			public String getTypeName() {
@@ -729,25 +753,35 @@ public class PasteAction extends SelectionDispatchAction{
 					pm.beginTask("", 4); //$NON-NLS-1$
 					try {
 						IPackageFragment destinationPack;
-						if (fDestinationPack != null) {
-							destinationPack= fDestinationPack;
+						if (parsedCu.fIsModuleInfo) {
+							destinationPack= fDestination.getPackageFragment(""); //$NON-NLS-1$ // the default package
 							pm.worked(1);
 						} else {
-							String packageName= parsedCu.getPackageName();
-							if (packageName == null)
-								packageName= ReorgMessages.PasteAction_snippet_default_package_name;
-							destinationPack= fDestination.getPackageFragment(packageName);
-							if (! destinationPack.exists()) {
-								JavaModelUtil.getPackageFragmentRoot(destinationPack).createPackageFragment(packageName, true, new SubProgressMonitor(pm, 1));
-							} else {
+							if (fDestinationPack != null) {
+								destinationPack= fDestinationPack;
 								pm.worked(1);
+							} else {
+								String packageName= parsedCu.getPackageName();
+								if (packageName == null)
+									packageName= ReorgMessages.PasteAction_snippet_default_package_name;
+								destinationPack= fDestination.getPackageFragment(packageName);
+								if (!destinationPack.exists()) {
+									JavaModelUtil.getPackageFragmentRoot(destinationPack).createPackageFragment(packageName, true, new SubProgressMonitor(pm, 1));
+								} else {
+									pm.worked(1);
+								}
 							}
 						}
 
 						String parsedText= Strings.trimIndentation(parsedCu.getText(), destinationPack.getJavaProject(), true);
 						int kind= parsedCu.getKind();
 						if (kind == ASTParser.K_COMPILATION_UNIT) {
-							final String cuName= parsedCu.getTypeName() + JavaModelUtil.DEFAULT_CU_SUFFIX;
+							final String cuName;
+							if (parsedCu.fIsModuleInfo) {
+								cuName= JavaModelUtil.MODULE_INFO_JAVA;
+							} else {
+								cuName= parsedCu.getTypeName() + JavaModelUtil.DEFAULT_CU_SUFFIX;
+							}
 							ICompilationUnit cu= destinationPack.getCompilationUnit(cuName);
 							boolean alreadyExists= cu.exists();
 							if (alreadyExists) {
@@ -943,7 +977,7 @@ public class PasteAction extends SelectionDispatchAction{
 					IProject project;
 					int i= 1;
 					do {
-						String name= Messages.format(ReorgMessages.PasteAction_projectName, i == 1 ? (Object) "" : new Integer(i)); //$NON-NLS-1$
+						String name= Messages.format(ReorgMessages.PasteAction_projectName, i == 1 ? (Object) "" : Integer.valueOf(i)); //$NON-NLS-1$
 						project= JavaPlugin.getWorkspace().getRoot().getProject(name);
 						i++;
 					} while (project.exists());

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2017 GK Software AG, and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2017, 2018 GK Software SE, and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - initial API and implementation
@@ -27,7 +30,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.provisional.JavaModelAccess;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
@@ -74,7 +76,7 @@ public abstract class ModuleEncapsulationDetail {
 			try {
 				for (IClasspathEntry classpathEntry : currentProject.getRawClasspath()) {
 					if (classpathEntry.getPath().equals(path)) {
-						return JavaModelAccess.getUnfilteredPackageFragmentRoots(currentProject, classpathEntry);
+						return currentProject.findUnfilteredPackageFragmentRoots(classpathEntry);
 					}
 				}
 			} catch (JavaModelException e) {

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -41,17 +44,18 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
+import org.eclipse.jdt.internal.core.manipulation.MembersOrderPreferenceCacheCommon;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.refactoring.nls.changes.CreateTextFileChange;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
-
-import org.eclipse.jdt.ui.CodeGeneration;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.preferences.MembersOrderPreferenceCache;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 public class AccessorClassCreator {
 
@@ -84,7 +88,7 @@ public class AccessorClassCreator {
 	private String createAccessorCUSource(IProgressMonitor pm) throws CoreException {
 		IProject project= getFileHandle(fAccessorPath).getProject();
 		String lineDelimiter= StubUtility.getLineDelimiterPreference(project);
-		return CodeFormatterUtil.format(CodeFormatter.K_COMPILATION_UNIT, getUnformattedSource(pm), 0, lineDelimiter, fCu.getJavaProject());
+		return CodeFormatterUtil.format(CodeFormatter.K_COMPILATION_UNIT, getUnformattedSource(pm), 0, lineDelimiter, FormatterProfileManager.getProjectSettings(fCu.getJavaProject()));
 	}
 
 	private static IFile getFileHandle(IPath filePath) {
@@ -108,7 +112,7 @@ public class AccessorClassCreator {
 			String classContent= createClass(lineDelim);
 			String cuContent= CodeGeneration.getCompilationUnitContent(newCu, fileComment, typeComment, classContent, lineDelim);
 			if (cuContent == null) {
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				if (fileComment != null) {
 					buf.append(fileComment).append(lineDelim);
 				}
@@ -142,21 +146,21 @@ public class AccessorClassCreator {
 			is.addImport("java.util.ResourceBundle"); //$NON-NLS-1$
 		}
 		TextEdit edit= is.rewriteImports(pm);
-		JavaElementUtil.applyEdit(newCu, edit, false, null);
+		JavaModelUtil.applyEdit(newCu, edit, false, null);
 	}
 
 	private String createClass(String lineDelim) throws CoreException {
 		if (fIsEclipseNLS) {
 			MembersOrderPreferenceCache sortOrder= JavaPlugin.getDefault().getMemberOrderPreferenceCache();
-			int constructorIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCache.CONSTRUCTORS_INDEX);
-			int fieldIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCache.STATIC_FIELDS_INDEX);
-			int initIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCache.STATIC_INIT_INDEX);
+			int constructorIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCacheCommon.CONSTRUCTORS_INDEX);
+			int fieldIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCacheCommon.STATIC_FIELDS_INDEX);
+			int initIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCacheCommon.STATIC_INIT_INDEX);
 
 			String constructor= createConstructor(lineDelim) + lineDelim;
 			String initializer= createStaticInitializer(lineDelim) + lineDelim;
 			String fields= createStaticFields() + lineDelim;
 
-			StringBuffer result= new StringBuffer();
+			StringBuilder result= new StringBuilder();
 			result.append("public class ").append(fAccessorClassName).append(" extends NLS {"); //$NON-NLS-1$ //$NON-NLS-2$
 			result.append("private static final String ").append(NLSRefactoring.BUNDLE_NAME_FIELD).append(" = \"").append(getResourceBundleName()).append("\"; "); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			result.append(NLSElement.createTagText(1)).append(lineDelim);
@@ -188,13 +192,13 @@ public class AccessorClassCreator {
 			return result.toString();
 		} else {
 			MembersOrderPreferenceCache sortOrder= JavaPlugin.getDefault().getMemberOrderPreferenceCache();
-			int constructorIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCache.CONSTRUCTORS_INDEX);
-			int methodIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCache.METHOD_INDEX);
+			int constructorIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCacheCommon.CONSTRUCTORS_INDEX);
+			int methodIdx= sortOrder.getCategoryIndex(MembersOrderPreferenceCacheCommon.METHOD_INDEX);
 
 			String constructor= lineDelim	+ createConstructor(lineDelim);
 			String method= lineDelim + createGetStringMethod(lineDelim);
 
-			StringBuffer result= new StringBuffer();
+			StringBuilder result= new StringBuilder();
 			result.append("public class ").append(fAccessorClassName).append(" {"); //$NON-NLS-1$ //$NON-NLS-2$
 			result.append("private static final String ").append(NLSRefactoring.BUNDLE_NAME_FIELD); //$NON-NLS-1$
 			result.append(" = \"").append(getResourceBundleName()).append("\"; ").append(NLSElement.createTagText(1)).append(lineDelim); //$NON-NLS-1$ //$NON-NLS-2$
@@ -238,7 +242,7 @@ public class AccessorClassCreator {
 				return fCollator.compare(s0.getKey(), s1.getKey());
 			}
 		});
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		for (Iterator<NLSSubstitution> iter= subs.iterator(); iter.hasNext();) {
 			NLSSubstitution element= iter.next();
 			appendStaticField(buf, element);
@@ -246,14 +250,14 @@ public class AccessorClassCreator {
 		return buf.toString();
 	}
 
-	private void appendStaticField(StringBuffer buf, NLSSubstitution substitution) {
+	private void appendStaticField(StringBuilder buf, NLSSubstitution substitution) {
 		buf.append("public static String "); //$NON-NLS-1$
 		buf.append(substitution.getKey());
 		buf.append(';');
 	}
 
 	private String createGetStringMethod(String lineDelim) {
-		StringBuffer result= new StringBuffer();
+		StringBuilder result= new StringBuilder();
 
 		result.append("public static String "); //$NON-NLS-1$
 		int i= fSubstitutionPattern.indexOf(NLSRefactoring.KEY);

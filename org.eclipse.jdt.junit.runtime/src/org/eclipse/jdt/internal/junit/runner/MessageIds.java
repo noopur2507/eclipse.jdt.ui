@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -107,13 +110,16 @@ public class MessageIds {
 
 	/**
 	 * Notification about a test inside the test suite. <br>
-	 * TEST_TREE + testId + "," + testName + "," + isSuite + "," + testcount + "," +
-	 * isDynamicTest + "," + parentId + "," + displayName + "," + parameterTypes<br>
+	 * TEST_TREE + testId + "," + testName + "," + isSuite + "," + testcount + "," + isDynamicTest +
+	 * "," + parentId + "," + displayName + "," + parameterTypes + "," + uniqueId <br>
 	 * isSuite = "true" or "false" <br>
 	 * isDynamicTest = "true" or "false" <br>
 	 * parentId = the unique id of its parent if it is a dynamic test, otherwise can be "-1" <br>
 	 * displayName = the display name of the test <br>
-	 * parameterTypes = comma-separated list of method parameter types if applicable, otherwise an empty string <br>
+	 * parameterTypes = comma-separated list of method parameter types if applicable, otherwise an
+	 * empty string <br>
+	 * uniqueId = the unique ID of the test provided by JUnit launcher, otherwise an empty string
+	 * <br>
 	 * See: ITestRunListener2#testTreeEntry
 	 * 
 	 */

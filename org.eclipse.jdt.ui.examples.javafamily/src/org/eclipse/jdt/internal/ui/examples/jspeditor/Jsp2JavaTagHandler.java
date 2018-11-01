@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2006 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -37,6 +40,7 @@ public class Jsp2JavaTagHandler implements ITagHandler {
 	/*
 	 * @see org.eclipse.jface.text.source.ITagHandler#canHandleTag(java.lang.String)
 	 */
+	@Override
 	public boolean canHandleTag(String tag) {
 		return true;
 	}
@@ -44,10 +48,12 @@ public class Jsp2JavaTagHandler implements ITagHandler {
 	/*
 	 * @see org.eclipse.jface.text.source.ITagHandler#canHandleText(java.lang.String)
 	 */
+	@Override
 	public boolean canHandleText(String text) {
 		return true;
 	}
 
+	@Override
 	public void reset(String startTag)  {
 		fInUseBean= "jsp:useBean".equals(startTag); //$NON-NLS-1$
 		fInTagLib= "c:out".equals(startTag); //$NON-NLS-1$
@@ -57,6 +63,7 @@ public class Jsp2JavaTagHandler implements ITagHandler {
 	/*
 	 * @see org.eclipse.jface.text.source.ITagHandler#addAttribute(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public void addAttribute(String name, String value, int sourceLineNumber) {
 		if (fInUseBean) {
 			if ("id".equals(name)) //$NON-NLS-1$
@@ -74,6 +81,7 @@ public class Jsp2JavaTagHandler implements ITagHandler {
 	/*
 	 * @see org.eclipse.jface.text.source.ITagHandler#backTranslateOffsetInLine(java.lang.String, int)
 	 */
+	@Override
 	public int backTranslateOffsetInLine(String originalLine, String translatedLine, int offsetInTranslatedLine) {
 		int javaPartitionStart= 0;
 		if (originalLine.indexOf("<%") != -1) //$NON-NLS-1$
@@ -123,6 +131,7 @@ public class Jsp2JavaTagHandler implements ITagHandler {
 	/*
 	 * @see org.eclipse.jface.text.source.ITagHandler#processEndTag(ITranslatorResultCollector, int)
 	 */
+	@Override
 	public void processEndTag(ITranslatorResultCollector resultCollector, int sourceLineNumber) throws IOException {
 		Assert.isTrue(resultCollector instanceof JspTranslatorResultCollector);
 

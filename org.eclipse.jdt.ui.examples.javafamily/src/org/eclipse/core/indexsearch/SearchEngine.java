@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2003, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -37,6 +40,7 @@ public class SearchEngine {
 		
 		private HashMap fMap= new HashMap();
 		
+		@Override
 		public void addRef(String word, String path) {
 			System.err.println("Index.add: " + path + " " + word); //$NON-NLS-1$ //$NON-NLS-2$
 			HashMap words= (HashMap) fMap.get(path);
@@ -47,11 +51,13 @@ public class SearchEngine {
 			words.put(word, word);
 		}
 		
+		@Override
 		public void remove(String path) {
 			System.err.println("Index.remove: " + path); //$NON-NLS-1$
 			fMap.remove(path);
 		}
 		
+		@Override
 		public void queryPrefix(HashSet results, String w) {
 			Iterator iter= fMap.keySet().iterator();
 			while (iter.hasNext()) {

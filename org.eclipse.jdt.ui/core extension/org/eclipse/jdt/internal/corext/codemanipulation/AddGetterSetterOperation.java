@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -50,13 +53,15 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.JavaUI;
+
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 /**
  * Workspace runnable to add accessor methods to fields.
@@ -152,7 +157,9 @@ public final class AddGetterSetterOperation implements IWorkspaceRunnable {
 	 */
 	private void addNewAccessor(final IType type, final IField field, final String contents, final ListRewrite rewrite, final ASTNode insertion) throws JavaModelException {
 		final String delimiter= StubUtility.getLineDelimiterUsed(type);
-		final MethodDeclaration declaration= (MethodDeclaration) rewrite.getASTRewrite().createStringPlaceholder(CodeFormatterUtil.format(CodeFormatter.K_CLASS_BODY_DECLARATIONS, contents, 0, delimiter, field.getJavaProject()), ASTNode.METHOD_DECLARATION);
+		final MethodDeclaration declaration= (MethodDeclaration) rewrite.getASTRewrite().createStringPlaceholder(
+				CodeFormatterUtil.format(CodeFormatter.K_CLASS_BODY_DECLARATIONS, contents, 0, delimiter, FormatterProfileManager.getProjectSettings(field.getJavaProject())),
+				ASTNode.METHOD_DECLARATION);
 		if (insertion != null)
 			rewrite.insertBefore(declaration, insertion, null);
 		else
@@ -206,7 +213,7 @@ public final class AddGetterSetterOperation implements IWorkspaceRunnable {
 			ASTNode insertion= StubUtility2.getNodeToInsertBefore(rewrite, sibling);
 			addNewAccessor(type, field, GetterSetterUtil.getSetterStub(field, name, fSettings.createComments, fVisibility | (field.getFlags() & Flags.AccStatic)), rewrite, insertion);
 			if (Flags.isFinal(field.getFlags())) {
-				ASTNode fieldDecl= ASTNodes.getParent(NodeFinder.perform(fASTRoot, field.getNameRange()), FieldDeclaration.class);
+				FieldDeclaration fieldDecl= ASTNodes.getParent(NodeFinder.perform(fASTRoot, field.getNameRange()), FieldDeclaration.class);
 				if (fieldDecl != null) {
 					ModifierRewrite.create(astRewrite, fieldDecl).setModifiers(0, Modifier.FINAL, null);
 				}
@@ -280,7 +287,7 @@ public final class AddGetterSetterOperation implements IWorkspaceRunnable {
 	 * @throws JavaModelException if an error occurs
 	 */
 	private void removeExistingAccessor(final IMethod accessor, final ListRewrite rewrite) throws JavaModelException {
-		final MethodDeclaration declaration= (MethodDeclaration) ASTNodes.getParent(NodeFinder.perform(rewrite.getParent().getRoot(), accessor.getNameRange()), MethodDeclaration.class);
+		final MethodDeclaration declaration= ASTNodes.getParent(NodeFinder.perform(rewrite.getParent().getRoot(), accessor.getNameRange()), MethodDeclaration.class);
 		if (declaration != null)
 			rewrite.remove(declaration, null);
 	}
@@ -299,14 +306,14 @@ public final class AddGetterSetterOperation implements IWorkspaceRunnable {
 			final ASTRewrite astRewrite= ASTRewrite.create(fASTRoot.getAST());
 			ListRewrite listRewriter= null;
 			if (fType.isAnonymous()) {
-				final ClassInstanceCreation creation= (ClassInstanceCreation) ASTNodes.getParent(NodeFinder.perform(fASTRoot, fType.getNameRange()), ClassInstanceCreation.class);
+				final ClassInstanceCreation creation= ASTNodes.getParent(NodeFinder.perform(fASTRoot, fType.getNameRange()), ClassInstanceCreation.class);
 				if (creation != null) {
 					final AnonymousClassDeclaration declaration= creation.getAnonymousClassDeclaration();
 					if (declaration != null)
 						listRewriter= astRewrite.getListRewrite(declaration, AnonymousClassDeclaration.BODY_DECLARATIONS_PROPERTY);
 				}
 			} else {
-				final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(NodeFinder.perform(fASTRoot, fType.getNameRange()), AbstractTypeDeclaration.class);
+				final AbstractTypeDeclaration declaration= ASTNodes.getParent(NodeFinder.perform(fASTRoot, fType.getNameRange()), AbstractTypeDeclaration.class);
 				if (declaration != null)
 					listRewriter= astRewrite.getListRewrite(declaration, declaration.getBodyDeclarationsProperty());
 			}
@@ -352,7 +359,7 @@ public final class AddGetterSetterOperation implements IWorkspaceRunnable {
 			}
 			fEdit= astRewrite.rewriteAST();
 			if (fApply) {
-				JavaElementUtil.applyEdit(unit, fEdit, fSave, new SubProgressMonitor(monitor, 1));
+				JavaModelUtil.applyEdit(unit, fEdit, fSave, new SubProgressMonitor(monitor, 1));
 			}
 		} finally {
 			monitor.done();

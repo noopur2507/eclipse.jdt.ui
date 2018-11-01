@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -11,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.text;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.osgi.util.TextProcessor;
 
@@ -46,6 +48,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.PopupDialog;
@@ -71,9 +74,8 @@ import org.eclipse.ui.commands.ActionHandler;
 import org.eclipse.ui.commands.HandlerSubmission;
 import org.eclipse.ui.commands.ICommand;
 import org.eclipse.ui.commands.ICommandManager;
-import org.eclipse.ui.commands.IKeySequenceBinding;
 import org.eclipse.ui.commands.Priority;
-import org.eclipse.ui.keys.KeySequence;
+import org.eclipse.ui.keys.IBindingService;
 
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IParent;
@@ -164,7 +166,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	/** The current string matcher */
 	protected JavaElementPrefixPatternMatcher fPatternMatcher;
 	private ICommand fInvokingCommand;
-	private KeySequence[] fInvokingCommandKeySequences;
+	private TriggerSequence[] fInvokingCommandKeySequences;
 
 	/**
 	 * Fields that support the dialog menu
@@ -770,17 +772,12 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 		return fInvokingCommand;
 	}
 
-	final protected KeySequence[] getInvokingCommandKeySequences() {
+	final protected TriggerSequence[] getInvokingCommandKeySequences() {
 		if (fInvokingCommandKeySequences == null) {
 			if (getInvokingCommand() != null) {
-				List<IKeySequenceBinding> list= getInvokingCommand().getKeySequenceBindings();
-				if (!list.isEmpty()) {
-					fInvokingCommandKeySequences= new KeySequence[list.size()];
-					for (int i= 0; i < fInvokingCommandKeySequences.length; i++) {
-						fInvokingCommandKeySequences[i]= list.get(i).getKeySequence();
-					}
-					return fInvokingCommandKeySequences;
-				}
+				IBindingService bindingService = PlatformUI.getWorkbench().getAdapter(IBindingService.class);
+				fInvokingCommandKeySequences = bindingService.getActiveBindingsFor(getInvokingCommand().getId());
+				return fInvokingCommandKeySequences;
 			}
 		}
 		return fInvokingCommandKeySequences;

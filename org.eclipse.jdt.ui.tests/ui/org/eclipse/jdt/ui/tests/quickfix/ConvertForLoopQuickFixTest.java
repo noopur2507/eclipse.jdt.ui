@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -29,13 +32,13 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.dom.GenericVisitor;
 import org.eclipse.jdt.internal.corext.fix.ConvertForLoopOperation;
 import org.eclipse.jdt.internal.corext.fix.ConvertLoopOperation;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 
@@ -2205,6 +2208,117 @@ public class ConvertForLoopQuickFixTest extends QuickFixTest {
 
 		assertFalse(satisfiesPrecondition(cu));
 	}
+	
+	public void testBug510758_1() throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+		StringBuffer buf= new StringBuffer();
+		
+		buf.append("package test1;\n");
+		buf.append("public class E1 {\n");
+		buf.append("    private Object[] array;\n");
+		buf.append("    public boolean isNull(Object object ) {\n");
+		buf.append("        boolean isNull= (object != null) ? false : true;\n");
+		buf.append("        return isNull; \n");
+		buf.append("    }\n");
+		buf.append("    public void method() {\n");
+		buf.append("        for (int i = 0; i < array.length; i++) {\n");
+		buf.append("            if (!isNull(array[i])) {\n");
+		buf.append("                System.out.println(array[i].toString()) ");
+		buf.append("            }\n");
+		buf.append("        }\n");
+		buf.append("    }\n");
+		buf.append("}\n");
+		ICompilationUnit cu= pack1.createCompilationUnit("E1.java", buf.toString(), false, null);
+
+		assertTrue(satisfiesPrecondition(cu));
+		
+		List<IJavaCompletionProposal> proposals= fetchConvertingProposal(buf, cu);
+
+		assertNotNull(fConvertLoopProposal);
+
+		assertCorrectLabels(proposals);
+
+		String preview1= getPreviewContent(fConvertLoopProposal);
+
+		buf= new StringBuffer();
+		buf.append("package test1;\n");
+		buf.append("public class E1 {\n");
+		buf.append("    private Object[] array;\n");
+		buf.append("    public boolean isNull(Object object ) {\n");
+		buf.append("        boolean isNull= (object != null) ? false : true;\n");
+		buf.append("        return isNull; \n");
+		buf.append("    }\n");
+		buf.append("    public void method() {\n");
+		buf.append("        for (Object element : array) {\n");
+		buf.append("            if (!isNull(element)) {\n");
+		buf.append("                System.out.println(element.toString()) ");
+		buf.append("            }\n");
+		buf.append("        }\n");
+		buf.append("    }\n");
+		buf.append("}\n");
+		String expected= buf.toString();
+		assertEqualString(preview1, expected);
+	}
+	
+	public void testBug510758_2() throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+		StringBuffer buf= new StringBuffer();
+		
+		buf.append("package test1;\n");
+		buf.append("public class E1 {\n");
+		buf.append("    private Object[] array;\n");
+		buf.append("    public boolean isNull(Object object ) {\n");
+		buf.append("        boolean isNull= (object != null) ? false : true;\n");
+		buf.append("        return isNull; \n");
+		buf.append("    }\n");
+		buf.append("    public void method() {\n");
+		buf.append("        for (int i = 0; i < array.length; i++) {\n");
+		buf.append("            if (!isNull(array[i+1])) {\n");
+		buf.append("                System.out.println(array[i+1].toString()) ");
+		buf.append("            }\n");
+		buf.append("        }\n");
+		buf.append("    }\n");
+		buf.append("}\n");
+		ICompilationUnit cu= pack1.createCompilationUnit("E1.java", buf.toString(), false, null);
+
+		assertFalse(satisfiesPrecondition(cu));
+		
+		List<IJavaCompletionProposal> proposals= fetchConvertingProposal(buf, cu);
+
+		assertNull(fConvertLoopProposal);
+
+		assertCorrectLabels(proposals);		
+	}
+	
+	public void testBug510758_3() throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+		StringBuffer buf= new StringBuffer();
+		
+		buf.append("package test1;\n");
+		buf.append("public class E1 {\n");
+		buf.append("    private Object[] array;\n");
+		buf.append("    public boolean isNull(Object object ) {\n");
+		buf.append("        boolean isNull= (object != null) ? false : true;\n");
+		buf.append("        return isNull; \n");
+		buf.append("    }\n");
+		buf.append("    public void method() {\n");
+		buf.append("        for (int i = 0; i < array.length; i++) {\n");
+		buf.append("            if (~isNull(array[i])) {\n");
+		buf.append("                System.out.println(array[i].toString()) ");
+		buf.append("            }\n");
+		buf.append("        }\n");
+		buf.append("    }\n");
+		buf.append("}\n");
+		ICompilationUnit cu= pack1.createCompilationUnit("E1.java", buf.toString(), false, null);
+
+		assertFalse(satisfiesPrecondition(cu));
+		
+		List<IJavaCompletionProposal> proposals= fetchConvertingProposal(buf, cu);
+
+		assertNull(fConvertLoopProposal);
+
+		assertCorrectLabels(proposals);		
+	}
 
 	private boolean satisfiesPrecondition(ICompilationUnit cu) {
 		ForStatement statement= getForStatement(cu);
@@ -2213,7 +2327,7 @@ public class ConvertForLoopQuickFixTest extends QuickFixTest {
 	}
 
 	private static ForStatement getForStatement(ICompilationUnit cu) {
-		CompilationUnit ast= SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, new NullProgressMonitor());
+		CompilationUnit ast= SharedASTProviderCore.getAST(cu, SharedASTProviderCore.WAIT_YES, new NullProgressMonitor());
 
 		final ForStatement[] statement= new ForStatement[1];
 		ast.accept(new GenericVisitor() {

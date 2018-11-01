@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -125,6 +128,7 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
@@ -137,7 +141,6 @@ import org.eclipse.jdt.ui.IContextMenuConstants;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.actions.IJavaEditorActionDefinitionIds;
 import org.eclipse.jdt.ui.actions.JdtActionConstants;
 import org.eclipse.jdt.ui.actions.OpenAttachedJavadocAction;
@@ -937,7 +940,7 @@ public class JavadocView extends AbstractInfoView {
 		if (input instanceof String) {
 			javadocHtml= (String) input;
 		} else {
-			StringBuffer buffer= new StringBuffer();
+			StringBuilder buffer= new StringBuilder();
 			HTMLPrinter.insertPageProlog(buffer, 0, fForegroundColorRGB, fBackgroundColorRGB, fgStyleSheet);
 			HTMLPrinter.addPageEpilog(buffer);
 			javadocHtml= buffer.toString();
@@ -957,7 +960,7 @@ public class JavadocView extends AbstractInfoView {
 			if (javadocHtml != null && javadocHtml.length() > 0) {
 				boolean RTL= (getSite().getShell().getStyle() & SWT.RIGHT_TO_LEFT) != 0;
 				if (RTL) {
-					StringBuffer buffer= new StringBuffer(javadocHtml);
+					StringBuilder buffer= new StringBuilder(javadocHtml);
 					HTMLPrinter.insertStyles(buffer, new String[] { "direction:rtl" } ); //$NON-NLS-1$
 					javadocHtml= buffer.toString();
 				}
@@ -988,7 +991,7 @@ public class JavadocView extends AbstractInfoView {
 	 * @return a string with the Javadoc in HTML format, or <code>null</code> if none
 	 */
 	private String getJavadocHtml(IJavaElement[] result, IWorkbenchPart activePart, ISelection selection, IProgressMonitor monitor) {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		int nResults= result.length;
 
 		if (nResults == 0)
@@ -1345,7 +1348,7 @@ public class JavadocView extends AbstractInfoView {
 		if (monitor != null && monitor.isCanceled())
 			return null;
 
-		CompilationUnit ast= SharedASTProvider.getAST(constantField.getTypeRoot(), SharedASTProvider.WAIT_NO, monitor);
+		CompilationUnit ast= SharedASTProviderCore.getAST(constantField.getTypeRoot(), SharedASTProviderCore.WAIT_NO, monitor);
 		if (ast != null) {
 			try {
 				if (constantField.isEnumConstant())
@@ -1396,7 +1399,7 @@ public class JavadocView extends AbstractInfoView {
 	 * @since 3.4
 	 */
 	private static Object getConstantValueFromActiveEditor(ITypeRoot activeType, IField field, ITextSelection selection, IProgressMonitor monitor) {
-		CompilationUnit unit= SharedASTProvider.getAST(activeType, SharedASTProvider.WAIT_ACTIVE_ONLY, monitor);
+		CompilationUnit unit= SharedASTProviderCore.getAST(activeType, SharedASTProviderCore.WAIT_ACTIVE_ONLY, monitor);
 		if (unit == null)
 			return null;
 
@@ -1413,7 +1416,7 @@ public class JavadocView extends AbstractInfoView {
 	 */
 	private static String formatCompilerConstantValue(Object constantValue) {
 		if (constantValue instanceof String) {
-			StringBuffer result= new StringBuffer();
+			StringBuilder result= new StringBuilder();
 			result.append('"');
 			String stringConstant= (String)constantValue;
 			if (stringConstant.length() > 80) {

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Jesper Kamstrup Linnet (eclipse@kamstrup-linnet.dk) - initial API and implementation
@@ -76,7 +79,7 @@ class CopyCallHierarchyAction extends Action {
 	 */
 	@Override
 	public void run() {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		addCalls(fViewer.getTree().getSelection()[0], 0, buf);
 
 		TextTransfer plainTextTransfer= TextTransfer.getInstance();
@@ -99,7 +102,7 @@ class CopyCallHierarchyAction extends Action {
 	 * @param indent the indent size
 	 * @param buf the string buffer
 	 */
-	private void addCalls(TreeItem item, int indent, StringBuffer buf) {
+	private void addCalls(TreeItem item, int indent, StringBuilder buf) {
 		for (int i= 0; i < indent; i++) {
 			buf.append(INDENTATION);
 		}

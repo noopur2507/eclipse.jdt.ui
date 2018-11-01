@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -162,7 +165,7 @@ public class JavaElementReferenceConverter extends AbstractParameterValueConvert
 			throw new ParameterValueConversionException("Could not get IJavaProject for element"); //$NON-NLS-1$
 		}
 
-		StringBuffer buffer;
+		StringBuilder buffer;
 
 		if (javaElement instanceof IType) {
 			IType type= (IType) javaElement;
@@ -192,8 +195,8 @@ public class JavaElementReferenceConverter extends AbstractParameterValueConvert
 		return buffer.toString();
 	}
 
-	private StringBuffer composeTypeReference(IType type) {
-		StringBuffer buffer= new StringBuffer();
+	private StringBuilder composeTypeReference(IType type) {
+		StringBuilder buffer= new StringBuilder();
 		buffer.append(type.getJavaProject().getElementName());
 		buffer.append(PROJECT_END_CHAR);
 		buffer.append(type.getFullyQualifiedName());

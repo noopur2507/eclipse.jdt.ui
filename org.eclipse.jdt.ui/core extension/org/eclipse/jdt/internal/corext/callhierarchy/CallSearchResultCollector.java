@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Jesper Kamstrup Linnet (eclipse@kamstrup-linnet.dk) - initial API and implementation
@@ -14,9 +17,12 @@ package org.eclipse.jdt.internal.corext.callhierarchy;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 
 class CallSearchResultCollector {
     /**
@@ -68,8 +74,29 @@ class CallSearchResultCollector {
         String fullyQualifiedName = getTypeOfElement(enclosingElement)
                                         .getFullyQualifiedName();
 
+		if (CallHierarchy.getDefault().isFilterTestCode()) {
+			IClasspathEntry classpathEntry= determineClassPathEntry(enclosingElement);
+			if (classpathEntry != null && classpathEntry.isTest()) {
+				return true;
+			}
+		}
+
         return CallHierarchy.getDefault().isIgnored(fullyQualifiedName);
     }
+
+	private static IClasspathEntry determineClassPathEntry(Object element) {
+		if (element instanceof IJavaElement) {
+			IPackageFragmentRoot packageFragmentRoot= (IPackageFragmentRoot) ((IJavaElement) element).getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+			if (packageFragmentRoot != null) {
+				try {
+					return packageFragmentRoot.getResolvedClasspathEntry();
+				} catch (JavaModelException e) {
+					return null;
+				}
+			}
+		}
+		return null;
+	}
 
     private IType getTypeOfElement(IMember element) {
         if (element.getElementType() == IJavaElement.TYPE) {

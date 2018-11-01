@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -17,8 +20,11 @@ import java.util.Hashtable;
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
 
+import org.eclipse.core.runtime.Path;
+
 import org.eclipse.jface.preference.IPreferenceStore;
 
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -28,8 +34,8 @@ import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
@@ -1591,5 +1597,29 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		expected[0]= buf.toString();
 		
 		assertExpectedExistInProposals(proposals, expected);
+	}
+	public void testBug530193() throws Exception {
+		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+		IPackageFragmentRoot testSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src-tests", new Path[0], new Path[0], "bin-tests",
+				new IClasspathAttribute[] { JavaCore.newClasspathAttribute(IClasspathAttribute.TEST, "true") });
+
+		IPackageFragment pack1= sourceFolder.createPackageFragment("pp", false, null);
+		StringBuffer buf1= new StringBuffer();
+		buf1.append("package pp;\n");
+		buf1.append("public class C1 {\n");
+		buf1.append("    Tests at=new Tests();\n");
+		buf1.append("}\n");
+		ICompilationUnit cu1= pack1.createCompilationUnit("C1.java", buf1.toString(), false, null);
+
+		IPackageFragment pack2= testSourceFolder.createPackageFragment("pt", false, null);
+		StringBuffer buf2= new StringBuffer();
+		buf2.append("package pt;\n");
+		buf2.append("public class Tests {\n");
+		buf2.append("}\n");
+		pack2.createCompilationUnit("Tests.java", buf2.toString(), false, null);
+
+		CompilationUnit astRoot= getASTRoot(cu1);
+		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu1, astRoot, 2, 1);
+		assertFalse(proposals.stream().anyMatch(p -> p.getDisplayString().equals("Import 'Tests' (pt)")));
 	}
 }

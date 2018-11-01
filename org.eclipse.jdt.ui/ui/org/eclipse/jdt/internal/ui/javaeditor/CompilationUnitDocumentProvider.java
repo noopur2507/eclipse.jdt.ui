@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -1115,7 +1118,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 				InputStream contents= storage.getContents();
 				try {
 					in= new BufferedReader(new InputStreamReader(contents, charsetName));
-					StringBuffer buffer= new StringBuffer(BUFFER_SIZE);
+					StringBuilder buffer= new StringBuilder(BUFFER_SIZE);
 					char[] readBuffer= new char[READER_CHUNK_SIZE];
 					int n;
 					n= in.read(readBuffer);

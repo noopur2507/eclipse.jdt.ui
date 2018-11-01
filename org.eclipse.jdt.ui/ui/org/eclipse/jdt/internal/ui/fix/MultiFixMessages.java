@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -99,10 +102,14 @@ public class MultiFixMessages extends NLS {
 
 	public static String NullAnnotationsCleanUp_add_nullable_annotation;
 	public static String NullAnnotationsCleanUp_add_nonnull_annotation;
+	public static String NullAnnotationsCleanUp_add_nonnullbydefault_annotation;
 	public static String NullAnnotationsCleanUp_remove_redundant_nullness_annotation;
 
 	public static String TypeParametersCleanUp_InsertInferredTypeArguments_description;
 	public static String TypeParametersCleanUp_RemoveUnnecessaryTypeArguments_description;
+
+	public static String RedundantModifiersCleanup_description;
+	public static String RedundantSemicolonsCleanup_description;
 
 	static {
 		// initialize resource bundle

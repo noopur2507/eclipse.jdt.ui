@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2006, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -23,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.core.runtime.Assert;
@@ -94,20 +98,23 @@ import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
 import org.eclipse.jdt.core.refactoring.descriptors.PullUpDescriptor;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
+import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
+import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2Core;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.BodyDeclarationRewrite;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
 import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComment;
@@ -115,7 +122,6 @@ import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringArguments;
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringDescriptorUtil;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.rename.MethodChecks;
 import org.eclipse.jdt.internal.corext.refactoring.reorg.SourceReferenceUtil;
@@ -126,21 +132,21 @@ import org.eclipse.jdt.internal.corext.refactoring.typeconstraints.types.TType;
 import org.eclipse.jdt.internal.corext.refactoring.typeconstraints2.ISourceConstraintVariable;
 import org.eclipse.jdt.internal.corext.refactoring.typeconstraints2.ITypeConstraintVariable;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
-import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 
-import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.JavaElementLabels;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
+
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 /**
  * Refactoring processor for the pull up refactoring.
@@ -308,7 +314,7 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 			if (expression != null) {
 				final ReturnStatement returnStatement= ast.newReturnStatement();
 				returnStatement.setExpression(expression);
-				bodyStatement= ASTNodes.asFormattedString(returnStatement, 0, delimiter, cu.getJavaProject().getOptions(true));
+				bodyStatement= ASTNodes.asFormattedString(returnStatement, 0, delimiter, FormatterProfileManager.getProjectSettings(cu.getJavaProject()));
 			}
 			String placeHolder= CodeGeneration.getMethodBodyContent(cu, targetTypeName, method.getName().getIdentifier(), false, bodyStatement, delimiter);
 			if (placeHolder != null) {
@@ -352,10 +358,10 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 	}
 
 	private static void mergeMaps(final Map<IMember, Set<IMember>> result, final Map<IMember, Set<IMember>> map) {
-		for (final Iterator<IMember> iter= result.keySet().iterator(); iter.hasNext();) {
-			final IMember key= iter.next();
+		for (final Entry<IMember, Set<IMember>> entry : result.entrySet()) {
+			final IMember key= entry.getKey();
 			if (map.containsKey(key)) {
-				final Set<IMember> resultSet= result.get(key);
+				final Set<IMember> resultSet= entry.getValue();
 				final Set<IMember> mapSet= map.get(key);
 				resultSet.addAll(mapSet);
 			}
@@ -363,10 +369,10 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 	}
 
 	private static void upgradeMap(final Map<IMember, Set<IMember>> result, final Map<IMember, Set<IMember>> map) {
-		for (final Iterator<IMember> iter= map.keySet().iterator(); iter.hasNext();) {
-			final IMember key= iter.next();
+		for (final Entry<IMember, Set<IMember>> entry : map.entrySet()) {
+			final IMember key= entry.getKey();
 			if (!result.containsKey(key)) {
-				final Set<IMember> mapSet= map.get(key);
+				final Set<IMember> mapSet= entry.getValue();
 				final Set<IMember> resultSet= new HashSet<>(mapSet);
 				result.put(key, resultSet);
 			}
@@ -535,7 +541,7 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 		ImportRewriteUtil.addImports(rewriter, context, methodToCreateStubFor, new HashMap<Name, String>(), new HashMap<Name, String>(), true);
 		IJavaProject javaProject= newCu.getJavaProject();
 		CodeGenerationSettings codeGenerationSettings= JavaPreferencesSettings.getCodeGenerationSettings(javaProject);
-		StubUtility2.addOverrideAnnotation(codeGenerationSettings, javaProject, astRewrite, importRewrite, newMethod, getDeclaringType().isInterface(),
+		StubUtility2Core.addOverrideAnnotation(codeGenerationSettings, javaProject, astRewrite, importRewrite, newMethod, getDeclaringType().isInterface(),
 				rewriter.createCategorizedGroupDescription(RefactoringCoreMessages.PullUpRefactoring_add_override_annotation, SET_PULL_UP));
 		astRewrite.getListRewrite(typeToCreateStubIn, typeToCreateStubIn.getBodyDeclarationsProperty()).insertAt(newMethod, BodyDeclarationRewrite.getInsertionIndex(newMethod, typeToCreateStubIn.bodyDeclarations()), rewriter.createCategorizedGroupDescription(RefactoringCoreMessages.PullUpRefactoring_add_method_stub, SET_PULL_UP));
 	}
@@ -1034,7 +1040,7 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 	private void createAbstractMethod(final IMethod sourceMethod, final CompilationUnitRewrite sourceRewriter, final CompilationUnit declaringCuNode, final AbstractTypeDeclaration destination, final TypeVariableMaplet[] mapping, final CompilationUnitRewrite targetRewrite, final Map<IMember, IncomingMemberVisibilityAdjustment> adjustments, final IProgressMonitor monitor, final RefactoringStatus status) throws JavaModelException {
 		final MethodDeclaration oldMethod= ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod, declaringCuNode);
 		ITypeBinding destinationBinding= destination.resolveBinding();
-		StubUtility2.addOverrideAnnotation(fSettings, sourceMethod.getJavaProject(), sourceRewriter.getASTRewrite(), sourceRewriter.getImportRewrite(), oldMethod,
+		StubUtility2Core.addOverrideAnnotation(fSettings, sourceMethod.getJavaProject(), sourceRewriter.getASTRewrite(), sourceRewriter.getImportRewrite(), oldMethod,
 				destinationBinding == null ? false : destinationBinding.isInterface(),
 				sourceRewriter.createCategorizedGroupDescription(RefactoringCoreMessages.PullUpRefactoring_add_override_annotation, SET_PULL_UP));
 		final MethodDeclaration newMethod= targetRewrite.getAST().newMethodDeclaration();
@@ -1082,13 +1088,13 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 			arguments.put(ATTRIBUTE_REPLACE, Boolean.valueOf(fReplace).toString());
 			arguments.put(ATTRIBUTE_INSTANCEOF, Boolean.valueOf(fInstanceOf).toString());
 			arguments.put(ATTRIBUTE_STUBS, Boolean.valueOf(fCreateMethodStubs).toString());
-			arguments.put(ATTRIBUTE_PULL, new Integer(fMembersToMove.length).toString());
+			arguments.put(ATTRIBUTE_PULL, Integer.valueOf(fMembersToMove.length).toString());
 			for (int offset= 0; offset < fMembersToMove.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fMembersToMove[offset]));
-			arguments.put(ATTRIBUTE_DELETE, new Integer(fDeletedMethods.length).toString());
+			arguments.put(ATTRIBUTE_DELETE, Integer.valueOf(fDeletedMethods.length).toString());
 			for (int offset= 0; offset < fDeletedMethods.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + fMembersToMove.length + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fDeletedMethods[offset]));
-			arguments.put(ATTRIBUTE_ABSTRACT, new Integer(fAbstractMethods.length).toString());
+			arguments.put(ATTRIBUTE_ABSTRACT, Integer.valueOf(fAbstractMethods.length).toString());
 			for (int offset= 0; offset < fAbstractMethods.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + fMembersToMove.length + fDeletedMethods.length + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fAbstractMethods[offset]));
 			return new DynamicValidationRefactoringChange(descriptor, RefactoringCoreMessages.PullUpRefactoring_Pull_Up, fChangeManager.getAllChanges());
@@ -1232,10 +1238,10 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 				adjustor.rewriteVisibility(new SubProgressMonitor(monitor, 1));
 			final TextEditBasedChangeManager manager= new TextEditBasedChangeManager();
 			if (fReplace) {
-				final Set<ICompilationUnit> set= fCompilationUnitRewrites.keySet();
-				for (final Iterator<ICompilationUnit> iterator= set.iterator(); iterator.hasNext();) {
-					ICompilationUnit unit= iterator.next();
-					CompilationUnitRewrite rewrite= fCompilationUnitRewrites.get(unit);
+				final Set<Entry<ICompilationUnit, CompilationUnitRewrite>> entrySet= fCompilationUnitRewrites.entrySet();
+				for (final Entry<ICompilationUnit, CompilationUnitRewrite> entry : entrySet) {
+					ICompilationUnit unit= entry.getKey();
+					CompilationUnitRewrite rewrite= entry.getValue();
 					if (rewrite != null) {
 						final CompilationUnitChange change= rewrite.createChange(false);
 						if (change != null)
@@ -1247,9 +1253,9 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 				final Map<ICompilationUnit, ICompilationUnit> workingcopies= new HashMap<>();
 				final IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 1);
 				try {
-					subMonitor.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, set.size());
-					for (final Iterator<ICompilationUnit> iterator= set.iterator(); iterator.hasNext();) {
-						ICompilationUnit unit= iterator.next();
+					subMonitor.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, entrySet.size());
+					for (final Entry<ICompilationUnit, CompilationUnitRewrite> entry : entrySet) {
+						ICompilationUnit unit= entry.getKey();
 						change= manager.get(unit);
 						if (change instanceof TextChange) {
 							edit= ((TextChange) change).getEdit();
@@ -1332,7 +1338,7 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 		final ASTRewrite rewrite= targetRewrite.getASTRewrite();
 		final AST ast= rewrite.getAST();
 		ITypeBinding destinationBinding= ASTNodeSearchUtil.getAbstractTypeDeclarationNode(getDestinationType(), targetRewrite.getRoot()).resolveBinding();
-		StubUtility2.addOverrideAnnotation(fSettings, sourceMethod.getJavaProject(), sourceRewrite.getASTRewrite(), sourceRewrite.getImportRewrite(), oldMethod,
+		StubUtility2Core.addOverrideAnnotation(fSettings, sourceMethod.getJavaProject(), sourceRewrite.getASTRewrite(), sourceRewrite.getImportRewrite(), oldMethod,
 				destinationBinding == null ? false : destinationBinding.isInterface(),
 				sourceRewrite.createCategorizedGroupDescription(RefactoringCoreMessages.PullUpRefactoring_add_override_annotation, SET_PULL_UP));
 		final MethodDeclaration newMethod= ast.newMethodDeclaration();
@@ -1823,15 +1829,12 @@ public class PullUpRefactoringProcessor extends HierarchyProcessor {
 	}
 
 	protected void registerChanges(final TextEditBasedChangeManager manager) throws CoreException {
-		ICompilationUnit unit= null;
-		CompilationUnitRewrite rewrite= null;
-		for (final Iterator<ICompilationUnit> iterator= fCompilationUnitRewrites.keySet().iterator(); iterator.hasNext();) {
-			unit= iterator.next();
-			rewrite= fCompilationUnitRewrites.get(unit);
+		for (final Entry<ICompilationUnit, CompilationUnitRewrite> entry : fCompilationUnitRewrites.entrySet()) {
+			CompilationUnitRewrite rewrite= entry.getValue();
 			if (rewrite != null) {
 				final CompilationUnitChange change= rewrite.createChange(true);
 				if (change != null)
-					manager.manage(unit, change);
+					manager.manage(entry.getKey(), change);
 			}
 		}
 	}

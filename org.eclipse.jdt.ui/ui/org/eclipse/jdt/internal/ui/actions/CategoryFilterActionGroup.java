@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -198,7 +201,7 @@ public class CategoryFilterActionGroup extends ActionGroup {
 
 		public CategoryFilterAction(String category, int count) {
 			fCategory= category;
-			StringBuffer buf = new StringBuffer();
+			StringBuilder buf = new StringBuilder();
 			buf.append('&').append(count).append(' ').append(fCategory);
 			setText(buf.toString());
 			setChecked(!fFilteredCategories.contains(fCategory));
@@ -313,7 +316,7 @@ public class CategoryFilterActionGroup extends ActionGroup {
 		if (fFilteredCategories.size() == 0) {
 			store.setValue(getPreferenceKey(), ""); //$NON-NLS-1$
 		} else {
-			StringBuffer buf= new StringBuffer();
+			StringBuilder buf= new StringBuilder();
 			Iterator<String> iter= fFilteredCategories.iterator();
 			String element= iter.next();
 			buf.append(element);
@@ -323,7 +326,7 @@ public class CategoryFilterActionGroup extends ActionGroup {
 				buf.append(element);
 			}
 			store.setValue(getPreferenceKey(), buf.toString());
-			buf= new StringBuffer();
+			buf= new StringBuilder();
 			iter= fLRUList.values().iterator();
 			element= iter.next();
 			buf.append(element);

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2009, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -40,19 +43,19 @@ public class BuildpathIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 			IResource resource= (IResource) element;
 			IProject project= resource.getProject();
 			if (project != null) {
-				IJavaProject javaProject= JavaCore.create(project);
-				if (javaProject != null) {
-					if (javaProject.isOnClasspath(resource)) {
-						IJavaElement javaElement= JavaCore.create(resource, javaProject);
-						try {
+				try {
+					IJavaProject javaProject= JavaCore.create(project);
+					if (javaProject != null) {
+						if (javaProject.isOnClasspath(resource)) {
+							IJavaElement javaElement= JavaCore.create(resource, javaProject);
 							if (javaElement instanceof IPackageFragmentRoot
 									&& ((IPackageFragmentRoot)javaElement).getKind() != IPackageFragmentRoot.K_SOURCE) {
 								return JavaPluginImages.DESC_OVR_LIBRARY;
 							}
-						} catch (JavaModelException e) {
-							return null;
 						}
 					}
+				} catch (JavaModelException | IllegalStateException e) {
+					return null;
 				}
 			}
 		}

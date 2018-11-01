@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -21,6 +24,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
@@ -42,10 +47,13 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.URIUtil;
 
+import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
 
+import org.eclipse.jdt.core.IClasspathAttribute;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
@@ -70,6 +78,7 @@ import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
 import org.eclipse.jdt.launching.ExecutionArguments;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMRunner;
+import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.SocketUtil;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
 
@@ -88,16 +97,37 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 	private int fPort;
 	private IJavaElement[] fTestElements;
 
+	private static final String DEFAULT= "<default>"; //$NON-NLS-1$
+
 	@Override
-	public synchronized void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+	public String showCommandLine(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
 		if (monitor == null) {
 			monitor = new NullProgressMonitor();
 		}
+		try {
+			VMRunnerConfiguration runConfig = getVMRunnerConfiguration(configuration, launch, mode, monitor);
+			if (runConfig == null) {
+				return ""; //$NON-NLS-1$
+			}
+			IVMRunner runner = getVMRunner(configuration, mode);
+			String cmdLine = runner.showCommandLine(runConfig, launch, monitor);
 
-		monitor.beginTask(MessageFormat.format("{0}...", configuration.getName()), 5); //$NON-NLS-1$
+			// check for cancellation
+			if (monitor.isCanceled()) {
+				return ""; //$NON-NLS-1$
+			}
+			return cmdLine;
+		} finally {
+			monitor.done();
+		}
+	}
+
+	private VMRunnerConfiguration getVMRunnerConfiguration(ILaunchConfiguration configuration, ILaunch launch, String mode, IProgressMonitor monitor) throws CoreException {
+		VMRunnerConfiguration runConfig = null;
+			monitor.beginTask(MessageFormat.format("{0}...", configuration.getName()), 5); //$NON-NLS-1$
 		// check for cancellation
 		if (monitor.isCanceled()) {
-			return;
+			return null;
 		}
 
 		try {
@@ -113,13 +143,13 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			} catch (CoreException e) {
 				if (e.getStatus().getSeverity() == IStatus.CANCEL) {
 					monitor.setCanceled(true);
-					return;
+					return null;
 				}
 				throw e;
 			}
 			// check for cancellation
 			if (monitor.isCanceled()) {
-				return;
+				return null;
 			}
 
 			fKeepAlive= mode.equals(ILaunchManager.DEBUG_MODE) && configuration.getAttribute(JUnitLaunchConfigurationConstants.ATTR_KEEPRUNNING, false);
@@ -127,10 +157,11 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			launch.setAttribute(JUnitLaunchConfigurationConstants.ATTR_PORT, String.valueOf(fPort));
 
 			ITestKind testKind= getTestRunnerKind(configuration);
+			IJavaProject javaProject= getJavaProject(configuration);
 			if (TestKindRegistry.JUNIT3_TEST_KIND_ID.equals(testKind.getId()) || TestKindRegistry.JUNIT4_TEST_KIND_ID.equals(testKind.getId())) {
 				fTestElements= evaluateTests(configuration, new SubProgressMonitor(monitor, 1));
 			} else {
-				IJavaElement testTarget= getTestTarget(configuration, getJavaProject(configuration));
+				IJavaElement testTarget= getTestTarget(configuration, javaProject);
 				if (testTarget instanceof IPackageFragment || testTarget instanceof IPackageFragmentRoot || testTarget instanceof IJavaProject) {
 					fTestElements= new IJavaElement[] { testTarget };
 				} else {
@@ -139,7 +170,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			}
 
 			String mainTypeName= verifyMainTypeName(configuration);
-			IVMRunner runner= getVMRunner(configuration, mode);
+			
 
 			File workingDir = verifyWorkingDirectory(configuration);
 			String workingDirName = null;
@@ -153,32 +184,80 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			ArrayList<String> vmArguments= new ArrayList<>();
 			ArrayList<String> programArguments= new ArrayList<>();
 			collectExecutionArguments(configuration, vmArguments, programArguments);
+			vmArguments.addAll(Arrays.asList(DebugPlugin.parseArguments(getVMArguments(configuration, mode))));
+			if (JavaRuntime.isModularProject(javaProject)) {
+				vmArguments.add("--add-modules=ALL-MODULE-PATH"); //$NON-NLS-1$
+			}
 
 			// VM-specific attributes
 			Map<String, Object> vmAttributesMap= getVMSpecificAttributesMap(configuration);
 
-			// Classpath
-			String[] classpath= getClasspath(configuration);
+			// Classpath and modulepath
+			String[][] classpathAndModulepath= getClasspathAndModulepath(configuration);
+			String[] classpath= classpathAndModulepath[0];
+			String[] modulepath= classpathAndModulepath[1];
+
+			if (TestKindRegistry.JUNIT5_TEST_KIND_ID.equals(getTestRunnerKind(configuration).getId())) {
+				if (!configuration.getAttribute(JUnitLaunchConfigurationConstants.ATTR_DONT_ADD_MISSING_JUNIT5_DEPENDENCY, false)) {
+					if (!Arrays.stream(classpath).anyMatch(s -> s.contains("junit-platform-launcher") || s.contains("org.junit.platform.launcher"))) { //$NON-NLS-1$ //$NON-NLS-2$
+						try {
+							JUnitRuntimeClasspathEntry x= new JUnitRuntimeClasspathEntry("org.junit.platform.launcher", null); //$NON-NLS-1$
+							String entryString= new ClasspathLocalizer(Platform.inDevelopmentMode()).entryString(x);
+							int length= classpath.length;
+							System.arraycopy(classpath, 0, classpath= new String[length + 1], 0, length);
+							classpath[length]= entryString;
+						} catch (IOException | URISyntaxException e) {
+							throw new CoreException(new Status(IStatus.ERROR, JUnitCorePlugin.CORE_PLUGIN_ID, IStatus.ERROR, "", e)); //$NON-NLS-1$
+						}
+					}
+				}
+			}
 
 			// Create VM config
-			VMRunnerConfiguration runConfig= new VMRunnerConfiguration(mainTypeName, classpath);
+			runConfig= new VMRunnerConfiguration(mainTypeName, classpath);
 			runConfig.setVMArguments(vmArguments.toArray(new String[vmArguments.size()]));
 			runConfig.setProgramArguments(programArguments.toArray(new String[programArguments.size()]));
 			runConfig.setEnvironment(envp);
 			runConfig.setWorkingDirectory(workingDirName);
 			runConfig.setVMSpecificAttributesMap(vmAttributesMap);
 
-			// Bootpath
-			runConfig.setBootClassPath(getBootpath(configuration));
+			if (!JavaRuntime.isModularConfiguration(configuration)) {
+				// Bootpath
+				runConfig.setBootClassPath(getBootpath(configuration));
+			} else {
+				// module path
+				runConfig.setModulepath(modulepath);
+				if (!configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_DEFAULT_MODULE_CLI_OPTIONS, true)) {
+					runConfig.setOverrideDependencies(configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MODULE_CLI_OPTIONS, "")); //$NON-NLS-1$
+				} else {
+					runConfig.setOverrideDependencies(getModuleCLIOptions(configuration));
+				}
+			}
 
 			// check for cancellation
 			if (monitor.isCanceled()) {
-				return;
+				return null;
 			}
-
+		}finally {
 			// done the verification phase
 			monitor.worked(1);
+		}
+		return runConfig;
+	}
 
+	@Override
+	public synchronized void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+
+		try {
+
+			VMRunnerConfiguration runConfig = getVMRunnerConfiguration(configuration, launch, mode, monitor);
+			if ( monitor.isCanceled() || runConfig == null) {
+				return;
+			}
+			IVMRunner runner= getVMRunner(configuration, mode);
 			monitor.subTask(JUnitMessages.JUnitLaunchConfigurationDelegate_create_source_locator_description);
 			// set the default source locator if required
 			setDefaultSourceLocator(launch, configuration);
@@ -300,6 +379,28 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 		vmArguments.addAll(Arrays.asList(execArgs.getVMArgumentsArray()));
 		programArguments.addAll(Arrays.asList(execArgs.getProgramArgumentsArray()));
 
+		boolean isJUnit5= TestKindRegistry.JUNIT5_TEST_KIND_ID.equals(getTestRunnerKind(configuration).getId());
+		boolean isModularProject= JavaRuntime.isModularProject(getJavaProject(configuration));
+		String addOpensTargets;
+		if (isModularProject) {
+			if (isJUnit5) {
+				if (isOnModulePath(getJavaProject(configuration), "org.junit.jupiter.api.Test")) { //$NON-NLS-1$
+					addOpensTargets= "org.junit.platform.commons,ALL-UNNAMED"; //$NON-NLS-1$
+				} else {
+					addOpensTargets= "ALL-UNNAMED"; //$NON-NLS-1$
+				}
+			} else {
+				if (isOnModulePath(getJavaProject(configuration), "junit.framework.TestCase")) { //$NON-NLS-1$
+					addOpensTargets= "junit,ALL-UNNAMED"; //$NON-NLS-1$
+				} else {
+					addOpensTargets= "ALL-UNNAMED"; //$NON-NLS-1$
+				}
+			}
+		} else {
+			addOpensTargets= null;
+		}
+		List<String> addOpensVmArgs= new ArrayList<>();
+
 		/*
 		 * The "-version" "3" arguments don't make sense and should eventually be removed.
 		 * But we keep them for now, since users may want to run with older releases of
@@ -333,14 +434,22 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 				IMethod method= (IMethod) testElement;
 				programArguments.add("-test"); //$NON-NLS-1$
 				programArguments.add(method.getDeclaringType().getFullyQualifiedName() + ':' + method.getElementName());
+				collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, method, configuration);
 			} else if (testElement instanceof IType) {
 				IType type= (IType) testElement;
 				programArguments.add("-classNames"); //$NON-NLS-1$
 				programArguments.add(type.getFullyQualifiedName());
+				collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, type, configuration);
 			} else if (testElement instanceof IPackageFragment || testElement instanceof IPackageFragmentRoot || testElement instanceof IJavaProject) {
-				String fileName= createPackageNamesFile(testElement, testRunnerKind);
+				Set<String> pkgNames= new HashSet<>();
+				String fileName= createPackageNamesFile(testElement, testRunnerKind, pkgNames);
 				programArguments.add("-packageNameFile"); //$NON-NLS-1$
 				programArguments.add(fileName);
+				for (String pkgName : pkgNames) {
+					if (!DEFAULT.equals(pkgName)) { // skip --add-opens for default package 
+						collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, pkgName, configuration);
+					}
+				}
 			} else {
 				abort(JUnitMessages.JUnitLaunchConfigurationDelegate_error_wrong_input, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
 			}
@@ -348,6 +457,9 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			String fileName= createTestNamesFile(testElements);
 			programArguments.add("-testNameFile"); //$NON-NLS-1$
 			programArguments.add(fileName);
+			for (IJavaElement testElement : testElements) {
+				collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, testElement, configuration);
+			}
 		}
 
 		String testFailureNames= configuration.getAttribute(JUnitLaunchConfigurationConstants.ATTR_FAILURES_NAMES, ""); //$NON-NLS-1$
@@ -385,14 +497,63 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 				}
 			}
 		}
+
+		if (addOpensTargets != null) {
+			vmArguments.addAll(addOpensVmArgs);
+		}
 	}
 
-	private String createPackageNamesFile(IJavaElement testContainer, ITestKind testRunnerKind) throws CoreException {
+	private static boolean isOnModulePath(IJavaProject javaProject, String typeToCheck) {
+		try {
+			IType type= javaProject.findType(typeToCheck);
+			if (type == null)
+				return false;
+			IPackageFragmentRoot packageFragmentRoot= (IPackageFragmentRoot) type.getPackageFragment().getParent();
+			IClasspathEntry resolvedClasspathEntry= packageFragmentRoot.getResolvedClasspathEntry();
+			return Arrays.stream(resolvedClasspathEntry.getExtraAttributes())
+					.anyMatch(p -> p.getName().equals(IClasspathAttribute.MODULE) && p.getValue().equals("true")); //$NON-NLS-1$
+		} catch (JavaModelException e) {
+			// if anything goes wrong, assume true (in the worst case, user get a warning because of a redundant add-opens)
+			return true;
+		}
+	}
+
+	private void collectAddOpensVmArgs(String addOpensTargets, List<String> addOpensVmArgs, IJavaElement javaElem, ILaunchConfiguration configuration) throws CoreException {
+		if (addOpensTargets != null) {
+			IPackageFragment pkg= getParentPackageFragment(javaElem);
+			if (pkg != null) {
+				String pkgName= pkg.getElementName();
+				collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, pkgName, configuration);
+			}
+		}
+	}
+
+	private void collectAddOpensVmArgs(String addOpensTargets, List<String> addOpensVmArgs, String pkgName, ILaunchConfiguration configuration) throws CoreException {
+		if (addOpensTargets != null) {
+			IJavaProject javaProject= getJavaProject(configuration);
+			String sourceModuleName= javaProject.getModuleDescription().getElementName();
+			addOpensVmArgs.add("--add-opens"); //$NON-NLS-1$
+			addOpensVmArgs.add(sourceModuleName + "/" + pkgName + "=" + addOpensTargets); //$NON-NLS-1$ //$NON-NLS-2$			
+		}
+	}
+
+	private IPackageFragment getParentPackageFragment(IJavaElement element) {
+		IJavaElement parent= element.getParent();
+		while (parent != null) {
+			if (parent instanceof IPackageFragment) {
+				return (IPackageFragment) parent;
+			}
+			parent= parent.getParent();
+		}
+		return null;
+	}
+
+	private String createPackageNamesFile(IJavaElement testContainer, ITestKind testRunnerKind, Set<String> pkgNames) throws CoreException {
 		try {
 			File file= File.createTempFile("packageNames", ".txt"); //$NON-NLS-1$ //$NON-NLS-2$
 			file.deleteOnExit();
-			try (BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"))) { //$NON-NLS-1$) 
-				Set<String> pkgNames= new HashSet<>();
+
+			try (BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 				if (testContainer instanceof IPackageFragment) {
 					pkgNames.add(getPackageName(testContainer.getElementName()));
 				} else if (testContainer instanceof IPackageFragmentRoot) {
@@ -433,7 +594,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 
 	private String getPackageName(String elementName) {
 		if (elementName.isEmpty()) {
-			return "<default>"; //$NON-NLS-1$
+			return DEFAULT;
 		}
 		return elementName;
 	}
@@ -442,9 +603,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 		try {
 			File file= File.createTempFile("testNames", ".txt"); //$NON-NLS-1$ //$NON-NLS-2$
 			file.deleteOnExit();
-			BufferedWriter bw= null;
-			try {
-				bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8")); //$NON-NLS-1$
+			try (BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));) {
 				for (int i= 0; i < testElements.length; i++) {
 					if (testElements[i] instanceof IType) {
 						IType type= (IType) testElements[i];
@@ -455,10 +614,6 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 						abort(JUnitMessages.JUnitLaunchConfigurationDelegate_error_wrong_input, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
 					}
 				}
-			} finally {
-				if (bw != null) {
-					bw.close();
-				}
 			}
 			return file.getAbsolutePath();
 		} catch (IOException e) {
@@ -467,6 +622,35 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 	}
 
 	@Override
+	public String[][] getClasspathAndModulepath(ILaunchConfiguration configuration) throws CoreException {
+		String[][] cpmp= super.getClasspathAndModulepath(configuration);
+		String[] cp= cpmp[0];
+
+		ITestKind kind= getTestRunnerKind(configuration);
+		List<String> junitEntries= new ClasspathLocalizer(Platform.inDevelopmentMode()).localizeClasspath(kind);
+
+		String[] classPath= new String[cp.length + junitEntries.size()];
+		Object[] jea= junitEntries.toArray();
+		System.arraycopy(cp, 0, classPath, 0, cp.length);
+		System.arraycopy(jea, 0, classPath, cp.length, jea.length);
+
+		cpmp[0]= classPath;
+
+		return cpmp;
+	}
+
+	/**
+	 * @deprecated The call to
+	 *             {@link JUnitLaunchConfigurationDelegate#getClasspath(ILaunchConfiguration)
+	 *             getClasspath(ILaunchConfiguration)} in
+	 *             {@link JUnitLaunchConfigurationDelegate#launch(ILaunchConfiguration, String, ILaunch, IProgressMonitor)
+	 *             launch(...)} has been replaced with the call to
+	 *             {@link JUnitLaunchConfigurationDelegate#getClasspathAndModulepath(ILaunchConfiguration)
+	 *             getClasspathAndModulepath(ILaunchConfiguration)}.
+	 * 
+	 */
+	@Override
+	@Deprecated
 	public String[] getClasspath(ILaunchConfiguration configuration) throws CoreException {
 		String[] cp= super.getClasspath(configuration);
 
@@ -526,10 +710,16 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 		private String localURL(JUnitRuntimeClasspathEntry jar) throws IOException, MalformedURLException, URISyntaxException {
 			Bundle bundle= JUnitCorePlugin.getDefault().getBundle(jar.getPluginId());
 			URL url;
-			if (jar.getPluginRelativePath() == null)
-				url= bundle.getEntry("/"); //$NON-NLS-1$
-			else
+			if (jar.getPluginRelativePath() == null) {
+				String bundleClassPath= bundle.getHeaders().get(Constants.BUNDLE_CLASSPATH);
+				url= bundleClassPath != null ? bundle.getEntry(bundleClassPath) : null;
+				if (url == null) {
+					url= bundle.getEntry("/"); //$NON-NLS-1$
+				}
+			} else {
 				url= bundle.getEntry(jar.getPluginRelativePath());
+			}
+
 			if (url == null)
 				throw new IOException();
 			return URIUtil.toFile(URIUtil.toURI(FileLocator.toFileURL(url))).getAbsolutePath(); // See bug 503050

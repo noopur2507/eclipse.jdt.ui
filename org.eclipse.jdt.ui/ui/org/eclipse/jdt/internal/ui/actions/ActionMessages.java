@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -28,12 +31,14 @@ public final class ActionMessages extends NLS {
 
 	public static String AddDelegateMethodsAction_template_link_message;
 	public static String AddDelegateMethodsAction_template_link_tooltip;
+	public static String AddDelegateMethodsAction_generate_button;
 	public static String AddGetterSetterAction_allow_setters_for_finals_description;
 	public static String AddGetterSetterAction_error_not_in_source_file;
 	public static String AddGetterSetterAction_template_link_description;
 	public static String AddGetterSetterAction_template_link_tooltip;
 	public static String AddUnimplementedConstructorsAction_template_link_message;
 	public static String AddUnimplementedConstructorsAction_template_link_tooltip;
+	public static String AddUnimplementedConstructorsAction_button_generate;
 
 	public static String GenerateConstructorUsingFieldsSelectionDialog_template_link_message;
 	public static String GenerateConstructorUsingFieldsSelectionDialog_template_link_tooltip;
@@ -179,6 +184,7 @@ public final class ActionMessages extends NLS {
 	public static String GetterSetterTreeSelectionDialog_alpha_pair_sort;
 	public static String GetterSetterTreeSelectionDialog_alpha_method_sort;
 	public static String GetterSetterTreeSelectionDialog_sort_label;
+	public static String GetterSetterTreeSelectionDialog_generate_button_label;
 	public static String SourceActionDialog_enterAt_label;
 	public static String SourceActionDialog_modifier_group;
 	public static String SourceActionDialog_modifier_public;
@@ -224,6 +230,7 @@ public final class ActionMessages extends NLS {
 	public static String GenerateConstructorUsingFieldsSelectionDialog_up_button;
 	public static String GenerateConstructorUsingFieldsSelectionDialog_down_button;
 	public static String GenerateConstructorUsingFieldsSelectionDialog_sort_constructor_choices_label;
+	public static String GenerateConstructorUsingFieldsSelectionDialog_button_generate;
 	public static String GenerateConstructorUsingFieldsSelectionDialog_omit_super;
 	public static String GenerateConstructorUsingFieldsAction_error_anonymous_class;
 
@@ -436,6 +443,8 @@ public final class ActionMessages extends NLS {
 	public static String CreateModuleInfoAction_error_message_no_source_folder;
 	public static String CreateModuleInfoAction_error_title;
 	public static String CreateModuleInfoAction_question_message_overwrite_module_info;
+	public static String CreateModuleInfoAction_dialog_finish_button_label;
+	public static String CreateModuleInfoAction_dialog_cancel_button_label;
 
 	public static String GenerateToStringAction_label;
 	public static String GenerateToStringAction_description;

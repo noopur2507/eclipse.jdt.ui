@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -114,7 +117,6 @@ import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatur
 import org.eclipse.jdt.internal.corext.Corext;
 import org.eclipse.jdt.internal.corext.SourceRangeFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
@@ -136,7 +138,6 @@ import org.eclipse.jdt.internal.corext.refactoring.ReturnTypeInfo;
 import org.eclipse.jdt.internal.corext.refactoring.SearchResultGroup;
 import org.eclipse.jdt.internal.corext.refactoring.StubTypeContext;
 import org.eclipse.jdt.internal.corext.refactoring.TypeContextChecker;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStringStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.RefactoringStatusCodes;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
@@ -150,6 +151,7 @@ import org.eclipse.jdt.internal.corext.refactoring.rename.RippleMethodFinder2;
 import org.eclipse.jdt.internal.corext.refactoring.rename.TempOccurrenceAnalyzer;
 import org.eclipse.jdt.internal.corext.refactoring.tagging.IDelegateUpdating;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavadocUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
@@ -163,6 +165,7 @@ import org.eclipse.jdt.ui.JavaElementLabels;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 
@@ -661,7 +664,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 		String trimmed= string.trim();
 		if ("".equals(trimmed)) //speed up for a common case //$NON-NLS-1$
 			return false;
-		StringBuffer cuBuff= new StringBuffer();
+		StringBuilder cuBuff= new StringBuilder();
 		cuBuff.append(CONST_CLASS_DECL)
 			  .append("Object") //$NON-NLS-1$
 			  .append(CONST_ASSIGN);
@@ -683,7 +686,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 		String trimmed= string.trim();
 		if ("".equals(trimmed)) //speed up for a common case //$NON-NLS-1$
 			return true;
-		StringBuffer cuBuff= new StringBuffer();
+		StringBuilder cuBuff= new StringBuilder();
 		cuBuff.append("class A{ {m("); //$NON-NLS-1$
 		int offset= cuBuff.length();
 		cuBuff.append(trimmed)
@@ -888,7 +891,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 	}
 
 	public String getOldMethodSignature() throws JavaModelException{
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 
 		int flags= getMethod().getFlags();
 		buff.append(getVisibilityString(flags));
@@ -914,7 +917,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 	}
 
 	public String getNewMethodSignature() throws JavaModelException{
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 
 		buff.append(getVisibilityString(fVisibility));
 		int flags= getMethod().getFlags();
@@ -946,7 +949,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 
 	private String getMethodThrows() {
 		final String throwsString= " throws "; //$NON-NLS-1$
-		StringBuffer buff= new StringBuffer(throwsString);
+		StringBuilder buff= new StringBuilder(throwsString);
 		for (Iterator<ExceptionInfo> iter= fExceptionInfos.iterator(); iter.hasNext(); ) {
 			ExceptionInfo info= iter.next();
 			if (! info.isDeleted()) {
@@ -962,7 +965,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 
 	private String getOldMethodThrows() {
 		final String throwsString= " throws "; //$NON-NLS-1$
-		StringBuffer buff= new StringBuffer(throwsString);
+		StringBuilder buff= new StringBuilder(throwsString);
 		for (Iterator<ExceptionInfo> iter= fExceptionInfos.iterator(); iter.hasNext(); ) {
 			ExceptionInfo info= iter.next();
 			if (! info.isAdded()) {
@@ -1036,7 +1039,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 	}
 
 	private String getOldMethodParameters() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		int i= 0;
 		for (Iterator<ParameterInfo> iter= getNotAddedInfos().iterator(); iter.hasNext(); i++) {
 			ParameterInfo info= iter.next();
@@ -1048,7 +1051,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 	}
 
 	private String getMethodParameters() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		int i= 0;
 		for (Iterator<ParameterInfo> iter= getNotDeletedInfos().iterator(); iter.hasNext(); i++) {
 			ParameterInfo info= iter.next();
@@ -1276,14 +1279,14 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 				arguments.put(ATTRIBUTE_RETURN, fReturnTypeInfo.getNewTypeName());
 			try {
 				if (!isVisibilitySameAsInitial())
-					arguments.put(ATTRIBUTE_VISIBILITY, new Integer(fVisibility).toString());
+					arguments.put(ATTRIBUTE_VISIBILITY, Integer.valueOf(fVisibility).toString());
 			} catch (JavaModelException exception) {
 				JavaPlugin.log(exception);
 			}
 			int count= 1;
 			for (final Iterator<ParameterInfo> iterator= fParameterInfos.iterator(); iterator.hasNext();) {
 				final ParameterInfo info= iterator.next();
-				final StringBuffer buffer= new StringBuffer(64);
+				final StringBuilder buffer= new StringBuilder(64);
 				if (info.isAdded())
 					buffer.append("{added}"); //$NON-NLS-1$
 				else
@@ -1317,7 +1320,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 			for (final Iterator<ExceptionInfo> iterator= fExceptionInfos.iterator(); iterator.hasNext();) {
 				final ExceptionInfo info= iterator.next();
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + count, JavaRefactoringDescriptorUtil.elementToHandle(project,info.getElement()));
-				arguments.put(ATTRIBUTE_KIND + count, new Integer(info.getKind()).toString());
+				arguments.put(ATTRIBUTE_KIND + count, Integer.valueOf(info.getKind()).toString());
 				count++;
 			}
 		} catch (JavaModelException exception) {
@@ -1492,7 +1495,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 		Iterator<ParameterInfo> iter= getNotDeletedInfos().iterator();
 		while (iter.hasNext()) {
 			ParameterInfo info= iter.next();
-			Expression newExpression= createNewExpression(info, getParameterInfos(), superCall.arguments(), cuRewrite, (MethodDeclaration) ASTNodes.getParent(superCall, MethodDeclaration.class));
+			Expression newExpression= createNewExpression(info, getParameterInfos(), superCall.arguments(), cuRewrite, ASTNodes.getParent(superCall, MethodDeclaration.class));
 			if (newExpression != null)
 				superCall.arguments().add(newExpression);
 		}
@@ -1652,7 +1655,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 			return new DocReferenceUpdate(node, cuRewrite, result);
 
 		else if (ASTNodes.getParent(node, ImportDeclaration.class) != null)
-			return new StaticImportUpdate((ImportDeclaration) ASTNodes.getParent(node, ImportDeclaration.class), cuRewrite, result);
+			return new StaticImportUpdate(ASTNodes.getParent(node, ImportDeclaration.class), cuRewrite, result);
 
 		else if (node instanceof LambdaExpression)
 			return new LambdaExpressionUpdate((LambdaExpression) node, cuRewrite, result);
@@ -1907,7 +1910,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 		@Override
 		protected Expression createNewParamgument(ParameterInfo info, List<ParameterInfo> parameterInfos, List<Expression> nodes) {
 			CompilationUnitRewrite cuRewrite= getCompilationUnitRewrite();
-			MethodDeclaration declaration= (MethodDeclaration) ASTNodes.getParent(fNode, MethodDeclaration.class);
+			MethodDeclaration declaration= ASTNodes.getParent(fNode, MethodDeclaration.class);
 			if (isRecursiveReference()) {
 				return createNewExpressionRecursive(info, parameterInfos, nodes, cuRewrite, declaration);
 			} else
@@ -1933,7 +1936,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 		}
 
 		private boolean isRecursiveReference() {
-			MethodDeclaration enclosingMethodDeclaration= (MethodDeclaration) ASTNodes.getParent(fNode, MethodDeclaration.class);
+			MethodDeclaration enclosingMethodDeclaration= ASTNodes.getParent(fNode, MethodDeclaration.class);
 			if (enclosingMethodDeclaration == null)
 				return false;
 
@@ -2803,7 +2806,7 @@ public class ChangeSignatureProcessor extends RefactoringProcessor implements ID
 					fVisibility= JdtFlags.getVisibilityCode(fMethod);
 					fReturnTypeInfo= new ReturnTypeInfo(Signature.toString(Signature.getReturnType(fMethod.getSignature())));
 				} catch (JavaModelException exception) {
-					return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_illegal_argument, new Object[] { new Integer(fVisibility),
+					return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_illegal_argument, new Object[] { Integer.valueOf(fVisibility),
 							ATTRIBUTE_VISIBILITY }));
 				}
 			}

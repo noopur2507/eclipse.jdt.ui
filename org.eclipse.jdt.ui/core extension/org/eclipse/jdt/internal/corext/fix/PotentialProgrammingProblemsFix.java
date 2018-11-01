@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -57,13 +60,14 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.cleanup.ICleanUpFix;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
+
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.internal.ui.text.correction.SerialVersionHashOperation;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
@@ -292,7 +296,7 @@ public class PotentialProgrammingProblemsFix extends CompilationUnitRewriteOpera
 			fCurrentContext= new ISerialVersionFixContext() {
 				@Override
 				public Long getSerialVersionId(ITypeBinding binding) {
-					return new Long(1);
+					return Long.valueOf(1);
 				}
 				@Override
 				public RefactoringStatus initialize(IProgressMonitor pm) throws CoreException {
@@ -305,7 +309,7 @@ public class PotentialProgrammingProblemsFix extends CompilationUnitRewriteOpera
 				private Random rng;
 				@Override
 				public Long getSerialVersionId(ITypeBinding binding) {
-					return new Long(rng.nextLong());
+					return Long.valueOf(rng.nextLong());
 				}
 				@Override
 				public RefactoringStatus initialize(IProgressMonitor pm) throws CoreException {

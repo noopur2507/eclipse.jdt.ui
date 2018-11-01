@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -175,7 +178,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 				} else if (PROPERTIES[VAL_PROP].equals(property)) {
 					res= substitution.getValue();
 				} else if (PROPERTIES[STATE_PROP].equals(property)) {
-					return new Integer(substitution.getState());
+					return Integer.valueOf(substitution.getState());
 				}
 				if (res != null) {
 					return getEscapedAsciiString(res);
@@ -317,7 +320,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 
 	private static String getEscapedAsciiString(String s) {
 		if (s != null) {
-			StringBuffer sb= new StringBuffer(s.length());
+			StringBuilder sb= new StringBuilder(s.length());
 			int length= s.length();
 			for (int i= 0; i < length; i++) {
 				char c= s.charAt(i);
@@ -735,7 +738,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 							NLSSubstitution substitution= (NLSSubstitution) widgetSel.get(0);
 							Integer value= (Integer) getCellModifier().getValue(substitution, PROPERTIES[STATE_PROP]);
 							int newValue= MultiStateCellEditor.getNextValue(NLSSubstitution.STATE_COUNT, value.intValue());
-							getCellModifier().modify(item, PROPERTIES[STATE_PROP], new Integer(newValue));
+							getCellModifier().modify(item, PROPERTIES[STATE_PROP], Integer.valueOf(newValue));
 						}
 					}
 				});

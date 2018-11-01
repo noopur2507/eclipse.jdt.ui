@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -56,7 +59,7 @@ public class GenerateConstructorUsingFieldsValidator implements ISelectionStatus
 		return count;
 	}
 
-	private void createSignature(final IMethodBinding constructor, StringBuffer buffer, Object[] selection) {
+	private void createSignature(final IMethodBinding constructor, StringBuilder buffer, Object[] selection) {
 		ITypeBinding types[]= constructor.getParameterTypes();
 		for (int index= 0; index < types.length; index++)
 			buffer.append(types[index].getName());
@@ -72,7 +75,7 @@ public class GenerateConstructorUsingFieldsValidator implements ISelectionStatus
 		IMethodBinding[] methods= fType.getDeclaredMethods();
 		for (int index= 0; index < methods.length; index++) {
 			if (methods[index].isConstructor()) {
-				StringBuffer buffer= new StringBuffer();
+				StringBuilder buffer= new StringBuilder();
 				createSignature(methods[index], buffer, null);
 				existing.add(buffer.toString());
 			}
@@ -82,7 +85,7 @@ public class GenerateConstructorUsingFieldsValidator implements ISelectionStatus
 
 	@Override
 	public IStatus validate(Object[] selection) {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		final IMethodBinding constructor= fDialog.getSuperConstructorChoice();
 		createSignature(constructor, buffer, selection);
 		if (fSignatures.contains(buffer.toString()))

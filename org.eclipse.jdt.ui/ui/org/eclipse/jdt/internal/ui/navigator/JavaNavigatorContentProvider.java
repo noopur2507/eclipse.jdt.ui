@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2003, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -284,16 +287,18 @@ public class JavaNavigatorContentProvider extends
 	private boolean convertToJavaElements(Set<Object> currentChildren) {
 
 		LinkedHashSet<Object> convertedChildren = new LinkedHashSet<>();
-		IJavaElement newChild;
 		for (Iterator<Object> childrenItr = currentChildren.iterator(); childrenItr
 				.hasNext();) {
 			Object child = childrenItr.next();
 			// only convert IFolders and IFiles
 			if (child instanceof IFolder || child instanceof IFile) {
-				if ((newChild = JavaCore.create((IResource) child)) != null
-						&& newChild.exists()) {
-					childrenItr.remove();
-					convertedChildren.add(newChild);
+				IJavaElement newChild = JavaCore.create((IResource) child);
+				if (newChild != null && newChild.exists()) {
+					IJavaProject javaProject= newChild.getJavaProject();
+					if (javaProject != null && javaProject.isOnClasspath(newChild)) {
+						childrenItr.remove();
+						convertedChildren.add(newChild);
+					}
 				}
 			} else if (child instanceof IJavaProject) {
 				childrenItr.remove();

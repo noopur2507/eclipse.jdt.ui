@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -292,7 +295,7 @@ final class CompilationUnitCompletion extends CompletionRequestor {
 				String local= fLocalTypes.get(Signature.getElementType(sig));
 				int dim= Signature.getArrayCount(sig);
 				if (local != null && dim > 0) {
-					StringBuffer array= new StringBuffer(local);
+					StringBuilder array= new StringBuilder(local);
 					for (int j= 0; j < dim; j++)
 						array.append("[]"); //$NON-NLS-1$
 					local= array.toString();
@@ -735,6 +738,7 @@ final class CompilationUnitCompletion extends CompletionRequestor {
 		setIgnored(CompletionProposal.METHOD_REF_WITH_CASTED_RECEIVER, true);
 		setIgnored(CompletionProposal.PACKAGE_REF, true);
 		setIgnored(CompletionProposal.MODULE_REF, true);
+		setIgnored(CompletionProposal.MODULE_DECLARATION, true);
 		setIgnored(CompletionProposal.POTENTIAL_METHOD_DECLARATION, true);
 		setIgnored(CompletionProposal.VARIABLE_DECLARATION, true);
 		setIgnored(CompletionProposal.TYPE_REF, true);

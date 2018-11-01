@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2017 GK Software AG and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2011, 2018 GK Software AG and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - [quick fix] Add quick fixes for null annotations - https://bugs.eclipse.org/337977
@@ -29,13 +32,16 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 
+import org.eclipse.jdt.internal.corext.codemanipulation.RedundantNullnessTypeAnnotationsFilter;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.AddMissingDefaultNullnessRewriteOperation;
 import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.Builder;
 import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.ChangeKind;
 import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.RemoveRedundantAnnotationRewriteOperation;
 import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.SignatureAnnotationRewriteOperation;
 import org.eclipse.jdt.internal.corext.fix.TypeAnnotationRewriteOperations.MoveTypeAnnotationRewriteOperation;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.cleanup.ICleanUpFix;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
@@ -64,7 +70,7 @@ public class NullAnnotationsFix extends CompilationUnitRewriteOperationsFix {
 		IBinding binding= nameNode.resolveBinding();
 		if (binding.getKind() == IBinding.VARIABLE && ((IVariableBinding) binding).isParameter())
 			return true;
-		VariableDeclaration argDecl= (VariableDeclaration) ASTNodes.getParent(selectedNode, VariableDeclaration.class);
+		VariableDeclaration argDecl= ASTNodes.getParent(selectedNode, VariableDeclaration.class);
 		if (argDecl != null)
 			binding= argDecl.resolveBinding();
 		if (binding.getKind() == IBinding.VARIABLE && ((IVariableBinding) binding).isParameter())
@@ -139,7 +145,7 @@ public class NullAnnotationsFix extends CompilationUnitRewriteOperationsFix {
 
 		if (addNonNull) {
 			operation.fRemoveIfNonNullByDefault= true;
-			operation.fNonNullByDefaultName= getNonNullByDefaultAnnotationName(javaElement, false);
+			operation.fNonNullByDefaultNames= RedundantNullnessTypeAnnotationsFilter.determineNonNullByDefaultNames(javaElement.getJavaProject());
 		}
 		return new NullAnnotationsFix(operation.getMessage(), operation.getCompilationUnit(), // note that this uses the findings from createAddAnnotationOperation(..)
 				new NullAnnotationsRewriteOperations.SignatureAnnotationRewriteOperation[] { operation });
@@ -148,6 +154,13 @@ public class NullAnnotationsFix extends CompilationUnitRewriteOperationsFix {
 	public static NullAnnotationsFix createRemoveRedundantNullAnnotationsFix(CompilationUnit compilationUnit, IProblemLocation problem) {
 		RemoveRedundantAnnotationRewriteOperation operation= new RemoveRedundantAnnotationRewriteOperation(compilationUnit, problem);
 		return new NullAnnotationsFix(FixMessages.NullAnnotationsRewriteOperations_remove_redundant_nullness_annotation, compilationUnit, new RemoveRedundantAnnotationRewriteOperation[] { operation });
+	}
+
+	public static NullAnnotationsFix createAddMissingDefaultNullnessAnnotationsFix(CompilationUnit compilationUnit, IProblemLocation problem) {
+		AddMissingDefaultNullnessRewriteOperation operation= new AddMissingDefaultNullnessRewriteOperation(compilationUnit, problem);
+		String nonNullByDefaultAnnotationname= NullAnnotationsFix.getNonNullByDefaultAnnotationName(compilationUnit.getJavaElement(), true);
+		String label= Messages.format(FixMessages.NullAnnotationsRewriteOperations_add_missing_default_nullness_annotation, new String[] { nonNullByDefaultAnnotationname });
+		return new NullAnnotationsFix(label, compilationUnit, new AddMissingDefaultNullnessRewriteOperation[] { operation });
 	}
 
 	// Entry for NullAnnotationsCleanup:
@@ -201,7 +214,17 @@ public class NullAnnotationsFix extends CompilationUnitRewriteOperationsFix {
 			IProblemLocation problem= locations[i];
 			if (problem == null)
 				continue; // problem was filtered out by createCleanUp()
-			boolean isArgumentProblem= isComplainingAboutArgument(problem.getCoveredNode(compilationUnit));
+
+			if (problem.getProblemId() == IProblem.MissingNonNullByDefaultAnnotationOnPackage) {
+				result.add(new AddMissingDefaultNullnessRewriteOperation(compilationUnit, problem));
+				continue;
+			}
+
+			ASTNode coveredNode= problem.getCoveredNode(compilationUnit);
+			boolean isArgumentProblem= isComplainingAboutArgument(coveredNode);
+			if(!isArgumentProblem && !isComplainingAboutReturn(coveredNode)) {
+				continue;
+			}
 			Builder builder= new Builder(problem, compilationUnit, nullableAnnotationName, nonNullAnnotationName,
 											/*allowRemove*/false, isArgumentProblem, ChangeKind.LOCAL);
 			boolean addNonNull= false;
@@ -232,7 +255,7 @@ public class NullAnnotationsFix extends CompilationUnitRewriteOperationsFix {
 			if (fix != null) {
 				if (addNonNull) {
 					fix.fRemoveIfNonNullByDefault= true;
-					fix.fNonNullByDefaultName= getNonNullByDefaultAnnotationName(compilationUnit.getJavaElement(), false);
+					fix.fNonNullByDefaultNames= RedundantNullnessTypeAnnotationsFilter.determineNonNullByDefaultNames(compilationUnit.getJavaElement().getJavaProject());
 				}
 				result.add(fix);
 			}

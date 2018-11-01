@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -69,6 +72,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeParameter;
+import org.eclipse.jdt.core.manipulation.TypeNameMatchCollector;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -78,15 +82,15 @@ import org.eclipse.jdt.core.search.TypeNameMatch;
 import org.eclipse.jdt.internal.corext.dom.ASTFlattener;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.HierarchicalASTVisitor;
-import org.eclipse.jdt.internal.corext.dom.Selection;
-import org.eclipse.jdt.internal.corext.dom.SelectionAnalyzer;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
-import org.eclipse.jdt.internal.corext.util.TypeNameMatchCollector;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.dom.Selection;
+import org.eclipse.jdt.internal.corext.dom.SelectionAnalyzer;
+
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaTypeCompletionProcessor;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
@@ -162,7 +166,7 @@ public class TypeContextChecker {
 			int parameterCount= types.length - 1;
 			ITypeBinding[] typeBindings= new ITypeBinding[types.length];
 
-			StringBuffer cuString= new StringBuffer();
+			StringBuilder cuString= new StringBuilder();
 			cuString.append(fStubTypeContext.getBeforeString());
 			int offsetBeforeMethodName= appendMethodDeclaration(cuString, types, parameterCount);
 			cuString.append(fStubTypeContext.getAfterString());
@@ -221,7 +225,7 @@ public class TypeContextChecker {
 			return true;
 		}
 
-		private int appendMethodDeclaration(StringBuffer cuString, String[] types, int parameterCount) throws JavaModelException {
+		private int appendMethodDeclaration(StringBuilder cuString, String[] types, int parameterCount) throws JavaModelException {
 			int flags= fMethod.getFlags();
 			if (Flags.isStatic(flags)) {
 				cuString.append("static "); //$NON-NLS-1$
@@ -432,7 +436,7 @@ public class TypeContextChecker {
 		if (! typeString.trim().equals(typeString))
 			return null;
 
-		StringBuffer cuBuff= new StringBuffer();
+		StringBuilder cuBuff= new StringBuilder();
 		cuBuff.append("interface A{"); //$NON-NLS-1$
 		int offset= cuBuff.length();
 		cuBuff.append(typeString).append(" m();}"); //$NON-NLS-1$
@@ -518,8 +522,8 @@ public class TypeContextChecker {
 	}
 
 	public static StubTypeContext createStubTypeContext(ICompilationUnit cu, CompilationUnit root, int focalPosition) throws CoreException {
-		StringBuffer bufBefore= new StringBuffer();
-		StringBuffer bufAfter= new StringBuffer();
+		StringBuilder bufBefore= new StringBuilder();
+		StringBuilder bufAfter= new StringBuilder();
 
 		int introEnd= 0;
 		PackageDeclaration pack= root.getPackage();
@@ -538,8 +542,8 @@ public class TypeContextChecker {
 		return new StubTypeContext(cu, bufBefore.toString(), bufAfter.toString());
 	}
 
-	private static void fillWithTypeStubs(final StringBuffer bufBefore, final StringBuffer bufAfter, final int focalPosition, List<? extends BodyDeclaration> types) {
-		StringBuffer buf;
+	private static void fillWithTypeStubs(final StringBuilder bufBefore, final StringBuilder bufAfter, final int focalPosition, List<? extends BodyDeclaration> types) {
+		StringBuilder buf;
 		for (Iterator<? extends BodyDeclaration> iter= types.iterator(); iter.hasNext();) {
 			BodyDeclaration bodyDeclaration= iter.next();
 			if (! (bodyDeclaration instanceof AbstractTypeDeclaration)) {
@@ -624,7 +628,7 @@ public class TypeContextChecker {
 		}
 	}
 
-	private static void appendTypeParameters(StringBuffer buf, List<TypeParameter> typeParameters) {
+	private static void appendTypeParameters(StringBuilder buf, List<TypeParameter> typeParameters) {
 		int typeParametersCount= typeParameters.size();
 		if (typeParametersCount > 0) {
 			buf.append('<');
@@ -638,7 +642,7 @@ public class TypeContextChecker {
 		}
 	}
 
-	private static void appendModifiers(StringBuffer buf, List<IExtendedModifier> modifiers) {
+	private static void appendModifiers(StringBuilder buf, List<IExtendedModifier> modifiers) {
 		for (Iterator<IExtendedModifier> iterator= modifiers.iterator(); iterator.hasNext();) {
 			IExtendedModifier extendedModifier= iterator.next();
 			if (extendedModifier.isModifier()) {
@@ -648,7 +652,7 @@ public class TypeContextChecker {
 		}
 	}
 
-	private static void appendSuperInterfaces(StringBuffer buf, List<Type> superInterfaces) {
+	private static void appendSuperInterfaces(StringBuilder buf, List<Type> superInterfaces) {
 		int superInterfaceCount= superInterfaces.size();
 		if (superInterfaceCount > 0) {
 			buf.append(" implements "); //$NON-NLS-1$
@@ -733,7 +737,7 @@ public class TypeContextChecker {
 			return null;
 		}
 
-		StringBuffer cuBuff= new StringBuffer();
+		StringBuilder cuBuff= new StringBuilder();
 		if (isInterface)
 			cuBuff.append("class __X__ implements "); //$NON-NLS-1$
 		else
@@ -766,7 +770,7 @@ public class TypeContextChecker {
 	}
 
 	public static ITypeBinding resolveSuperClass(String superclass, IType typeHandle, StubTypeContext superClassContext) {
-		StringBuffer cuString= new StringBuffer();
+		StringBuilder cuString= new StringBuilder();
 		cuString.append(superClassContext.getBeforeString());
 		cuString.append(superclass);
 		cuString.append(superClassContext.getAfterString());
@@ -797,7 +801,7 @@ public class TypeContextChecker {
 		ITypeBinding[] result= new ITypeBinding[interfaces.length];
 
 		int[] interfaceOffsets= new int[interfaces.length];
-		StringBuffer cuString= new StringBuffer();
+		StringBuilder cuString= new StringBuilder();
 		cuString.append(superInterfaceContext.getBeforeString());
 		int last= interfaces.length - 1;
 		for (int i= 0; i <= last; i++) {

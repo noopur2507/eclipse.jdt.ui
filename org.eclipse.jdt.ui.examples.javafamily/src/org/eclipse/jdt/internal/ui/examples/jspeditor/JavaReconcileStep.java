@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -69,6 +72,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 		/*
 		 * @see org.eclipse.jdt.core.WorkingCopyOwner#createBuffer(org.eclipse.jdt.core.ICompilationUnit)
 		 */
+		@Override
 		public IBuffer createBuffer(ICompilationUnit workingCopy) {
 			// FIXME: Don't know how to get a buffer without using internal API.
 			return BufferManager.createBuffer(workingCopy);
@@ -84,12 +88,14 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 			fProblem= problem;
 		}
 
+		@Override
 		public Position getPosition()  {
 			if (fPosition == null)
 				fPosition= createPositionFromProblem();
 			return fPosition;
 		}
 
+		@Override
 		public Annotation createAnnotation() {
 			int start= fProblem.getSourceStart();
 			if (start < 0)
@@ -130,6 +136,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 		/*
 		 * @see IProblemRequestor#beginReporting()
 		 */
+		@Override
 		public void beginReporting() {
 			fIsRunning= true;
 			fCollectedProblems= new ArrayList();
@@ -138,6 +145,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 		/*
 		 * @see IProblemRequestor#acceptProblem(IProblem)
 		 */
+		@Override
 		public void acceptProblem(IProblem problem) {
 			if (isActive())
 				fCollectedProblems.add(problem);
@@ -146,6 +154,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 		/*
 		 * @see IProblemRequestor#endReporting()
 		 */
+		@Override
 		public void endReporting() {
 			fIsRunning= false;
 
@@ -172,6 +181,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 		/*
 		 * @see IProblemRequestor#isActive()
 		 */
+		@Override
 		public boolean isActive() {
 			return fIsActive && fCollectedProblems != null && !isCanceled();
 		}
@@ -257,6 +267,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 	/*
 	 * @see AbstractReconcileStep#reconcileModel(DirtyRegion, IRegion)
 	 */
+	@Override
 	protected IReconcileResult[] reconcileModel(DirtyRegion dirtyRegion, IRegion subRegion) {
 		Assert.isTrue(getInputModel() instanceof DocumentAdapter, "wrong model"); //$NON-NLS-1$
 
@@ -295,6 +306,7 @@ public class JavaReconcileStep extends AbstractReconcileStep {
 	/*
 	 * @see AbstractReconcileStep#getModel()
 	 */
+	@Override
 	public IReconcilableModel getModel() {
 		return fWorkingCopy;
 	}

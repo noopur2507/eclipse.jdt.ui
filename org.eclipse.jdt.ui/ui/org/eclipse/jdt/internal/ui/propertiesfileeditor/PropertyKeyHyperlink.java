@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -157,7 +160,7 @@ public class PropertyKeyHyperlink implements IHyperlink {
 					if (document != null) {
 						int line= document.getLineOfOffset(offset) + 1;
 						String pathLabel= BasicElementLabels.getPathLabel(resource.getFullPath(), false);
-						Object[] args= new Object[] { new Integer(line), pathLabel };
+						Object[] args= new Object[] { Integer.valueOf(line), pathLabel };
 						return showLineNumber ? Messages.format(PropertiesFileEditorMessages.OpenAction_SelectionDialog_elementLabel, args) : pathLabel;
 					}
 				} finally {
@@ -326,7 +329,7 @@ public class PropertyKeyHyperlink implements IHyperlink {
 					}
 				}
 				if (count > 1) {
-					Object[] args= new Object[] { BasicElementLabels.getResourceName(name), new Integer(count) };
+					Object[] args= new Object[] { BasicElementLabels.getResourceName(name), Integer.valueOf(count) };
 					name= Messages.format(PropertiesFileEditorMessages.OpenAction_SelectionDialog_elementLabelWithMatchCount, args);
 				}
 
@@ -474,7 +477,7 @@ public class PropertyKeyHyperlink implements IHyperlink {
 									//maybe not an eclipse style NLS string
 									String searchString;
 									if (useDoubleQuotedKey) {
-										StringBuffer buf= new StringBuffer("\""); //$NON-NLS-1$
+										StringBuilder buf= new StringBuilder("\""); //$NON-NLS-1$
 										buf.append(key);
 										buf.append('"');
 										searchString= buf.toString();

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2013 GK Software AG and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2012, 2018 GK Software AG and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - initial API and implementation
@@ -44,7 +47,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
@@ -52,6 +55,7 @@ import org.eclipse.jdt.internal.corext.fix.FixMessages;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup;
 
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 
 /**
@@ -224,7 +228,7 @@ public class ExtractToNullCheckedLocalProposal extends LinkedCorrectionProposal 
 		getLinkedProposalModel().addPositionGroup(localNameGroup);
 
 		// AST context:
-		Statement origStmt= (Statement) ASTNodes.getParent(this.fieldReference, Statement.class);
+		Statement origStmt= ASTNodes.getParent(this.fieldReference, Statement.class);
 		// determine suitable strategy for rearranging elements towards a new code structure:
 		RearrangeStrategy rearrangeStrategy= RearrangeStrategy.create(origStmt, rewrite, group);
 		
@@ -278,7 +282,7 @@ public class ExtractToNullCheckedLocalProposal extends LinkedCorrectionProposal 
 			Type returnType= newType(((ReturnStatement)origStmt).getExpression().resolveTypeBinding(), ast, imports);
 			ReturnStatement returnStatement= ast.newReturnStatement();
 			returnStatement.setExpression(ASTNodeFactory.newDefaultExpression(ast, returnType, 0));
-			elseStatement+= '\n'+ASTNodes.asFormattedString(returnStatement, 0, String.valueOf('\n'), getCompilationUnit().getJavaProject().getOptions(true));
+			elseStatement+= '\n' + ASTNodes.asFormattedString(returnStatement, 0, String.valueOf('\n'), FormatterProfileManager.getProjectSettings(getCompilationUnit().getJavaProject()));
 		}
 
 		EmptyStatement todoNode= (EmptyStatement) rewrite.createStringPlaceholder(elseStatement, ASTNode.EMPTY_STATEMENT);

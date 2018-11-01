@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -14,7 +17,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
 
@@ -22,9 +29,11 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.wizard.IWizard;
 import org.eclipse.jface.wizard.WizardDialog;
 
 import org.eclipse.ui.IObjectActionDelegate;
@@ -43,6 +52,39 @@ import org.eclipse.jdt.internal.ui.wizards.NewModuleInfoWizard;
 
 public class CreateModuleInfoAction implements IObjectActionDelegate {
 
+	private class ModuleInfoCreationDialog extends WizardDialog {
+
+		public ModuleInfoCreationDialog(Shell parentShell, IWizard newWizard) {
+			super(parentShell, newWizard);
+		}
+
+		@Override
+		protected final void createButtonsForButtonBar(final Composite parent) {
+			super.createButtonsForButtonBar(parent);
+			Button cancel= this.getButton(CANCEL);
+			Button finish= this.getButton(IDialogConstants.FINISH_ID);
+			if (cancel != null) {
+				cancel.setText(ActionMessages.CreateModuleInfoAction_dialog_cancel_button_label);
+				setButtonLayoutData(cancel);
+			}
+			if (finish != null) {
+				finish.setText(ActionMessages.CreateModuleInfoAction_dialog_finish_button_label);
+				setButtonLayoutData(finish);
+			}
+		}
+
+		@Override
+		protected void setButtonLayoutData(Button button) {
+			super.setButtonLayoutData(button);
+			Object data= button.getLayoutData();
+			if (data instanceof GridData) {
+				GridData gridData= (GridData) data;
+				gridData.widthHint+= button.getText().length(); 
+				button.setLayoutData(gridData);
+			}
+		}
+	}
+	
 	private static final String MODULE_INFO_JAVA_FILENAME= JavaModelUtil.MODULE_INFO_JAVA;
 
 	private ISelection fSelection;
@@ -108,7 +150,7 @@ public class CreateModuleInfoAction implements IObjectActionDelegate {
 				}
 
 				IWorkbenchWizard moduleInfoWizard= new NewModuleInfoWizard(javaProject, packageFragmentRoots, targetPkgFragmentRoot);
-				WizardDialog dialog= new WizardDialog(getDisplay().getActiveShell(), moduleInfoWizard);
+				WizardDialog dialog= new ModuleInfoCreationDialog(getDisplay().getActiveShell(), moduleInfoWizard);
 				dialog.setHelpAvailable(false);
 				dialog.create();				
 				dialog.open();

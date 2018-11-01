@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2006, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -11,10 +14,7 @@
 
 package org.eclipse.jdt.ui;
 
-import java.util.regex.Pattern;
-
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
@@ -32,8 +32,6 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CodeStyleConfiguration {
-
-	private static final Pattern SEMICOLON_PATTERN= Pattern.compile(";"); //$NON-NLS-1$
 
 	private CodeStyleConfiguration() {
 		// do not instantiate and subclass
@@ -53,7 +51,7 @@ public class CodeStyleConfiguration {
 	 * @see ImportRewrite#create(ICompilationUnit, boolean)
 	 */
 	public static ImportRewrite createImportRewrite(ICompilationUnit cu, boolean restoreExistingImports) throws JavaModelException {
-		return configureImportRewrite(ImportRewrite.create(cu, restoreExistingImports));
+		return org.eclipse.jdt.core.manipulation.CodeStyleConfiguration.createImportRewrite(cu, restoreExistingImports);
 	}
 
 	/**
@@ -67,39 +65,6 @@ public class CodeStyleConfiguration {
 	 * @see ImportRewrite#create(CompilationUnit, boolean)
 	 */
 	public static ImportRewrite createImportRewrite(CompilationUnit astRoot, boolean restoreExistingImports) {
-		return configureImportRewrite(ImportRewrite.create(astRoot, restoreExistingImports));
+		return org.eclipse.jdt.core.manipulation.CodeStyleConfiguration.createImportRewrite(astRoot, restoreExistingImports);
 	}
-
-	private static ImportRewrite configureImportRewrite(ImportRewrite rewrite) {
-		IJavaProject project= rewrite.getCompilationUnit().getJavaProject();
-		String order= PreferenceConstants.getPreference(PreferenceConstants.ORGIMPORTS_IMPORTORDER, project);
-		if (order.endsWith(";")) { //$NON-NLS-1$
-			order= order.substring(0, order.length() - 1);
-		}
-		String[] split= SEMICOLON_PATTERN.split(order, -1);
-		rewrite.setImportOrder(split);
-
-		String thres= PreferenceConstants.getPreference(PreferenceConstants.ORGIMPORTS_ONDEMANDTHRESHOLD, project);
-		try {
-			int num= Integer.parseInt(thres);
-			if (num == 0)
-				num= 1;
-			rewrite.setOnDemandImportThreshold(num);
-		} catch (NumberFormatException e) {
-			// ignore
-		}
-		String thresStatic= PreferenceConstants.getPreference(PreferenceConstants.ORGIMPORTS_STATIC_ONDEMANDTHRESHOLD, project);
-		try {
-			int num= Integer.parseInt(thresStatic);
-			if (num == 0)
-				num= 1;
-			rewrite.setStaticOnDemandImportThreshold(num);
-		} catch (NumberFormatException e) {
-			// ignore
-		}
-		return rewrite;
-	}
-
-
-
 }

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -104,13 +107,13 @@ import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.ExtractLocalDescriptor;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.Corext;
 import org.eclipse.jdt.internal.corext.SourceRangeFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
@@ -125,14 +128,15 @@ import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComme
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringArguments;
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringDescriptorUtil;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStringStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.RefactoringStatusCodes;
 import org.eclipse.jdt.internal.corext.refactoring.rename.RefactoringAnalyzeUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.NoCommentSourceRangeComputer;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -147,6 +151,7 @@ public class ExtractTempRefactoring extends Refactoring {
 
 	private static final String ATTRIBUTE_REPLACE= "replace"; //$NON-NLS-1$
 	private static final String ATTRIBUTE_FINAL= "final"; //$NON-NLS-1$
+	private static final String ATTRIBUTE_TYPE_VAR= "varType"; //$NON-NLS-1$
 
 	private static final class ForStatementChecker extends ASTVisitor {
 
@@ -339,6 +344,8 @@ public class ExtractTempRefactoring extends Refactoring {
 	private ICompilationUnit fCu;
 
 	private boolean fDeclareFinal;
+	
+	private boolean fDeclareVarType;
 
 	private String[] fExcludedVariableNames;
 
@@ -380,6 +387,7 @@ public class ExtractTempRefactoring extends Refactoring {
 
 		fReplaceAllOccurrences= true; // default
 		fDeclareFinal= false; // default
+		fDeclareVarType= false; // default
 		fTempName= ""; //$NON-NLS-1$
 
 		fLinkedProposalModel= null;
@@ -398,6 +406,7 @@ public class ExtractTempRefactoring extends Refactoring {
 
 		fReplaceAllOccurrences= true; // default
 		fDeclareFinal= false; // default
+		fDeclareVarType= false; // default
 		fTempName= ""; //$NON-NLS-1$
 
 		fLinkedProposalModel= null;
@@ -528,7 +537,7 @@ public class ExtractTempRefactoring extends Refactoring {
 		final String header= Messages.format(RefactoringCoreMessages.ExtractTempRefactoring_descriptor_description, new String[] { BasicElementLabels.getJavaElementName(fTempName), BasicElementLabels.getJavaCodeString(expression)});
 		final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 		comment.addSetting(Messages.format(RefactoringCoreMessages.ExtractTempRefactoring_name_pattern, BasicElementLabels.getJavaElementName(fTempName)));
-		final BodyDeclaration decl= (BodyDeclaration) ASTNodes.getParent(fSelectedExpression.getAssociatedExpression(), BodyDeclaration.class);
+		final BodyDeclaration decl= ASTNodes.getParent(fSelectedExpression.getAssociatedExpression(), BodyDeclaration.class);
 		if (decl instanceof MethodDeclaration) {
 			final IMethodBinding method= ((MethodDeclaration) decl).resolveBinding();
 			final String label= method != null ? BindingLabelProvider.getBindingLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED) : BasicElementLabels.getJavaElementName('{' + JavaElementLabels.ELLIPSIS_STRING + '}');
@@ -539,12 +548,15 @@ public class ExtractTempRefactoring extends Refactoring {
 			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_replace_occurrences);
 		if (fDeclareFinal)
 			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_declare_final);
+		if (fDeclareVarType) 
+			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_declare_var_type);
 		final ExtractLocalDescriptor descriptor= RefactoringSignatureDescriptorFactory.createExtractLocalDescriptor(project, description, comment.asString(), arguments, RefactoringDescriptor.NONE);
 		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT, JavaRefactoringDescriptorUtil.elementToHandle(project, fCu));
 		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME, fTempName);
-		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, new Integer(fSelectionStart).toString() + " " + new Integer(fSelectionLength).toString()); //$NON-NLS-1$
+		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.valueOf(fSelectionStart).toString() + " " + Integer.valueOf(fSelectionLength).toString()); //$NON-NLS-1$
 		arguments.put(ATTRIBUTE_REPLACE, Boolean.valueOf(fReplaceAllOccurrences).toString());
 		arguments.put(ATTRIBUTE_FINAL, Boolean.valueOf(fDeclareFinal).toString());
+		arguments.put(ATTRIBUTE_TYPE_VAR, Boolean.valueOf(fDeclareVarType).toString());
 		return descriptor;
 	}
 
@@ -794,6 +806,10 @@ public class ExtractTempRefactoring extends Refactoring {
 	public boolean declareFinal() {
 		return fDeclareFinal;
 	}
+	
+	public boolean declareVarType() {
+		return fDeclareVarType;
+	}
 
 	private ASTNode[] findDeepestCommonSuperNodePathForReplacedNodes() throws JavaModelException {
 		ASTNode[] matchNodes= getMatchNodes();
@@ -914,8 +930,10 @@ public class ExtractTempRefactoring extends Refactoring {
 
 		ASTRewrite rewrite= fCURewrite.getASTRewrite();
 		AST ast= rewrite.getAST();
-
-		if (expression instanceof ClassInstanceCreation && (typeBinding == null || typeBinding.getTypeArguments().length == 0)) {
+		
+		if (isVarTypeAllowed() && fDeclareVarType) {
+			resultingType= ast.newSimpleType(ast.newSimpleName("var")); //$NON-NLS-1$
+		} else if (expression instanceof ClassInstanceCreation && (typeBinding == null || typeBinding.getTypeArguments().length == 0)) {
 			resultingType= (Type) rewrite.createCopyTarget(((ClassInstanceCreation) expression).getType());
 		} else if (expression instanceof CastExpression) {
 			resultingType= (Type) rewrite.createCopyTarget(((CastExpression) expression).getType());
@@ -1040,6 +1058,10 @@ public class ExtractTempRefactoring extends Refactoring {
 	public void setDeclareFinal(boolean declareFinal) {
 		fDeclareFinal= declareFinal;
 	}
+	
+	public void setDeclareVarType(boolean declareVarType) {
+		fDeclareVarType= declareVarType;
+	}
 
 	public void setReplaceAllOccurrences(boolean replaceAllOccurrences) {
 		fReplaceAllOccurrences= replaceAllOccurrences;
@@ -1100,6 +1122,25 @@ public class ExtractTempRefactoring extends Refactoring {
 			fDeclareFinal= Boolean.valueOf(declareFinal).booleanValue();
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_FINAL));
+		final String declareVarType= arguments.getAttribute(ATTRIBUTE_TYPE_VAR);
+		if (declareVarType != null) {
+			fDeclareVarType= Boolean.valueOf(declareVarType).booleanValue();
+		} else
+			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_TYPE_VAR));
 		return new RefactoringStatus();
+	}
+	
+	public boolean isVarTypeAllowed() {
+		boolean isAllowed= false;
+		if (fCompilationUnitNode != null) {
+			IJavaElement root= fCompilationUnitNode.getJavaElement();
+			if (root != null) {
+				IJavaProject javaProject= root.getJavaProject();
+				if (javaProject != null && JavaModelUtil.is10OrHigher(javaProject)) {
+					isAllowed= true;
+				}
+			}
+		}
+		return isAllowed;
 	}
 }

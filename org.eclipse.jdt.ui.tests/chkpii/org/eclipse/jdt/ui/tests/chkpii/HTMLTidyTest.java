@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2008, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -106,23 +109,25 @@ public class HTMLTidyTest extends TestCase {
 	private StringMatcher[] getIgnores() throws IOException {
 		ArrayList<StringMatcher> matchers= new ArrayList<>();
 		InputStream is= getClass().getResourceAsStream("ignoreFiles.txt");
-		BufferedReader reader= new BufferedReader(new InputStreamReader(is));
-		while (reader.ready()) {
-			String line= reader.readLine();
-			if (line.length() > 0) {
-				char first= line.charAt(0);
-				if (line.endsWith("/*"))
-					line= line.substring(0, line.length() - 2); // stops at directory during tree traversal
-				if (first != '/' && first != '*') { // relative matches
-					// emulate CHKPII specification:
-					// matchers.add(new StringMatcher(fWorkspacePath + "/" + line, true, false));
+		try (BufferedReader reader= new BufferedReader(new InputStreamReader(is)))
+		{
+			while (reader.ready()) {
+				String line= reader.readLine();
+				if (line.length() > 0) {
+					char first= line.charAt(0);
+					if (line.endsWith("/*"))
+						line= line.substring(0, line.length() - 2); // stops at directory during tree traversal
+					if (first != '/' && first != '*') { // relative matches
+						// emulate CHKPII specification:
+						// matchers.add(new StringMatcher(fWorkspacePath + "/" + line, true, false));
 
-					// emulate actual CHKPII implementation:
-					matchers.add(new StringMatcher("*/" + line, true, false));
+						// emulate actual CHKPII implementation:
+						matchers.add(new StringMatcher("*/" + line, true, false));
+					}
+					matchers.add(new StringMatcher(line, true, false));
 				}
-				matchers.add(new StringMatcher(line, true, false));
 			}
-		}
+		};
 		return matchers.toArray(new StringMatcher[matchers.size()]);
 	}
 

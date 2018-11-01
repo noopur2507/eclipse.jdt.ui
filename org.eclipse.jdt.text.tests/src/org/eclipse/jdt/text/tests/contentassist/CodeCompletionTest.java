@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -19,9 +22,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
+import org.eclipse.jdt.testplugin.NullTestUtils;
 import org.eclipse.jdt.testplugin.TestOptions;
 import org.eclipse.test.OrderedTestSuite;
 
@@ -56,16 +59,15 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.template.java.JavaContextType;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.CompletionProposalCollector;
 import org.eclipse.jdt.ui.text.java.CompletionProposalComparator;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -73,6 +75,7 @@ import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jdt.internal.ui.text.java.AbstractJavaCompletionProposal;
 import org.eclipse.jdt.internal.ui.text.java.FillArgumentNamesCompletionProposalCollector;
 import org.eclipse.jdt.internal.ui.text.java.JavaCompletionProposalComputer;
 import org.eclipse.jdt.internal.ui.text.java.JavaNoTypeCompletionProposalComputer;
@@ -161,7 +164,6 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 	protected void setUp() throws Exception {
 		fJProject1= JavaProjectHelper.createJavaProject("TestProject1", "bin");
 		JavaProjectHelper.addRTJar(fJProject1);
-		JavaProjectHelper.addRequiredProject(fJProject1, ProjectTestSetup.getProject());
 
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE, "1");
@@ -525,43 +527,12 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 		assertEquals(buf.toString(), doc.get());
 	}
 	
-	private void prepareNullAnnotations(IPackageFragmentRoot sourceFolder) throws JavaModelException {
-		Map<String, String> options= fJProject1.getOptions(true);
-		options.put(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, JavaCore.ENABLED);
-		options.put(JavaCore.COMPILER_NONNULL_ANNOTATION_NAME, "annots.NonNull");
-		options.put(JavaCore.COMPILER_NULLABLE_ANNOTATION_NAME, "annots.Nullable");
-		options.put(JavaCore.COMPILER_NONNULL_BY_DEFAULT_ANNOTATION_NAME, "annots.NonNullByDefault");
-		fJProject1.setOptions(options);
-		
-		IPackageFragment pack0= sourceFolder.createPackageFragment("annots", false, null);
-		StringBuffer buf= new StringBuffer();
-		buf.append("package annots;\n");
-		buf.append("\n");
-		buf.append("@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)\n");
-		buf.append("public @interface NonNull {}\n");
-		pack0.createCompilationUnit("NonNull.java", buf.toString(), false, null);
-
-		buf= new StringBuffer();
-		buf.append("package annots;\n");
-		buf.append("\n");
-		buf.append("@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)\n");
-		buf.append("public @interface Nullable {}\n");
-		pack0.createCompilationUnit("Nullable.java", buf.toString(), false, null);
-
-		buf= new StringBuffer();
-		buf.append("package annots;\n");
-		buf.append("\n");
-		buf.append("@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)\n");
-		buf.append("public @interface NonNullByDefault {}\n");
-		pack0.createCompilationUnit("NonNullByDefault.java", buf.toString(), false, null);
-	}
-
 	// same CU
 	// @NonNullByDefault on class
 	// -> don't insert redundant @NonNull
 	public void testAnonymousTypeCompletion7() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		prepareNullAnnotations(sourceFolder);
+		NullTestUtils.prepareNullDeclarationAnnotations(sourceFolder);
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
 		String before= "package test1;\n" +
@@ -613,7 +584,7 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 	// -> don't insert redundant @NonNull
 	public void testAnonymousTypeCompletion8() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		prepareNullAnnotations(sourceFolder);
+		NullTestUtils.prepareNullDeclarationAnnotations(sourceFolder);
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
 		
@@ -674,7 +645,7 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 	// -> don't insert redundant @NonNull
 	public void testAnonymousTypeCompletion9() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		prepareNullAnnotations(sourceFolder);
+		NullTestUtils.prepareNullDeclarationAnnotations(sourceFolder);
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
 		
@@ -731,7 +702,7 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 	// -> don't insert redundant @NonNull
 	public void testAnonymousTypeCompletion10() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		prepareNullAnnotations(sourceFolder);
+		NullTestUtils.prepareNullDeclarationAnnotations(sourceFolder);
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
 		
@@ -927,6 +898,63 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		assertEquals("", buf.toString(), doc.get());
+	}
+
+	public void testAnonymousTypeCompletionBug526615() throws Exception {
+		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+
+		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
+
+		pack1.createCompilationUnit("B.java",
+				"package test1;\n" +
+				"public abstract class B {}",
+				false, null);
+
+		StringBuffer buf= new StringBuffer();
+		buf.append("package test1;\n");
+		buf.append("/**\n");
+		buf.append(" * Lore ipsum dolor sit amet, consectetur adipisici elit,\n");
+		buf.append(" * sed eiusmod tempor incidunt ut labore et dolore magna aliqua.\n");
+		buf.append(" */\n");
+		buf.append("@SuppressWarnings({\"rawtypes\", \"unchecked\"})\n");
+		buf.append("public class A {\n");
+		buf.append("    B run= new B(\n");
+		buf.append("    static class C {}\n");
+		buf.append("}\n");
+		String contents= buf.toString();
+
+		ICompilationUnit cu= pack1.createCompilationUnit("A.java", contents, false, null);
+
+		String str= "B run= new B(";
+
+		int offset= contents.indexOf(str) + str.length();
+
+		CompletionProposalCollector collector= createCollector(cu, offset);
+		collector.setReplacementLength(0);
+
+		codeComplete(cu, offset, collector);
+
+		IJavaCompletionProposal[] proposals= collector.getJavaCompletionProposals();
+
+		assertNumberOf("proposals", proposals.length, 1);
+
+		IDocument doc= new Document(contents);
+
+		proposals[0].apply(doc);
+
+		buf= new StringBuffer();
+		buf.append("package test1;\n");
+		buf.append("/**\n");
+		buf.append(" * Lore ipsum dolor sit amet, consectetur adipisici elit,\n");
+		buf.append(" * sed eiusmod tempor incidunt ut labore et dolore magna aliqua.\n");
+		buf.append(" */\n");
+		buf.append("@SuppressWarnings({\"rawtypes\", \"unchecked\"})\n");
+		buf.append("public class A {\n");
+		buf.append("    B run= new B() {\n");
+		buf.append("    };\n");
+		buf.append("    static class C {}\n");
+		buf.append("}\n");
+		assertEquals(buf.toString(), doc.get());
 	}
 
 	public void testConstructorCompletion() throws Exception {
@@ -2192,7 +2220,7 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 			JavaCompletionProposalComputer computer= new JavaNoTypeCompletionProposalComputer();
 
 			// make sure we get an import rewrite context
-			SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, null);
+			SharedASTProviderCore.getAST(cu, SharedASTProviderCore.WAIT_YES, null);
 
 			List<ICompletionProposal> proposals= computer.computeCompletionProposals(context, null);
 
@@ -2270,7 +2298,7 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 			JavaCompletionProposalComputer computer= new JavaNoTypeCompletionProposalComputer();
 
 			// make sure we get an import rewrite context
-			SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, null);
+			SharedASTProviderCore.getAST(cu, SharedASTProviderCore.WAIT_YES, null);
 
 			List<ICompletionProposal> proposals= computer.computeCompletionProposals(context, null);
 
@@ -2423,6 +2451,77 @@ public class CodeCompletionTest extends AbstractCompletionTest {
 			}
 		}
 		assertTrue(finallyTemplateFound);
+	}
+
+	public void testCompletionInPackageInfo() throws Exception {
+		IPreferenceStore store= PreferenceConstants.getPreferenceStore();
+		store.setValue(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, "annots.DefaultLocation.*");
+		try {
+			IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+			IPackageFragment pack0= sourceFolder.createPackageFragment("annots", false, null);
+
+			StringBuilder buf= new StringBuilder();
+			buf.append("package annots;\n");
+			buf.append("\n");
+			buf.append("public enum DefaultLocation { PARAMETER, RETURN_TYPE, FIELD, TYPE_BOUND, TYPE_ARGUMENT, ARRAY_CONTENTS, TYPE_PARAMETER }\n");
+			pack0.createCompilationUnit("DefaultLocation.java", buf.toString(), false, null);
+		
+			buf= new StringBuilder();
+			buf.append("package annots;\n");
+			buf.append("\n");
+			buf.append("import java.lang.annotation.*;\n");
+			buf.append("import static annots.DefaultLocation.*;\n");
+			buf.append("\n");
+			buf.append("@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)\n");
+			buf.append("@Target({ ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.LOCAL_VARIABLE })\n");
+			buf.append("public @interface NonNullByDefault { DefaultLocation[] value() default {PARAMETER, RETURN_TYPE, FIELD, TYPE_BOUND, TYPE_ARGUMENT}; }\n");
+			pack0.createCompilationUnit("NonNullByDefault.java", buf.toString(), false, null);
+
+			IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
+			buf= new StringBuilder();
+			buf.append("@annots.NonNullByDefault({ARRAY})\n");
+			buf.append("package test1;\n");
+			String contents= buf.toString();
+
+			ICompilationUnit cu= pack1.createCompilationUnit("package-info.java", contents, false, null);
+
+			int offset= contents.indexOf("{ARRAY}") + 6;
+
+			JavaCompletionProposalComputer computer= new JavaNoTypeCompletionProposalComputer();
+
+			// make sure we get an import rewrite context
+			SharedASTProviderCore.getAST(cu, SharedASTProviderCore.WAIT_YES, null);
+
+			List<ICompletionProposal> proposals= computer.computeCompletionProposals(createContext(offset, cu), null);
+
+
+			ICompletionProposal proposal= null;
+
+			for (int i= 0; i < proposals.size(); i++) {
+				ICompletionProposal curr= proposals.get(i);
+				if (curr instanceof AbstractJavaCompletionProposal) {
+					AbstractJavaCompletionProposal javaProposal= (AbstractJavaCompletionProposal) curr;
+					if (javaProposal.getReplacementString().equals("ARRAY_CONTENTS")) {
+						proposal= curr;
+						break;
+					}
+				}
+			}
+			assertNotNull("proposal not found", proposal);
+
+			IDocument doc= new Document(contents);
+			proposal.apply(doc);
+
+			buf= new StringBuilder();
+			buf.append("@annots.NonNullByDefault({ARRAY_CONTENTS})\n");
+			buf.append("package test1;\n");
+			buf.append("\n");
+			buf.append("import static annots.DefaultLocation.ARRAY_CONTENTS;\n");
+			String expected= buf.toString();
+			assertEquals(expected, doc.get());
+		} finally {
+			store.setToDefault(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS);
+		}
 	}
 
 	private static void assertNumberOf(String name, int is, int expected) {

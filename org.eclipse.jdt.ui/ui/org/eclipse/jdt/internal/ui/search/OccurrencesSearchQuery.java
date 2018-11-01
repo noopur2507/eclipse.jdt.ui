@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -107,7 +110,7 @@ public class OccurrencesSearchQuery implements ISearchQuery {
 		}
 		JavaElementLine lineElement= null;
 		try {
-			Integer key= new Integer(lineNumber);
+			Integer key= Integer.valueOf(lineNumber);
 			lineElement= lineToGroup.get(key);
 			if (lineElement == null) {
 				int lineStartOffset= astRoot.getPosition(lineNumber, 0);
@@ -134,7 +137,7 @@ public class OccurrencesSearchQuery implements ISearchQuery {
 		if (nMatches == 1) {
 			return Messages.format(fSingularLabel, new Object[] { fName, BasicElementLabels.getFileName(fElement) });
 		} else {
-			return Messages.format(fPluralLabel, new Object[] { fName, new Integer(nMatches), BasicElementLabels.getFileName(fElement) });
+			return Messages.format(fPluralLabel, new Object[] { fName, Integer.valueOf(nMatches), BasicElementLabels.getFileName(fElement) });
 		}
 	}
 

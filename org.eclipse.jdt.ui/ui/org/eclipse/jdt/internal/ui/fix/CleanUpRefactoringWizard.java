@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -200,7 +203,7 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 
 			@Override
 			protected String getSelectionCountMessage(int selectionCount, int size) {
-				return Messages.format(MultiFixMessages.CleanUpRefactoringWizard_XofYCleanUpsSelected_message, new Object[] {new Integer(selectionCount), new Integer(size)});
+				return Messages.format(MultiFixMessages.CleanUpRefactoringWizard_XofYCleanUpsSelected_message, new Object[] {Integer.valueOf(selectionCount), Integer.valueOf(size)});
 			}
 
 			@Override
@@ -263,9 +266,9 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 			if (cleanUpTargetsSize == 1) {
 				setMessage(MultiFixMessages.CleanUpRefactoringWizard_CleaningUp11_Title);
 			} else if (projects.length == 1) {
-				setMessage(Messages.format(MultiFixMessages.CleanUpRefactoringWizard_CleaningUpN1_Title, new Integer(cleanUpTargetsSize)));
+				setMessage(Messages.format(MultiFixMessages.CleanUpRefactoringWizard_CleaningUpN1_Title, Integer.valueOf(cleanUpTargetsSize)));
 			} else {
-				setMessage(Messages.format(MultiFixMessages.CleanUpRefactoringWizard_CleaningUpNN_Title, new Object[] {new Integer(cleanUpTargetsSize), new Integer(projects.length)}));
+				setMessage(Messages.format(MultiFixMessages.CleanUpRefactoringWizard_CleaningUpNN_Title, new Object[] {Integer.valueOf(cleanUpTargetsSize), Integer.valueOf(projects.length)}));
 			}
         }
 
@@ -412,7 +415,7 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 		}
 
         private void showCustomSettings(BulletListBlock bulletListBlock) {
-			StringBuffer buf= new StringBuffer();
+        	StringBuilder buf= new StringBuilder();
 
 			final ICleanUp[] cleanUps= JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps();
 			CleanUpOptions options= new MapCleanUpOptions(fCustomSettings);

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -48,7 +51,6 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -57,23 +59,25 @@ import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
-import org.eclipse.jdt.internal.corext.dom.ASTNodes;
-import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
+import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
+import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.dialogs.OverrideMethodDialog;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 
 public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal implements ICompletionProposalExtension4 {
@@ -101,7 +105,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 	}
 
 	private String createDummyType(String name) throws JavaModelException {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 
 		buffer.append("abstract class "); //$NON-NLS-1$
 		buffer.append(name);
@@ -120,7 +124,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 		return buffer.toString();
 	}
 
-	private String createNewBody(ImportRewrite importRewrite) throws CoreException {
+	private String createNewBody(ImportRewrite importRewrite, int offset) throws CoreException {
 		if (importRewrite == null)
 			return null;
 
@@ -136,7 +140,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			// creates a type that extends the super type
 			String dummyClassContent= createDummyType(name);
 
-			StringBuffer workingCopyContents= new StringBuffer(fCompilationUnit.getSource());
+			StringBuilder workingCopyContents= new StringBuilder(fCompilationUnit.getSource());
 			int insertPosition;
 			if (sameUnit) {
 				insertPosition= range.getOffset() + range.getLength();
@@ -148,12 +152,18 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 				// add an extra block: helps the AST to recover
 				workingCopyContents.insert(insertPosition, '{' + dummyClassContent + '}');
 				insertPosition++;
+				if(offset > insertPosition) {
+					offset += dummyClassContent.length()+2;
+				}
 			} else {
 				/*
 				 * The two empty lines are added because the trackedDeclaration uses the covered range
 				 * and hence would also included comments that directly follow the dummy class.
 				 */
 				workingCopyContents.insert(insertPosition, dummyClassContent + "\n\n"); //$NON-NLS-1$
+				if(offset > insertPosition) {
+					offset += dummyClassContent.length()+2;
+				}
 			}
 
 			workingCopy.getBuffer().setContents(workingCopyContents.toString());
@@ -164,6 +174,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			parser.setSource(workingCopy);
 
 			CompilationUnit astRoot= (CompilationUnit) parser.createAST(new NullProgressMonitor());
+			ImportRewriteContext context=new ContextSensitiveImportRewriteContext(astRoot, offset, importRewrite);
 			ASTNode newType= NodeFinder.perform(astRoot, insertPosition, dummyClassContent.length());
 			if (!(newType instanceof AbstractTypeDeclaration))
 				return null;
@@ -227,10 +238,11 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 				}
 				methodsToOverride= result.toArray(new IMethodBinding[result.size()]);
 			}
-			IBinding contextBinding= null; // used to find @NonNullByDefault effective at that current context
+			ASTNode focusNode; // used to find @NonNullByDefault effective
 			if (fCompilationUnit.getJavaProject().getOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, true).equals(JavaCore.ENABLED)) {
-				ASTNode focusNode= NodeFinder.perform(astRoot, getReplacementOffset()+dummyClassContent.length(), 0);
-				contextBinding= ASTNodes.getEnclosingDeclaration(focusNode);
+				focusNode= NodeFinder.perform(astRoot, getReplacementOffset()+dummyClassContent.length(), 0);
+			} else {
+				focusNode= null;
 			}
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
 			ITrackedNodePosition trackedDeclaration= rewrite.track(declaration);
@@ -238,7 +250,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			ListRewrite rewriter= rewrite.getListRewrite(declaration, declaration.getBodyDeclarationsProperty());
 			for (int i= 0; i < methodsToOverride.length; i++) {
 				IMethodBinding curr= methodsToOverride[i];
-				MethodDeclaration stub= StubUtility2.createImplementationStub(workingCopy, rewrite, importRewrite, null, curr, dummyTypeBinding, settings, dummyTypeBinding.isInterface(), contextBinding);
+				MethodDeclaration stub= StubUtility2.createImplementationStub(workingCopy, rewrite, importRewrite, context, curr, dummyTypeBinding, settings, dummyTypeBinding.isInterface(), focusNode);
 				rewriter.insertFirst(stub, null);
 			}
 
@@ -385,7 +397,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 	@Override
 	protected boolean updateReplacementString(IDocument document, char trigger, int offset, ImportRewrite impRewrite) throws CoreException, BadLocationException {
 		fImportRewrite= impRewrite;
-		String newBody= createNewBody(impRewrite);
+		String newBody= createNewBody(impRewrite, offset);
 		if (newBody == null)
 			return false;
 
@@ -395,7 +407,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 		boolean replacementStringEndsWithParentheses= isAnonymousConstructorInvoc || getReplacementString().endsWith(")"); //$NON-NLS-1$
 
 		// construct replacement text: an expression to be formatted
-		StringBuffer buf= new StringBuffer("new A("); //$NON-NLS-1$
+		StringBuilder buf= new StringBuilder("new A("); //$NON-NLS-1$
 		if (!replacementStringEndsWithParentheses || isAnonymousConstructorInvoc)
 			buf.append(')');
 		buf.append(newBody);
@@ -406,7 +418,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 		IRegion lineInfo= document.getLineInformationOfOffset(getReplacementOffset());
 		int indent= Strings.computeIndentUnits(document.get(lineInfo.getOffset(), lineInfo.getLength()), project);
 
-		Map<String, String> options= project != null ? project.getOptions(true) : JavaCore.getOptions();
+		Map<String, String> options= project != null ? FormatterProfileManager.getProjectSettings(project) : JavaCore.getOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_INDENT_EMPTY_LINES, DefaultCodeFormatterConstants.TRUE);
 		String replacementString= CodeFormatterUtil.format(CodeFormatter.K_EXPRESSION, buf.toString(), 0, lineDelim, options);
 

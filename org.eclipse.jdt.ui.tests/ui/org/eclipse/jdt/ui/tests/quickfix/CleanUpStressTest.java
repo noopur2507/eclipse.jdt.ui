@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -1066,9 +1069,8 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append(" * An interface to define how a test suite should be loaded.\n");
         buf.append(" */\n");
         buf.append("public interface TestSuiteLoader {\n");
-        buf.append("    abstract public Class load(String suiteClassName)\n");
-        buf.append("            throws ClassNotFoundException;\n");
-        buf.append("    abstract public Class reload(Class aClass) throws ClassNotFoundException;\n");
+        buf.append("    Class load(String suiteClassName) throws ClassNotFoundException;\n");
+        buf.append("    Class reload(Class aClass) throws ClassNotFoundException;\n");
         buf.append("}");
         fExpectedChangesAllTests.put("junit.runner.TestSuiteLoader.java", buf.toString());
         buf= new StringBuffer();
@@ -1455,11 +1457,11 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Counts the number of test cases that will be run by this test.\n");
         buf.append("     */\n");
-        buf.append("    public abstract int countTestCases();\n");
+        buf.append("    int countTestCases();\n");
         buf.append("    /**\n");
         buf.append("     * Runs a test and collects its result in a TestResult instance.\n");
         buf.append("     */\n");
-        buf.append("    public abstract void run(TestResult result);\n");
+        buf.append("    void run(TestResult result);\n");
         buf.append("}");
         fExpectedChangesAllTests.put("junit.framework.Test.java", buf.toString());
         buf= new StringBuffer();
@@ -2238,8 +2240,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Sets the name of the suite.\n");
         buf.append("     * \n");
-        buf.append("     * @param name\n");
-        buf.append("     *            The name to set\n");
+        buf.append("     * @param name The name to set\n");
         buf.append("     */\n");
         buf.append("    public void setName(final String name) {\n");
         buf.append("        this.fName = name;\n");
@@ -2773,19 +2774,19 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * An error occurred.\n");
         buf.append("     */\n");
-        buf.append("    public void addError(Test test, Throwable t);\n");
+        buf.append("    void addError(Test test, Throwable t);\n");
         buf.append("    /**\n");
         buf.append("     * A failure occurred.\n");
         buf.append("     */\n");
-        buf.append("    public void addFailure(Test test, AssertionFailedError t);\n");
+        buf.append("    void addFailure(Test test, AssertionFailedError t);\n");
         buf.append("    /**\n");
         buf.append("     * A test ended.\n");
         buf.append("     */\n");
-        buf.append("    public void endTest(Test test);\n");
+        buf.append("    void endTest(Test test);\n");
         buf.append("    /**\n");
         buf.append("     * A test started.\n");
         buf.append("     */\n");
-        buf.append("    public void startTest(Test test);\n");
+        buf.append("    void startTest(Test test);\n");
         buf.append("}");
         fExpectedChangesAllTests.put("junit.framework.TestListener.java", buf.toString());
         buf= new StringBuffer();
@@ -2869,7 +2870,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Run the the following method protected.\n");
         buf.append("     */\n");
-        buf.append("    public abstract void protect() throws Throwable;\n");
+        buf.append("    void protect() throws Throwable;\n");
         buf.append("}");
         fExpectedChangesAllTests.put("junit.framework.Protectable.java", buf.toString());
         buf= new StringBuffer();
@@ -2883,37 +2884,37 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Adds a money to this money.\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney add(IMoney m);\n");
+        buf.append("    IMoney add(IMoney m);\n");
         buf.append("    /**\n");
         buf.append("     * Adds a simple Money to this money. This is a helper method for\n");
         buf.append("     * implementing double dispatch\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney addMoney(Money m);\n");
+        buf.append("    IMoney addMoney(Money m);\n");
         buf.append("    /**\n");
         buf.append("     * Adds a MoneyBag to this money. This is a helper method for implementing\n");
         buf.append("     * double dispatch\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney addMoneyBag(MoneyBag s);\n");
+        buf.append("    IMoney addMoneyBag(MoneyBag s);\n");
         buf.append("    /**\n");
         buf.append("     * Append this to a MoneyBag m.\n");
         buf.append("     */\n");
-        buf.append("    public abstract void appendTo(MoneyBag m);\n");
+        buf.append("    void appendTo(MoneyBag m);\n");
         buf.append("    /**\n");
         buf.append("     * Tests whether this money is zero\n");
         buf.append("     */\n");
-        buf.append("    public abstract boolean isZero();\n");
+        buf.append("    boolean isZero();\n");
         buf.append("    /**\n");
         buf.append("     * Multiplies a money by the given factor.\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney multiply(int factor);\n");
+        buf.append("    IMoney multiply(int factor);\n");
         buf.append("    /**\n");
         buf.append("     * Negates this money.\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney negate();\n");
+        buf.append("    IMoney negate();\n");
         buf.append("    /**\n");
         buf.append("     * Subtracts a money from this money.\n");
         buf.append("     */\n");
-        buf.append("    public abstract IMoney subtract(IMoney m);\n");
+        buf.append("    IMoney subtract(IMoney m);\n");
         buf.append("}");
         fExpectedChangesAllTests.put("junit.samples.money.IMoney.java", buf.toString());
         buf= new StringBuffer();
@@ -3162,15 +3163,15 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append(" */\n");
         buf.append("public interface TestRunListener {\n");
         buf.append("    /* test status constants */\n");
-        buf.append("    public static final int STATUS_ERROR = 1;\n");
-        buf.append("    public static final int STATUS_FAILURE = 2;\n");
+        buf.append("    int STATUS_ERROR = 1;\n");
+        buf.append("    int STATUS_FAILURE = 2;\n");
         buf.append("\n");
-        buf.append("    public void testEnded(String testName);\n");
-        buf.append("    public void testFailed(int status, String testName, String trace);\n");
-        buf.append("    public void testRunEnded(long elapsedTime);\n");
-        buf.append("    public void testRunStarted(String testSuiteName, int testCount);\n");
-        buf.append("    public void testRunStopped(long elapsedTime);\n");
-        buf.append("    public void testStarted(String testName);\n");
+        buf.append("    void testEnded(String testName);\n");
+        buf.append("    void testFailed(int status, String testName, String trace);\n");
+        buf.append("    void testRunEnded(long elapsedTime);\n");
+        buf.append("    void testRunStarted(String testSuiteName, int testCount);\n");
+        buf.append("    void testRunStopped(long elapsedTime);\n");
+        buf.append("    void testStarted(String testName);\n");
         buf.append("}\n");
         buf.append("");
         fExpectedChangesAllTests.put("junit.runner.TestRunListener.java", buf.toString());
@@ -3790,12 +3791,9 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Constructs a comparison failure.\n");
         buf.append("     * \n");
-        buf.append("     * @param message\n");
-        buf.append("     *            the identifying message or null\n");
-        buf.append("     * @param expected\n");
-        buf.append("     *            the expected string value\n");
-        buf.append("     * @param actual\n");
-        buf.append("     *            the actual string value\n");
+        buf.append("     * @param message  the identifying message or null\n");
+        buf.append("     * @param expected the expected string value\n");
+        buf.append("     * @param actual   the actual string value\n");
         buf.append("     */\n");
         buf.append("    public ComparisonFailure(final String message, final String expected,\n");
         buf.append("            final String actual) {\n");
@@ -4344,8 +4342,8 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append(" * of the JDK 1.1.7 compatibility.\n");
         buf.append(" */\n");
         buf.append("public class Sorter {\n");
-        buf.append("    public static interface Swapper {\n");
-        buf.append("        public void swap(Vector values, int left, int right);\n");
+        buf.append("    public interface Swapper {\n");
+        buf.append("        void swap(Vector values, int left, int right);\n");
         buf.append("    }\n");
         buf.append("\n");
         buf.append("    public static void sortStrings(final Vector values, int left, int right,\n");
@@ -4527,7 +4525,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Returns an enumeration of Strings with qualified class names\n");
         buf.append("     */\n");
-        buf.append("    public Enumeration collectTests();\n");
+        buf.append("    Enumeration collectTests();\n");
         buf.append("}\n");
         buf.append("");
         fExpectedChangesAllTests.put("junit.runner.TestCollector.java", buf.toString());
@@ -4847,8 +4845,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Runs the bare test sequence.\n");
         buf.append("     * \n");
-        buf.append("     * @exception Throwable\n");
-        buf.append("     *                if any exception is thrown\n");
+        buf.append("     * @exception Throwable if any exception is thrown\n");
         buf.append("     */\n");
         buf.append("    public void runBare() throws Throwable {\n");
         buf.append("        this.setUp();\n");
@@ -4861,8 +4858,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Override to run the test and assert its state.\n");
         buf.append("     * \n");
-        buf.append("     * @exception Throwable\n");
-        buf.append("     *                if any exception is thrown\n");
+        buf.append("     * @exception Throwable if any exception is thrown\n");
         buf.append("     */\n");
         buf.append("    protected void runTest() throws Throwable {\n");
         buf.append("        Assert.assertNotNull(this.fName);\n");
@@ -4893,8 +4889,7 @@ public class CleanUpStressTest extends CleanUpTestCase {
         buf.append("    /**\n");
         buf.append("     * Sets the name of a TestCase\n");
         buf.append("     * \n");
-        buf.append("     * @param name\n");
-        buf.append("     *            The name to set\n");
+        buf.append("     * @param name The name to set\n");
         buf.append("     */\n");
         buf.append("    public void setName(final String name) {\n");
         buf.append("        this.fName = name;\n");
@@ -5306,6 +5301,9 @@ public class CleanUpStressTest extends CleanUpTestCase {
 
 		enable(CleanUpConstants.SORT_MEMBERS);
 		enable(CleanUpConstants.SORT_MEMBERS_ALL);
+		
+		enable(CleanUpConstants.REMOVE_REDUNDANT_MODIFIERS);
+		enable(CleanUpConstants.REMOVE_REDUNDANT_SEMICOLONS);
 
 		ICompilationUnit[] units= cus.toArray(new ICompilationUnit[cus.size()]);
 		performRefactoring(units);

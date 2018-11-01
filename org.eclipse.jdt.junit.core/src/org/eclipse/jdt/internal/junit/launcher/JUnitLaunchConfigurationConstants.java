@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -38,6 +41,14 @@ public class JUnitLaunchConfigurationConstants {
 
 
 	public static final String ATTR_PORT= JUnitCorePlugin.PLUGIN_ID+".PORT"; //$NON-NLS-1$
+
+	public static final String ATTR_DONT_ADD_MISSING_JUNIT5_DEPENDENCY= JUnitCorePlugin.PLUGIN_ID + ".DONT_ADD_MISSING_JUNIT5_DEPENDENCY"; //$NON-NLS-1$
+
+	/**
+	 * If the element is a test class annotated with <code>@RunWith(JUnitPlatform.class)</code>,
+	 * this attribute is set to true.
+	 */
+	public static final String ATTR_RUN_WITH_JUNIT_PLATFORM_ANNOTATION= JUnitCorePlugin.PLUGIN_ID + ".IS_RUN_WITH_JUNIT_PLATFORM"; //$NON-NLS-1$
 
 	/**
 	 * The test method name (followed by a comma-separated list of fully qualified parameter type

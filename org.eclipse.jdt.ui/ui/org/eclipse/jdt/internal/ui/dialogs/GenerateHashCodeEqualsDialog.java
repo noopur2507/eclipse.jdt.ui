@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Pierre-Yves B. <pyvesdev@gmail.com> - Generation of equals and hashcode with java 7 Objects.equals and Objects.hashcode - https://bugs.eclipse.org/424214
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.dialogs;
 
@@ -20,16 +24,19 @@ import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.IStatus;
 
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ISelectionStatusValidator;
 
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
@@ -118,15 +125,19 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 
 	private static final String SETTINGS_INSTANCEOF= "InstanceOf"; //$NON-NLS-1$
 	private static final String SETTINGS_BLOCKS= "Blocks"; //$NON-NLS-1$
+	private static final String SETTINGS_J7_HASH_EQUALS= "Objects.equals & Objects.hash"; //$NON-NLS-1$
 
 	private boolean fUseInstanceOf;
 	private boolean fUseBlocks;
+	private boolean fUseJ7HashEquals;
+	private IJavaProject fProject;
 
 	public GenerateHashCodeEqualsDialog(Shell shell, CompilationUnitEditor editor, IType type, IVariableBinding[] allFields, IVariableBinding[] selectedFields) throws JavaModelException {
 		super(shell, new BindingLabelProvider(), new GenerateHashCodeEqualsContentProvider(allFields), editor, type, false);
+		this.fProject = type.getJavaProject();
 		setEmptyListMessage(JavaUIMessages.GenerateHashCodeEqualsDialog_no_entries);
 
-		setInitialSelections(selectedFields);
+		setInitialSelections((Object[]) selectedFields);
 
 		setTitle(JavaUIMessages.GenerateHashCodeEqualsDialog_dialog_title);
 		setMessage(JavaUIMessages.GenerateHashCodeEqualsDialog_select_fields_to_include);
@@ -136,12 +147,14 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 
 		fUseInstanceOf= asBoolean(getDialogSettings().get(SETTINGS_INSTANCEOF), false);
 		fUseBlocks= asBoolean(getDialogSettings().get(SETTINGS_BLOCKS), false);
+		fUseJ7HashEquals= asBoolean(getDialogSettings().get(SETTINGS_J7_HASH_EQUALS), false);
 	}
 
 	@Override
 	public boolean close() {
 		getDialogSettings().put(SETTINGS_INSTANCEOF, fUseInstanceOf);
 		getDialogSettings().put(SETTINGS_BLOCKS, fUseBlocks);
+		getDialogSettings().put(SETTINGS_J7_HASH_EQUALS, fUseJ7HashEquals);
 		return super.close();
 	}
 
@@ -181,6 +194,23 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 			}
 		});
 		button.setSelection(isUseBlocks());
+
+		button= new Button(composite, SWT.CHECK);
+		button.setText(JavaUIMessages.GenerateHashCodeEqualsDialog_j7hashequals_button);
+		if (JavaModelUtil.is17OrHigher(this.fProject)) {
+			button.addSelectionListener(new SelectionAdapter() {
+
+				@Override
+				public void widgetSelected(SelectionEvent event) {
+					setUseJ7HashEquals((((Button) event.widget).getSelection()));
+				}
+			});
+			button.setSelection(isUseJ7HashEquals());
+		} else {
+			button.setEnabled(false);
+			button.setSelection(false);
+			setUseJ7HashEquals(false);
+		}
 		data= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		data.horizontalSpan= 2;
 		button.setLayoutData(data);
@@ -202,5 +232,19 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 
 	public void setUseBlocks(boolean useBlocks) {
 		fUseBlocks= useBlocks;
+	}
+
+	public boolean isUseJ7HashEquals() {
+		return fUseJ7HashEquals;
+	}
+
+	public void setUseJ7HashEquals(boolean useJ7HashEquals) {
+		fUseJ7HashEquals= useJ7HashEquals;
+	}
+
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.OK_ID, JavaUIMessages.GenerateHashCodeEqualsDialog_generate, true);
+		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
 }

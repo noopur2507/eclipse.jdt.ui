@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -86,11 +89,11 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchPattern;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -357,7 +360,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 			Name	ctorOwnerName= (Name) NodeFinder.perform(fFactoryCU, ctorOwningType.getNameRange());
 
-			fCtorOwningClass= (AbstractTypeDeclaration) ASTNodes.getParent(ctorOwnerName, AbstractTypeDeclaration.class);
+			fCtorOwningClass= ASTNodes.getParent(ctorOwnerName, AbstractTypeDeclaration.class);
 			fFactoryOwningClass= fCtorOwningClass;
 
 			pm.worked(1);
@@ -426,7 +429,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			return SearchPattern.createPattern(ctor, IJavaSearchConstants.REFERENCES, SearchUtils.GENERICS_AGNOSTIC_MATCH_RULE);
 		else { // perhaps a synthetic method? (but apparently not always... hmmm...)
 			// Can't find an IMethod for this method, so build a string pattern instead
-			StringBuffer	buf= new StringBuffer();
+			StringBuilder	buf= new StringBuilder();
 
 			buf.append(methodBinding.getDeclaringClass().getQualifiedName())
 			   .append("(");//$NON-NLS-1$
@@ -575,7 +578,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 		int			numArgs= fCtorBinding.getParameterTypes().length;
 		String[]	names= new String[numArgs];
 
-		CompilationUnit		ctorUnit= (CompilationUnit) ASTNodes.getParent(fCtorOwningClass, CompilationUnit.class);
+		CompilationUnit		ctorUnit= ASTNodes.getParent(fCtorOwningClass, CompilationUnit.class);
 		MethodDeclaration	ctorDecl= (MethodDeclaration) ctorUnit.findDeclaringNode(fCtorBinding.getKey());
 
 		if (ctorDecl != null) {
@@ -640,7 +643,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			for (int i= 0; i < unimplementedMethods.length; i++) {
 				IMethodBinding unImplementedMethod= unimplementedMethods[i];
 				MethodDeclaration newMethodDecl= StubUtility2.createImplementationStub(fCUHandle, unitRewriter, fImportRewriter, context,
-						unImplementedMethod, unImplementedMethod.getDeclaringClass(), settings, false, fFactoryOwningClass.resolveBinding());
+						unImplementedMethod, unImplementedMethod.getDeclaringClass(), settings, false, new NodeFinder(fFactoryCU, decl.getStartPosition(), 0).getCoveringNode());
 				decl.bodyDeclarations().add(newMethodDecl);
 			}
 			newCtorCall.setAnonymousClassDeclaration(decl);
@@ -858,7 +861,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 		// Need to use a qualified name for the factory method if we're not
 		// in the context of the class holding the factory.
-		AbstractTypeDeclaration	callOwner= (AbstractTypeDeclaration) ASTNodes.getParent(ctorCall, AbstractTypeDeclaration.class);
+		AbstractTypeDeclaration	callOwner= ASTNodes.getParent(ctorCall, AbstractTypeDeclaration.class);
 		ITypeBinding callOwnerBinding= callOwner.resolveBinding();
 
 		if (callOwnerBinding == null || !Bindings.equals(callOwner.resolveBinding(), fFactoryOwningClass.resolveBinding())) {
@@ -1179,7 +1182,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT, JavaRefactoringDescriptorUtil.elementToHandle(project, fCUHandle));
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME, fNewMethodName);
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + 1, JavaRefactoringDescriptorUtil.elementToHandle(project, binding.getJavaElement()));
-			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, new Integer(fSelectionStart).toString() + " " + new Integer(fSelectionLength).toString()); //$NON-NLS-1$
+			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.valueOf(fSelectionStart).toString() + " " + Integer.valueOf(fSelectionLength).toString()); //$NON-NLS-1$
 			arguments.put(ATTRIBUTE_PROTECT, Boolean.valueOf(fProtectConstructor).toString());
 			final DynamicValidationStateChange result= new DynamicValidationRefactoringChange(descriptor, RefactoringCoreMessages.IntroduceFactory_name);
 			boolean hitInFactoryClass= false;
@@ -1321,7 +1324,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 					fFactoryCU= getASTFor(factoryUnitHandle);
 					fFactoryUnitHandle= factoryUnitHandle;
 				}
-				fFactoryOwningClass= (AbstractTypeDeclaration) ASTNodes.getParent(NodeFinder.perform(fFactoryCU, factoryType.getNameRange()), AbstractTypeDeclaration.class);
+				fFactoryOwningClass= ASTNodes.getParent(NodeFinder.perform(fFactoryCU, factoryType.getNameRange()), AbstractTypeDeclaration.class);
 
 				String factoryPkg= factoryType.getPackageFragment().getElementName();
 				String ctorPkg= fCtorOwningClass.resolveBinding().getPackage().getName();

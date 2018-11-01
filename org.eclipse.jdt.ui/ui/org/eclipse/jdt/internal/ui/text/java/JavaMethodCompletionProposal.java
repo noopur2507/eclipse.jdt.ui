@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -33,6 +36,7 @@ import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 
 public class JavaMethodCompletionProposal extends LazyJavaCompletionProposal {
@@ -224,7 +228,7 @@ public class JavaMethodCompletionProposal extends LazyJavaCompletionProposal {
 		if (fProposal.getKind() == CompletionProposal.METHOD_REF_WITH_CASTED_RECEIVER) {
 			String coreCompletion= String.valueOf(fProposal.getCompletion());
 			String lineDelimiter= TextUtilities.getDefaultLineDelimiter(getTextViewer().getDocument());
-			String replacement= CodeFormatterUtil.format(CodeFormatter.K_EXPRESSION, coreCompletion, 0, lineDelimiter, fInvocationContext.getProject());
+			String replacement= CodeFormatterUtil.format(CodeFormatter.K_EXPRESSION, coreCompletion, 0, lineDelimiter, FormatterProfileManager.getProjectSettings(fInvocationContext.getProject()));
 			buffer.append(replacement.substring(0, replacement.lastIndexOf('.') + 1));
 		}
 

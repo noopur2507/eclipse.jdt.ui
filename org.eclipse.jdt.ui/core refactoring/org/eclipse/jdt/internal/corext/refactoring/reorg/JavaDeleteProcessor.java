@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,11 +15,13 @@ package org.eclipse.jdt.internal.corext.refactoring.reorg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +67,7 @@ import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.DeleteDescriptor;
 import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.GetterSetterUtil;
 import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComment;
@@ -82,7 +88,6 @@ import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.refactoring.IRefactoringProcessorIds;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public final class JavaDeleteProcessor extends DeleteProcessor {
 
@@ -261,7 +266,7 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 			fDeleteModifications= new DeleteModifications();
 			fDeleteModifications.delete(fResources);
 			fDeleteModifications.delete(fJavaElements);
-			List<IResource> packageDeletes= fDeleteModifications.postProcess();
+			List<IResource> packageDeletes= fDeleteModifications.postProcess(pm);
 
 			TextChangeManager manager= new TextChangeManager();
 			fDeleteChange= DeleteChangeCreator.createDeleteChange(manager, fResources, fJavaElements, getProcessorName(), packageDeletes);
@@ -415,7 +420,10 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 		}
 
 		// new package list in the right sequence
-		final List<IPackageFragment>allFragmentsToDelete= new ArrayList<>();
+		final Set<IPackageFragment>allFragmentsToDelete= new LinkedHashSet<>();
+
+		IsCompletelySelected isCompletelySelected = new IsCompletelySelected(initialPackagesToDelete);
+		Set<IPackageFragment> packagesToDelete = new HashSet<>(initialPackagesToDelete); // or use binary search, since the array is sorted?
 
 		for (Iterator<IPackageFragment> outerIter= initialPackagesToDelete.iterator(); outerIter.hasNext();) {
 			final IPackageFragment currentPackageFragment= outerIter.next();
@@ -423,13 +431,14 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 			// The package will at least be cleared
 			allFragmentsToDelete.add(currentPackageFragment);
 
-			if (canRemoveCompletely(currentPackageFragment, initialPackagesToDelete)) {
+			if (isCompletelySelected.test(currentPackageFragment)) {
 
 				final IPackageFragment parent= JavaElementUtil.getParentSubpackage(currentPackageFragment);
-				if (parent != null && !initialPackagesToDelete.contains(parent)) {
+
+				if (parent != null && !packagesToDelete.contains(parent)) {
 
 					final List<IPackageFragment>emptyParents= new ArrayList<>();
-					addDeletableParentPackages(parent, initialPackagesToDelete, deletedChildren, emptyParents);
+					addDeletableParentPackages(parent, packagesToDelete, deletedChildren, emptyParents);
 
 					// Add parents in the right sequence (inner to outer)
 					allFragmentsToDelete.addAll(emptyParents);
@@ -464,22 +473,6 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 	}
 
 	/**
-	 * @param pack the package to delete
-	 * @param packagesToDelete all packages to delete
-	 * @return true if this initially selected package is really deletable
-	 * (if it has non-selected subpackages, it may only be cleared).
-	 * @throws JavaModelException should not happen
-	 */
-	private boolean canRemoveCompletely(IPackageFragment pack, List<IPackageFragment> packagesToDelete) throws JavaModelException {
-		final IPackageFragment[] subPackages= JavaElementUtil.getPackageAndSubpackages(pack);
-		for (int i= 0; i < subPackages.length; i++) {
-			if (!subPackages[i].equals(pack) && !packagesToDelete.contains(subPackages[i]))
-				return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Adds deletable parent packages of the fragment "frag" to the list
 	 * "deletableParentPackages"; also adds the resources of those packages to the
 	 * set "resourcesToDelete".
@@ -489,7 +482,7 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 	 * @param deletableParentPackages result ro add deletable parent packages
 	 * @throws CoreException should not happen
 	 */
-	private void addDeletableParentPackages(IPackageFragment frag, List<IPackageFragment> initialPackagesToDelete, Set<IResource> resourcesToDelete, List<IPackageFragment> deletableParentPackages)
+	private void addDeletableParentPackages(IPackageFragment frag, Collection<IPackageFragment> initialPackagesToDelete, Set<IResource> resourcesToDelete, List<IPackageFragment> deletableParentPackages)
 			throws CoreException {
 
 		if (frag.getResource().isLinked()) {
@@ -633,10 +626,10 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 			final DeleteDescriptor descriptor= RefactoringSignatureDescriptorFactory.createDeleteDescriptor(project, description, comment.asString(), arguments, flags);
 			arguments.put(ATTRIBUTE_DELETE_SUBPACKAGES, Boolean.valueOf(fDeleteSubPackages).toString());
 			arguments.put(ATTRIBUTE_SUGGEST_ACCESSORS, Boolean.valueOf(fSuggestGetterSetterDeletion).toString());
-			arguments.put(ATTRIBUTE_RESOURCES, new Integer(fResources.length).toString());
+			arguments.put(ATTRIBUTE_RESOURCES, Integer.valueOf(fResources.length).toString());
 			for (int offset= 0; offset < fResources.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.resourceToHandle(project, fResources[offset]));
-			arguments.put(ATTRIBUTE_ELEMENTS, new Integer(fJavaElements.length).toString());
+			arguments.put(ATTRIBUTE_ELEMENTS, Integer.valueOf(fJavaElements.length).toString());
 			for (int offset= 0; offset < fJavaElements.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + fResources.length + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fJavaElements[offset]));
 			return new DynamicValidationRefactoringChange(descriptor, RefactoringCoreMessages.DeleteRefactoring_7, new Change[] { fDeleteChange});
@@ -797,24 +790,19 @@ public final class JavaDeleteProcessor extends DeleteProcessor {
 	}
 
 	private Set<ICompilationUnit> getCusToEmpty() throws JavaModelException {
+		Set<IJavaElement> deletedElements= new HashSet<>(Arrays.asList(fJavaElements));
 		Set<ICompilationUnit> result= new HashSet<>();
 		for (int i= 0; i < fJavaElements.length; i++) {
 			IJavaElement element= fJavaElements[i];
 			ICompilationUnit cu= ReorgUtils.getCompilationUnit(element);
-			if (cu != null && ! result.contains(cu) && willHaveAllTopLevelTypesDeleted(cu))
+			if (cu != null && !result.contains(cu) && deletedElements.containsAll(topLevelTypes(cu)))
 				result.add(cu);
 		}
 		return result;
 	}
 
-	private boolean willHaveAllTopLevelTypesDeleted(ICompilationUnit cu) throws JavaModelException {
-		Set<IJavaElement> elementSet= new HashSet<>(Arrays.asList(fJavaElements));
-		IType[] topLevelTypes= cu.getTypes();
-		for (int i= 0; i < topLevelTypes.length; i++) {
-			if (! elementSet.contains(topLevelTypes[i]))
-				return false;
-		}
-		return true;
+	private static List<IType> topLevelTypes(ICompilationUnit cu) throws JavaModelException {
+		return Arrays.asList(cu.getTypes());
 	}
 
 	private RefactoringStatus initialize(JavaRefactoringArguments extended) {

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2010, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -24,7 +27,6 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.MouseTrackListener;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
@@ -94,20 +96,7 @@ public class FilterTextControl {
 
 	public FilterTextControl(Composite parent) {
 		final boolean nativeField= useNativeSearchField(parent);
-		fComposite= new Composite(parent, nativeField ? SWT.NONE : SWT.BORDER) {
-			@Override
-			public void setEnabled(boolean enabled) {
-				super.setEnabled(enabled);
-				
-				if (nativeField)
-					return;
-				
-				Color color= enabled ? getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND) : getParent().getBackground();
-				setBackground(color);
-				if (fClearButton != null)
-					fClearButton.setBackground(color);
-			}
-		};
+		fComposite= new Composite(parent, nativeField ? SWT.NONE : SWT.BORDER);
 		if (!nativeField)
 			fComposite.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
 		
@@ -143,6 +132,7 @@ public class FilterTextControl {
 		} else {
 			fTextControl= new Text(parent, SWT.SINGLE);
 		}
+		fTextControl.setFont(parent.getFont());
 
 		GridData gridData= new GridData(SWT.FILL, SWT.CENTER, true, false);
 		// if the text widget supported cancel then it will have it's own

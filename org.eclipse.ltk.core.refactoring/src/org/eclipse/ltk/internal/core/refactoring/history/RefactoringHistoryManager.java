@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -265,7 +268,7 @@ public final class RefactoringHistoryManager {
 				final int index= line.indexOf(DELIMITER_COMPONENT);
 				if (index > 0) {
 					try {
-						final long stamp= new Long(line.substring(0, index)).longValue();
+						final long stamp= Long.valueOf(line.substring(0, index)).longValue();
 						if (stamp >= start && stamp <= end)
 							list.add(new DefaultRefactoringDescriptorProxy(unescapeString(line.substring(index + 1)), project, stamp));
 					} catch (NumberFormatException exception) {

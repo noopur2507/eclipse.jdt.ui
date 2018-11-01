@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -66,9 +69,11 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.dialogs.WorkingSetConfigurationBlock;
 
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.JavaCore;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
@@ -88,7 +93,6 @@ import org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart;
 import org.eclipse.jdt.internal.ui.preferences.CompliancePreferencePage;
 import org.eclipse.jdt.internal.ui.preferences.NewJavaProjectPreferencePage;
 import org.eclipse.jdt.internal.ui.preferences.PropertyAndPreferencePage;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildPathSupport;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.ComboDialogField;
@@ -175,7 +179,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 		private String fPreviousExternalLocation;
 
-		private static final String DIALOGSTORE_LAST_EXTERNAL_LOC= JavaUI.ID_PLUGIN + ".last.external.project"; //$NON-NLS-1$
+		private final String DIALOGSTORE_LAST_EXTERNAL_LOC= JavaUI.ID_PLUGIN + ".last.external.project"; //$NON-NLS-1$
 
 		public LocationGroup() {
 			fUseDefaults= new SelectionButtonDialogField(SWT.CHECK);
@@ -247,7 +251,8 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 		@Override
 		public void changeControlPressed(DialogField field) {
-			final DirectoryDialog dialog= new DirectoryDialog(getShell());
+			final DirectoryDialog dialog= new DirectoryDialog(getShell(), SWT.SHEET);
+			dialog.setText(NewWizardMessages.NewJavaProjectWizardPageOne_dialog_title);
 			dialog.setMessage(NewWizardMessages.NewJavaProjectWizardPageOne_directory_message);
 			String directoryName = fLocation.getText().trim();
 			if (directoryName.length() == 0) {
@@ -379,10 +384,10 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 	private final class JREGroup implements Observer, SelectionListener, IDialogFieldListener {
 
-		private static final String LAST_SELECTED_EE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.execution.enviroment"; //$NON-NLS-1$
-		private static final String LAST_SELECTED_JRE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.project.jre"; //$NON-NLS-1$
+		private final String LAST_SELECTED_EE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.execution.enviroment"; //$NON-NLS-1$
+		private final String LAST_SELECTED_JRE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.project.jre"; //$NON-NLS-1$
 //		private static final String LAST_SELECTED_JRE_KIND= JavaUI.ID_PLUGIN + ".last.selected.jre.kind"; // used before EE became default
-		private static final String LAST_SELECTED_JRE_KIND2= JavaUI.ID_PLUGIN + ".last.selected.jre.kind2"; //$NON-NLS-1$
+		private final String LAST_SELECTED_JRE_KIND2= JavaUI.ID_PLUGIN + ".last.selected.jre.kind2"; //$NON-NLS-1$
 
 		private static final int DEFAULT_JRE= 0;
 		private static final int PROJECT_JRE= 1;
@@ -481,7 +486,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 					if (i1 instanceof IVMInstall2 && i0 instanceof IVMInstall2) {
 						String cc0= JavaModelUtil.getCompilerCompliance((IVMInstall2) i0, JavaCore.VERSION_1_4);
 						String cc1= JavaModelUtil.getCompilerCompliance((IVMInstall2) i1, JavaCore.VERSION_1_4);
-						int result= cc1.compareTo(cc0);
+						int result= JavaCore.compareJavaVersions(cc1, cc0);
 						if (result != 0)
 							return result;
 					}
@@ -522,12 +527,6 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 			}
 
 			fInstalledEEs= JavaRuntime.getExecutionEnvironmentsManager().getExecutionEnvironments();
-			Arrays.sort(fInstalledEEs, new Comparator<IExecutionEnvironment>() {
-				@Override
-				public int compare(IExecutionEnvironment arg0, IExecutionEnvironment arg1) {
-					return Policy.getComparator().compare(arg0.getId(), arg1.getId());
-				}
-			});
 			selectionIndex= -1;//find new index
 			String[] eeLabels= new String[fInstalledEEs.length];
 			fEECompliance= new String[fInstalledEEs.length];
@@ -1251,19 +1250,68 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 	}
 
 	/**
-	 * Returns the default class path entries to be added on new projects. By default this is the JRE container as
-	 * selected by the user.
+	 * Returns the default class path entries to be added on new projects. By default this is the JRE
+	 * container as selected by the user.
 	 *
 	 * @return returns the default class path entries
 	 */
 	public IClasspathEntry[] getDefaultClasspathEntries() {
 		IPath newPath= fJREGroup.getJREContainerPath();
 		if (newPath != null) {
-			return new IClasspathEntry[] { JavaCore.newContainerEntry(newPath) };
+			return updateWithModuleAttribute(new IClasspathEntry[] { JavaCore.newContainerEntry(newPath) }, newPath);
 		}
-		return PreferenceConstants.getDefaultJRELibrary();
+		return updateWithModuleAttribute(PreferenceConstants.getDefaultJRELibrary(), new Path("org.eclipse.jdt.launching.JRE_CONTAINER")); //$NON-NLS-1$
 	}
 
+	/**
+	 * Updates the JRE container with module info
+	 * 
+	 * @param cpEntries array containing jre container without module attribute
+	 * @param newPath JRE path
+	 * @return array containing JRE container with module attribute if modular
+	 */
+	private IClasspathEntry[] updateWithModuleAttribute(IClasspathEntry[] cpEntries, IPath newPath) {
+		try {
+			if (cpEntries.length == 1) {
+				IVMInstall vmInstall= JavaRuntime.getVMInstall(newPath);
+				if (vmInstall != null) {
+					boolean modularJava= JavaRuntime.isModularJava(vmInstall);
+					if (modularJava) {
+						IClasspathEntry jre= cpEntries[0];
+						IClasspathAttribute[] newAttributes= addModuleAttributeIfNeeded(jre.getExtraAttributes());
+						if (newAttributes != null) {
+							IClasspathEntry jreModular= JavaCore.newContainerEntry(jre.getPath(), jre.getAccessRules(),
+									newAttributes, jre.isExported());
+							if (jreModular != null) {
+								return new IClasspathEntry[] { jreModular };
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			JavaPlugin.log(e);
+		}
+		return cpEntries;
+	}
+
+	private IClasspathAttribute[] addModuleAttributeIfNeeded(IClasspathAttribute[] extraAttributes) {
+		String TRUE = "true"; //$NON-NLS-1$
+		for (int j= 0; j < extraAttributes.length; j++) {
+			IClasspathAttribute classpathAttribute= extraAttributes[j];
+			if (IClasspathAttribute.MODULE.equals(classpathAttribute.getName())) {
+				if (TRUE.equals(classpathAttribute.getValue())) {
+					return null; // no change required
+				}
+				extraAttributes[j]= JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, TRUE);
+				return extraAttributes;
+			}
+		}
+		extraAttributes= Arrays.copyOf(extraAttributes, extraAttributes.length+1);
+		extraAttributes[extraAttributes.length-1]= JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, TRUE);
+		return extraAttributes;
+	}
+	
 	/**
 	 * Returns the source class path entries to be added on new projects.
 	 * The underlying resources may not exist. All entries that are returned must be of kind

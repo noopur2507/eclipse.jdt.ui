@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -70,12 +73,12 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
@@ -88,7 +91,7 @@ import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
 
 public class CopyQualifiedNameAction extends SelectionDispatchAction {
 
-	private static final long LABEL_FLAGS= new Long(JavaElementLabels.F_FULLY_QUALIFIED | JavaElementLabels.M_FULLY_QUALIFIED | JavaElementLabels.I_FULLY_QUALIFIED
+	private static final long LABEL_FLAGS= Long.valueOf(JavaElementLabels.F_FULLY_QUALIFIED | JavaElementLabels.M_FULLY_QUALIFIED | JavaElementLabels.I_FULLY_QUALIFIED
 			| JavaElementLabels.T_FULLY_QUALIFIED | JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.USE_RESOLVED | JavaElementLabels.T_TYPE_PARAMETERS | JavaElementLabels.CU_QUALIFIED
 			| JavaElementLabels.CF_QUALIFIED).longValue();
 
@@ -211,7 +214,7 @@ public class CopyQualifiedNameAction extends SelectionDispatchAction {
 					dataTypes= new Transfer[] { TextTransfer.getInstance() };
 				}
 			} else {
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				buf.append(getQualifiedName(elements[0]));
 				for (int i= 1; i < elements.length; i++) {
 					String qualifiedName= getQualifiedName(elements[i]);
@@ -299,7 +302,7 @@ public class CopyQualifiedNameAction extends SelectionDispatchAction {
 		if (element == null)
 			return null;
 
-		CompilationUnit ast= SharedASTProvider.getAST(element, SharedASTProvider.WAIT_YES, null);
+		CompilationUnit ast= SharedASTProviderCore.getAST(element, SharedASTProviderCore.WAIT_YES, null);
 		if (ast == null)
 			return null;
 

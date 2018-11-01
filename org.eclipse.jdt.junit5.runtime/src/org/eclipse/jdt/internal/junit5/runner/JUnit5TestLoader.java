@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2016, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -30,8 +33,11 @@ public class JUnit5TestLoader implements ITestLoader {
 
 	private Launcher fLauncher= LauncherFactory.create();
 
+	private RemoteTestRunner fRemoteTestRunner;
+
 	@Override
 	public ITestReference[] loadTests(Class[] testClasses, String testName, String[] failureNames, String[] packages, String[][] includeExcludeTags, String uniqueId, RemoteTestRunner listener) {
+		fRemoteTestRunner= listener;
 		ITestReference[] refs= new ITestReference[0];
 		if (uniqueId != null && !uniqueId.trim().isEmpty()) {
 			refs= new ITestReference[1];
@@ -62,12 +68,12 @@ public class JUnit5TestLoader implements ITestLoader {
 
 	private ITestReference createFilteredTest(Class<?> clazz, String testName, String[][] includeExcludeTags) {
 		LauncherDiscoveryRequest request= LauncherDiscoveryRequestBuilder.request().selectors(DiscoverySelectors.selectMethod(clazz.getName() + "#" + testName)).filters(getTagFilters(includeExcludeTags)).build(); //$NON-NLS-1$
-		return new JUnit5TestReference(request, fLauncher);
+		return new JUnit5TestReference(request, fLauncher, fRemoteTestRunner);
 	}
 
 	private ITestReference createUnfilteredTest(Class<?> clazz, String[][] includeExcludeTags) {
 		LauncherDiscoveryRequest request= LauncherDiscoveryRequestBuilder.request().selectors(DiscoverySelectors.selectClass(clazz)).filters(getTagFilters(includeExcludeTags)).build();
-		return new JUnit5TestReference(request, fLauncher);
+		return new JUnit5TestReference(request, fLauncher, fRemoteTestRunner);
 	}
 
 	private ITestReference createTest(String pkg, String[][] includeExcludeTags) {
@@ -87,12 +93,12 @@ public class JUnit5TestLoader implements ITestLoader {
 				.filters(getTagFilters(includeExcludeTags))
 				.build();
 
-		return new JUnit5TestReference(request, fLauncher);
+		return new JUnit5TestReference(request, fLauncher, fRemoteTestRunner);
 	}
 
 	private ITestReference createUniqueIdTest(String uniqueId, String[][] includeExcludeTags) {
 		LauncherDiscoveryRequest request= LauncherDiscoveryRequestBuilder.request().selectors(DiscoverySelectors.selectUniqueId(uniqueId)).filters(getTagFilters(includeExcludeTags)).build();
-		return new JUnit5TestReference(request, fLauncher);
+		return new JUnit5TestReference(request, fLauncher, fRemoteTestRunner);
 	}
 
 	private Filter<?>[] getTagFilters(String[][] includeExcludeTags) {

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -58,6 +61,13 @@ import org.eclipse.jdt.internal.ui.util.StringMatcher;
 
 
 class NLSSearchResultRequestor extends SearchRequestor {
+
+	/**
+	 * Warning-free alias for <code>ITerminalSymbols.TokenNameIdentifier</code>.
+	 */
+	@SuppressWarnings("deprecation")
+	protected static final int InternalTokenNameIdentifier= ITerminalSymbols.TokenNameIdentifier;
+
 	/*
 	 * Matches are added to fResult. Element (group key) is IJavaElement or FileEntry.
 	 */
@@ -253,7 +263,7 @@ class NLSSearchResultRequestor extends SearchRequestor {
 			if (scanner.getNextToken() != ITerminalSymbols.TokenNameDOT)
 				return null;
 
-			if (scanner.getNextToken() != ITerminalSymbols.TokenNameIdentifier)
+			if (scanner.getNextToken() != InternalTokenNameIdentifier) // assuming that unit is not module-info.java
 				return null;
 
 			String src= new String(scanner.getCurrentTokenSource());
@@ -264,14 +274,14 @@ class NLSSearchResultRequestor extends SearchRequestor {
 				// Old school
 				// next must be key string. Ignore methods which do not take a single String parameter (Bug 295040).
 				int nextToken= scanner.getNextToken();
-				if (nextToken != ITerminalSymbols.TokenNameStringLiteral && nextToken != ITerminalSymbols.TokenNameIdentifier)
+				if (nextToken != ITerminalSymbols.TokenNameStringLiteral && nextToken != InternalTokenNameIdentifier)
 					return null;
 
 				tokenStart= scanner.getCurrentTokenStartPosition();
 				tokenEnd= scanner.getCurrentTokenEndPosition();
 				int token;
 				while ((token= scanner.getNextToken()) == ITerminalSymbols.TokenNameDOT) {
-					if ((nextToken= scanner.getNextToken()) != ITerminalSymbols.TokenNameIdentifier) {
+					if ((nextToken= scanner.getNextToken()) != InternalTokenNameIdentifier) {
 							return null;
 					}
 					tokenStart= scanner.getCurrentTokenStartPosition();
@@ -284,7 +294,7 @@ class NLSSearchResultRequestor extends SearchRequestor {
 					keyPositionResult.setOffset(tokenStart + 1);
 					keyPositionResult.setLength(tokenEnd - tokenStart - 1);
 					return source.substring(tokenStart + 1, tokenEnd);
-				} else if (nextToken == ITerminalSymbols.TokenNameIdentifier) {
+				} else if (nextToken == InternalTokenNameIdentifier) {
 					keyPositionResult.setOffset(tokenStart);
 					keyPositionResult.setLength(tokenEnd - tokenStart + 1);
 					IType parentClass= (IType)enclosingElement.getAncestor(IJavaElement.TYPE);

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -115,10 +118,12 @@ public class TextualTrace {
 
 		String line;
 		String[] patterns = filterPatterns;
+		boolean firstLine= true;
 		try {
-			while ((line = bufferedReader.readLine()) != null) {
-				if (!filterLine(patterns, line))
+			while ((line= bufferedReader.readLine()) != null) {
+				if (firstLine || !filterLine(patterns, line))
 					printWriter.println(line);
+				firstLine= false;
 			}
 		} catch (IOException e) {
 			return stackTrace; // return the stack unfiltered

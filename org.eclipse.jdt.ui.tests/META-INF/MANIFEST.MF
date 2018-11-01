@@ -1,8 +1,9 @@
 Manifest-Version: 1.0
+Automatic-Module-Name: org.eclipse.jdt.ui.tests
 Bundle-ManifestVersion: 2
 Bundle-Name: %Plugin.name
 Bundle-SymbolicName: org.eclipse.jdt.ui.tests; singleton:=true
-Bundle-Version: 3.13.100.qualifier
+Bundle-Version: 3.13.300.qualifier
 Bundle-Activator: org.eclipse.jdt.testplugin.JavaTestPlugin
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: %Plugin.providerName
@@ -34,6 +35,7 @@ Export-Package:
  org.eclipse.jdt.ui.tests.performance.views;x-internal:=true,
  org.eclipse.jdt.ui.tests.preferences;x-internal:=true,
  org.eclipse.jdt.ui.tests.quickfix;x-internal:=true,
+ org.eclipse.jdt.ui.tests.refactoring;x-internal:=true,
  org.eclipse.jdt.ui.tests.search;x-internal:=true,
  org.eclipse.jdt.ui.tests.ui.internal.compatibility;x-internal:=true,
  org.eclipse.jdt.ui.tests.wizardapi;x-internal:=true
@@ -50,6 +52,7 @@ Require-Bundle:
  org.eclipse.jdt.junit,
  org.eclipse.jdt.junit.runtime,
  org.eclipse.jdt.junit4.runtime,
+ org.eclipse.jdt.junit5.runtime,
  org.eclipse.jdt.launching,
  org.eclipse.jdt.ui,
  org.eclipse.jface.text,

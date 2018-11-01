@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -51,7 +54,6 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeReferenceMatch;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.refactoring.CollectingSearchRequestor;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringScopeFactory;
@@ -66,6 +68,8 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.corext.util.SearchUtils;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public class MoveCuUpdateCreator {
@@ -186,7 +190,7 @@ public class MoveCuUpdateCreator {
 		String old= importDecl.getElementName();
 		int oldPackLength= movedUnit.getParent().getElementName().length();
 
-		StringBuffer result= new StringBuffer(fDestination.getElementName());
+		StringBuilder result= new StringBuilder(fDestination.getElementName());
 		if (oldPackLength == 0) // move FROM default package
 			result.append('.').append(old);
 		else if (result.length() == 0) // move TO default package
@@ -209,7 +213,7 @@ public class MoveCuUpdateCreator {
     	String old= importDecl.getElementName();
 		int oldPackLength= movedUnit.getParent().getElementName().length();
 
-		StringBuffer result= new StringBuffer(fDestination.getElementName());
+		StringBuilder result= new StringBuilder(fDestination.getElementName());
 		if (oldPackLength == 0) // move FROM default package
 			result.append('.').append(old);
 		else if (result.length() == 0) // move TO default package
@@ -369,7 +373,7 @@ public class MoveCuUpdateCreator {
 			try {
 				int tokenType= fScanner.getNextToken();
 				while (tokenType != ITerminalSymbols.TokenNameEOF) {
-					if (tokenType == ITerminalSymbols.TokenNameIdentifier)
+					if (tokenType == ITerminalSymbols.TokenNameIdentifier) // TODO: could we be in the context of module-info.java, conflicting with restricted keywords?
 						lastIdentifierStart= fScanner.getCurrentTokenStartPosition();
 					tokenType= fScanner.getNextToken();
 				}

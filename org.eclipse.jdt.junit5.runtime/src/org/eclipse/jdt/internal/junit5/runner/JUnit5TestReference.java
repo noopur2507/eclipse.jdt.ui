@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2016, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -33,9 +36,12 @@ public class JUnit5TestReference implements ITestReference {
 
 	private TestPlan fTestPlan;
 
-	public JUnit5TestReference(LauncherDiscoveryRequest request, Launcher launcher) {
+	private RemoteTestRunner fRemoteTestRunner;
+
+	public JUnit5TestReference(LauncherDiscoveryRequest request, Launcher launcher, RemoteTestRunner remoteTestRunner) {
 		fRequest= request;
 		fLauncher= launcher;
+		fRemoteTestRunner= remoteTestRunner;
 		fTestPlan= fLauncher.discover(fRequest);
 	}
 
@@ -53,7 +59,7 @@ public class JUnit5TestReference implements ITestReference {
 		}
 	}
 
-	void sendTree(IVisitsTestTrees notified, TestIdentifier testIdentifier) {
+	private void sendTree(IVisitsTestTrees notified, TestIdentifier testIdentifier) {
 		JUnit5Identifier identifier= new JUnit5Identifier(testIdentifier);
 		String parentId= getParentId(testIdentifier, fTestPlan);
 		if (testIdentifier.isTest()) {
@@ -73,13 +79,14 @@ public class JUnit5TestReference implements ITestReference {
 	 * @return the parent id from {@link TestIdMap} if the parent is present, otherwise
 	 *         <code>"-1"</code>
 	 */
-	static String getParentId(TestIdentifier testIdentifier, TestPlan testPlan) {
-		return testPlan.getParent(testIdentifier).map(parent -> RemoteTestRunner.fgTestRunServer.getTestId(new JUnit5Identifier(parent))).orElse("-1"); //$NON-NLS-1$
+	private String getParentId(TestIdentifier testIdentifier, TestPlan testPlan) {
+		// Same as JUnit5TestListener.getParentId(TestIdentifier testIdentifier, TestPlan testPlan)
+		return testPlan.getParent(testIdentifier).map(parent -> fRemoteTestRunner.getTestId(new JUnit5Identifier(parent))).orElse("-1"); //$NON-NLS-1$
 	}
 
 	@Override
 	public void run(TestExecution execution) {
-		fLauncher.execute(fRequest, new JUnit5TestListener(execution.getListener()));
+		fLauncher.execute(fRequest, new JUnit5TestListener(execution.getListener(), fRemoteTestRunner));
 	}
 
 	@Override

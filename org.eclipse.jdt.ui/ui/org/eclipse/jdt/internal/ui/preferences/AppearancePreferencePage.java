@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -57,7 +60,9 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 	private static final String PREF_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW= PreferenceConstants.APPEARANCE_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW;
 	private static final String STACK_BROWSING_VIEWS_VERTICALLY= PreferenceConstants.BROWSING_STACK_VERTICALLY;
 	private static final String PREF_FOLD_PACKAGES_IN_PACKAGE_EXPLORER= PreferenceConstants.APPEARANCE_FOLD_PACKAGES_IN_PACKAGE_EXPLORER;
+	private static final String PREF_SORT_LIBRARY_ENTRIES_BY_NAME= PreferenceConstants.APPEARANCE_SORT_LIBRARY_ENTRIES_BY_NAME;
 	private static final String PREF_CATEGORY= PreferenceConstants.APPEARANCE_CATEGORY;
+	private static final String DECORATE_TEST_CODE_CONTAINER_ICONS= PreferenceConstants.DECORATE_TEST_CODE_CONTAINER_ICONS;
 
 	private SelectionButtonDialogField fShowMethodReturnType;
 	private SelectionButtonDialogField fShowCategory;
@@ -65,10 +70,12 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 	private SelectionButtonDialogField fAbbreviatePackageNames;
 	private SelectionButtonDialogField fStackBrowsingViewsVertically;
 	private SelectionButtonDialogField fShowMembersInPackageView;
+	private SelectionButtonDialogField fDecorateTestCodeContainerIcons;
 	private StringDialogField fPackageNamePattern;
 	private StringDialogField fAbbreviatePackageNamePattern;
 	private SelectionButtonDialogField fFoldPackagesInPackageExplorer;
 	private SelectionButtonDialogField fShowMethodTypeParameters;
+	private SelectionButtonDialogField fSortLibraryEntriesByName;
 
 	public AppearancePreferencePage() {
 		setPreferenceStore(JavaPlugin.getDefault().getPreferenceStore());
@@ -97,6 +104,10 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		fShowMembersInPackageView.setDialogFieldListener(listener);
 		fShowMembersInPackageView.setLabelText(PreferencesMessages.AppearancePreferencePage_showMembersInPackagesView);
 
+		fDecorateTestCodeContainerIcons= new SelectionButtonDialogField(SWT.CHECK);
+		fDecorateTestCodeContainerIcons.setDialogFieldListener(listener);
+		fDecorateTestCodeContainerIcons.setLabelText(PreferencesMessages.AppearancePreferencePage_decorateTestCodeContainerIcons);
+
 		fStackBrowsingViewsVertically= new SelectionButtonDialogField(SWT.CHECK);
 		fStackBrowsingViewsVertically.setDialogFieldListener(listener);
 		fStackBrowsingViewsVertically.setLabelText(PreferencesMessages.AppearancePreferencePage_stackViewsVerticallyInTheJavaBrowsingPerspective);
@@ -104,6 +115,10 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		fFoldPackagesInPackageExplorer= new SelectionButtonDialogField(SWT.CHECK);
 		fFoldPackagesInPackageExplorer.setDialogFieldListener(listener);
 		fFoldPackagesInPackageExplorer.setLabelText(PreferencesMessages.AppearancePreferencePage_foldEmptyPackages);
+
+		fSortLibraryEntriesByName= new SelectionButtonDialogField(SWT.CHECK);
+		fSortLibraryEntriesByName.setDialogFieldListener(listener);
+		fSortLibraryEntriesByName.setLabelText(PreferencesMessages.AppearancePreferencePage_sortLibraryEntries);
 
 		fCompressPackageNames= new SelectionButtonDialogField(SWT.CHECK);
 		fCompressPackageNames.setDialogFieldListener(listener);
@@ -127,6 +142,7 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		fShowMethodReturnType.setSelection(prefs.getBoolean(PREF_METHOD_RETURNTYPE));
 		fShowMethodTypeParameters.setSelection(prefs.getBoolean(PREF_METHOD_TYPEPARAMETERS));
 		fShowMembersInPackageView.setSelection(prefs.getBoolean(SHOW_CU_CHILDREN));
+		fDecorateTestCodeContainerIcons.setSelection(prefs.getBoolean(DECORATE_TEST_CODE_CONTAINER_ICONS));
 		fShowCategory.setSelection(prefs.getBoolean(PREF_CATEGORY));
 		fStackBrowsingViewsVertically.setSelection(prefs.getBoolean(STACK_BROWSING_VIEWS_VERTICALLY));
 		fPackageNamePattern.setText(prefs.getString(PREF_PKG_NAME_PATTERN_FOR_PKG_VIEW));
@@ -137,6 +153,7 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		doDialogFieldChanged(fAbbreviatePackageNames);
 		fAbbreviatePackageNamePattern.setEnabled(fAbbreviatePackageNames.isSelected());
 		fFoldPackagesInPackageExplorer.setSelection(prefs.getBoolean(PREF_FOLD_PACKAGES_IN_PACKAGE_EXPLORER));
+		fSortLibraryEntriesByName.setSelection(prefs.getBoolean(PREF_SORT_LIBRARY_ENTRIES_BY_NAME));
 	}
 
 	/*
@@ -170,6 +187,8 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		fShowCategory.doFillIntoGrid(result, nColumns);
 		fShowMembersInPackageView.doFillIntoGrid(result, nColumns);
 		fFoldPackagesInPackageExplorer.doFillIntoGrid(result, nColumns);
+		fDecorateTestCodeContainerIcons.doFillIntoGrid(result, nColumns);
+		fSortLibraryEntriesByName.doFillIntoGrid(result, nColumns);
 
 		new Separator().doFillIntoGrid(result, nColumns);
 
@@ -253,12 +272,14 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		prefs.setValue(PREF_METHOD_TYPEPARAMETERS, fShowMethodTypeParameters.isSelected());
 		prefs.setValue(PREF_CATEGORY, fShowCategory.isSelected());
 		prefs.setValue(SHOW_CU_CHILDREN, fShowMembersInPackageView.isSelected());
+		prefs.setValue(DECORATE_TEST_CODE_CONTAINER_ICONS, fDecorateTestCodeContainerIcons.isSelected());
 		prefs.setValue(STACK_BROWSING_VIEWS_VERTICALLY, fStackBrowsingViewsVertically.isSelected());
 		prefs.setValue(PREF_PKG_NAME_PATTERN_FOR_PKG_VIEW, fPackageNamePattern.getText());
 		prefs.setValue(PREF_COMPRESS_PACKAGE_NAMES, fCompressPackageNames.isSelected());
 		prefs.setValue(PREF_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW, fAbbreviatePackageNamePattern.getText());
 		prefs.setValue(PREF_ABBREVIATE_PACKAGE_NAMES, fAbbreviatePackageNames.isSelected());
 		prefs.setValue(PREF_FOLD_PACKAGES_IN_PACKAGE_EXPLORER, fFoldPackagesInPackageExplorer.isSelected());
+		prefs.setValue(PREF_SORT_LIBRARY_ENTRIES_BY_NAME, fSortLibraryEntriesByName.isSelected());
 		JavaPlugin.flushInstanceScope();
 		return super.performOk();
 	}
@@ -273,12 +294,14 @@ public class AppearancePreferencePage extends PreferencePage implements IWorkben
 		fShowMethodTypeParameters.setSelection(prefs.getDefaultBoolean(PREF_METHOD_TYPEPARAMETERS));
 		fShowCategory.setSelection(prefs.getDefaultBoolean(PREF_CATEGORY));
 		fShowMembersInPackageView.setSelection(prefs.getDefaultBoolean(SHOW_CU_CHILDREN));
+		fDecorateTestCodeContainerIcons.setSelection(prefs.getDefaultBoolean(DECORATE_TEST_CODE_CONTAINER_ICONS));
 		fStackBrowsingViewsVertically.setSelection(prefs.getDefaultBoolean(STACK_BROWSING_VIEWS_VERTICALLY));
 		fPackageNamePattern.setText(prefs.getDefaultString(PREF_PKG_NAME_PATTERN_FOR_PKG_VIEW));
 		fCompressPackageNames.setSelection(prefs.getDefaultBoolean(PREF_COMPRESS_PACKAGE_NAMES));
 		fAbbreviatePackageNamePattern.setText(prefs.getDefaultString(PREF_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW));
 		fAbbreviatePackageNames.setSelection(prefs.getDefaultBoolean(PREF_ABBREVIATE_PACKAGE_NAMES));
 		fFoldPackagesInPackageExplorer.setSelection(prefs.getDefaultBoolean(PREF_FOLD_PACKAGES_IN_PACKAGE_EXPLORER));
+		fSortLibraryEntriesByName.setSelection(prefs.getDefaultBoolean(PREF_SORT_LIBRARY_ENTRIES_BY_NAME));
 		super.performDefaults();
 	}
 }

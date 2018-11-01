@@ -1,10 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
  *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Sebastian Davids <sdavids@gmx.de> - Bug 37432 getInvertEqualsProposal
@@ -14,6 +17,7 @@
  *     Eugene Lucash <e.lucash@gmail.com> - [quick assist] Add key binding for Extract method Quick Assist - https://bugs.eclipse.org/424166
  *     Lukas Hanke <hanke@yatta.de> - Bug 430818 [1.8][quick fix] Quick fix for "for loop" is not shown for bare local variable/argument/field - https://bugs.eclipse.org/bugs/show_bug.cgi?id=430818
  *     Jeremie Bresson <dev@jmini.fr> - Bug 439912: [1.8][quick assist] Add quick assists to add and remove parentheses around single lambda parameter - https://bugs.eclipse.org/439912
+ *     Jens Reimann <jens.reimann@ibh-systems.com>, Fabian Pfaff <fabian.pfaff@vogella.com> - Bug 197850: [quick assist] Add import static field/method - https://bugs.eclipse.org/bugs/show_bug.cgi?id=197850
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.correction;
 
@@ -51,6 +55,8 @@ import org.eclipse.jdt.core.NamingConventions;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
@@ -127,10 +133,10 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -158,6 +164,7 @@ import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractTempRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineTempRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.PromoteTempToFieldRefactoring;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRemover;
 import org.eclipse.jdt.internal.corext.refactoring.util.TightSourceRangeComputer;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -180,6 +187,7 @@ import org.eclipse.jdt.internal.ui.fix.LambdaExpressionsCleanUp;
 import org.eclipse.jdt.internal.ui.fix.TypeParametersCleanUp;
 import org.eclipse.jdt.internal.ui.fix.VariableDeclarationCleanUp;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jdt.internal.ui.text.correction.proposals.ASTRewriteRemoveImportsCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.AssignToVariableAssistProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.FixCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.GenerateForLoopAssistProposal;
@@ -188,6 +196,7 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistPr
 import org.eclipse.jdt.internal.ui.text.correction.proposals.NewDefiningMethodProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.RefactoringCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.RenameRefactoringProposal;
+import org.eclipse.jdt.internal.ui.text.correction.proposals.TypeChangeCorrectionProposal;
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
 
 /**
@@ -252,6 +261,8 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				|| getChangeLambdaBodyToBlockProposal(context, coveringNode, null)
 				|| getChangeLambdaBodyToExpressionProposal(context, coveringNode, null)
 				|| getAddInferredLambdaParameterTypes(context, coveringNode, null)
+				|| getAddVarLambdaParameterTypes(context, coveringNode, null)
+				|| getRemoveVarOrInferredLambdaParameterTypes(context, coveringNode, null)
 				|| getConvertMethodReferenceToLambdaProposal(context, coveringNode, null)
 				|| getConvertLambdaToMethodReferenceProposal(context, coveringNode, null)
 				|| getFixParenthesesInLambdaExpression(context, coveringNode, null)
@@ -259,7 +270,8 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				|| getMakeVariableDeclarationFinalProposals(context, null)
 				|| getMissingCaseStatementProposals(context, coveringNode, null)
 				|| getConvertStringConcatenationProposals(context, null)
-				|| getInferDiamondArgumentsProposal(context, coveringNode, null, null);
+				|| getInferDiamondArgumentsProposal(context, coveringNode, null, null)
+				|| getAddStaticImportProposals(context, coveringNode, null);
 		}
 		return false;
 	}
@@ -306,6 +318,8 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				getChangeLambdaBodyToBlockProposal(context, coveringNode, resultingCollections);
 				getChangeLambdaBodyToExpressionProposal(context, coveringNode, resultingCollections);
 				getAddInferredLambdaParameterTypes(context, coveringNode, resultingCollections);
+				getAddVarLambdaParameterTypes(context, coveringNode, resultingCollections);
+				getRemoveVarOrInferredLambdaParameterTypes(context, coveringNode, resultingCollections);
 				getConvertMethodReferenceToLambdaProposal(context, coveringNode, resultingCollections);
 				getConvertLambdaToMethodReferenceProposal(context, coveringNode, resultingCollections);
 				getFixParenthesesInLambdaExpression(context, coveringNode, resultingCollections);
@@ -316,6 +330,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				getMakeVariableDeclarationFinalProposals(context, resultingCollections);
 				getConvertStringConcatenationProposals(context, resultingCollections);
 				getMissingCaseStatementProposals(context, coveringNode, resultingCollections);
+				getConvertVarTypeToResolvedTypeProposal(context, coveringNode, resultingCollections);
+				getConvertResolvedTypeToVarTypeProposal(context, coveringNode, resultingCollections);
+				getAddStaticImportProposals(context, coveringNode, resultingCollections);
 			}
 			return resultingCollections.toArray(new IJavaCompletionProposal[resultingCollections.size()]);
 		}
@@ -1358,13 +1375,20 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 	}
 
 	public static boolean getAddInferredLambdaParameterTypes(IInvocationContext context, ASTNode covering, Collection<ICommandAccess> resultingCollections) {
-		LambdaExpression lambda;
+		LambdaExpression lambda= null;
+		boolean isLambdaParamVarType= false;
+		ASTNode parent= covering.getParent();
 		if (covering instanceof LambdaExpression) {
 			lambda= (LambdaExpression) covering;
 		} else if (covering.getLocationInParent() == VariableDeclarationFragment.NAME_PROPERTY &&
 				((VariableDeclarationFragment) covering.getParent()).getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
 			lambda= (LambdaExpression) covering.getParent().getParent();
-		} else {
+		} else if (covering.getLocationInParent() == SingleVariableDeclaration.NAME_PROPERTY &&
+				((SingleVariableDeclaration) parent).getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
+			lambda= (LambdaExpression) covering.getParent().getParent();
+		}
+
+		if (lambda == null) {
 			return false;
 		}
 
@@ -1373,8 +1397,22 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		if (noOfLambdaParams == 0)
 			return false;
 
-		if (lambdaParameters.get(0) instanceof SingleVariableDeclaration)
-			return false;
+		VariableDeclaration firstLambdaParam= lambdaParameters.get(0);
+		if (firstLambdaParam instanceof SingleVariableDeclaration) {
+			CompilationUnit astRoot= context.getASTRoot();
+			IJavaElement root= astRoot.getJavaElement();
+			if (root != null) {
+				IJavaProject javaProject= root.getJavaProject();
+				if (javaProject != null && JavaModelUtil.is11OrHigher(javaProject)) {
+					if (((SingleVariableDeclaration) firstLambdaParam).getType().isVar()) {
+						isLambdaParamVarType= true;
+					}
+				}
+			}
+			if (!isLambdaParamVarType) {
+				return false;
+			}
+		}
 
 		IMethodBinding methodBinding= lambda.resolveMethodBinding();
 		if (methodBinding == null)
@@ -1401,8 +1439,197 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 
 		// add proposal
 		String label= CorrectionMessages.QuickAssistProcessor_add_inferred_lambda_parameter_types;
+		if (isLambdaParamVarType) {
+			label= CorrectionMessages.QuickAssistProcessor_replace_var_with_inferred_lambda_parameter_types;
+		}
 		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
 		ASTRewriteCorrectionProposal proposal= new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(), rewrite, IProposalRelevance.ADD_INFERRED_LAMBDA_PARAMETER_TYPES, image);
+		proposal.setImportRewrite(importRewrite);
+		resultingCollections.add(proposal);
+		return true;
+	}
+
+	public static boolean getAddVarLambdaParameterTypes(IInvocationContext context, ASTNode covering, Collection<ICommandAccess> resultingCollections) {
+		CompilationUnit astRoot= context.getASTRoot();
+		IJavaElement root= astRoot.getJavaElement();
+		ASTNode parent= covering.getParent();
+		if (parent == null || root == null) {
+			return false;
+		}
+		IJavaProject javaProject= root.getJavaProject();
+		if (javaProject == null) {
+			return false;
+		}
+		if (!JavaModelUtil.is11OrHigher(javaProject)) {
+			return false;
+		}
+
+		LambdaExpression lambda= null;
+		boolean isLambdaParamExplicitType= false;
+		if (covering instanceof LambdaExpression) {
+			lambda= (LambdaExpression) covering;
+		} else if (covering.getLocationInParent() == VariableDeclarationFragment.NAME_PROPERTY &&
+				((VariableDeclarationFragment) parent).getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
+			lambda= (LambdaExpression) covering.getParent().getParent();
+		} else if (covering.getLocationInParent() == SingleVariableDeclaration.NAME_PROPERTY &&
+				((SingleVariableDeclaration) parent).getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
+			lambda= (LambdaExpression) covering.getParent().getParent();
+		}
+
+		if (lambda == null) {
+			return false;
+		}
+
+		List<VariableDeclaration> lambdaParameters= lambda.parameters();
+		int noOfLambdaParams= lambdaParameters.size();
+		if (noOfLambdaParams == 0)
+			return false;
+
+
+		VariableDeclaration firstLambdaParam= lambdaParameters.get(0);
+		if (firstLambdaParam instanceof SingleVariableDeclaration) {
+			if (!((SingleVariableDeclaration) firstLambdaParam).getType().isVar()) {
+				isLambdaParamExplicitType= true;
+			} else {
+				return false;
+			}
+		}
+
+
+		IMethodBinding methodBinding= lambda.resolveMethodBinding();
+		if (methodBinding == null)
+			return false;
+
+		if (resultingCollections == null)
+			return true;
+
+		String VAR_TYPE= "var"; //$NON-NLS-1$
+		AST ast= lambda.getAST();
+		ASTRewrite rewrite= ASTRewrite.create(ast);
+
+		ImportRemover remover= new ImportRemover(context.getCompilationUnit().getJavaProject(), context.getASTRoot());
+
+		ImportRewrite importRewrite= StubUtility.createImportRewrite(context.getASTRoot(), true);
+
+		rewrite.set(lambda, LambdaExpression.PARENTHESES_PROPERTY, Boolean.valueOf(true), null);
+		for (int i= 0; i < noOfLambdaParams; i++) {
+			VariableDeclaration param= lambdaParameters.get(i);
+			Type oldType= null;
+			if (param instanceof SingleVariableDeclaration) {
+				SingleVariableDeclaration curParent= (SingleVariableDeclaration) param;
+				oldType= curParent.getType();
+				if (oldType != null) {
+					rewrite.replace(oldType, ast.newSimpleType(ast.newName(VAR_TYPE)), null);
+					remover.registerRemovedNode(oldType);
+				}
+			}
+			if (oldType == null) {
+				SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
+				newParam.setName(ast.newSimpleName(param.getName().getIdentifier()));
+				newParam.setType(ast.newSimpleType(ast.newName(VAR_TYPE)));
+				rewrite.replace(param, newParam, null);
+			}
+		}
+
+		// add proposal
+		ASTRewriteCorrectionProposal proposal;
+		String label= null;
+		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
+		if (isLambdaParamExplicitType) {
+			label= CorrectionMessages.QuickAssistProcessor_replace_lambda_parameter_types_with_var;
+			ASTRewriteRemoveImportsCorrectionProposal newProposal= new ASTRewriteRemoveImportsCorrectionProposal(label, context.getCompilationUnit(), rewrite,
+					IProposalRelevance.ADD_INFERRED_LAMBDA_PARAMETER_TYPES, image);
+			newProposal.setImportRemover(remover);
+			proposal= newProposal;
+
+		} else {
+			label= CorrectionMessages.QuickAssistProcessor_add_var_lambda_parameter_types;
+			proposal= new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(), rewrite, IProposalRelevance.ADD_INFERRED_LAMBDA_PARAMETER_TYPES, image);
+		}
+		proposal.setImportRewrite(importRewrite);
+		resultingCollections.add(proposal);
+		return true;
+	}
+
+	public static boolean getRemoveVarOrInferredLambdaParameterTypes(IInvocationContext context, ASTNode covering, Collection<ICommandAccess> resultingCollections) {
+		CompilationUnit astRoot= context.getASTRoot();
+		IJavaElement root= astRoot.getJavaElement();
+		ASTNode parent= covering.getParent();
+		if (parent == null || root == null) {
+			return false;
+		}
+		IJavaProject javaProject= root.getJavaProject();
+		if (javaProject == null) {
+			return false;
+		}
+		boolean checkForVarTypes= false;
+		if (JavaModelUtil.is11OrHigher(javaProject)) {
+			checkForVarTypes= true;
+		}
+
+		LambdaExpression lambda;
+		if (covering instanceof LambdaExpression) {
+			lambda= (LambdaExpression) covering;
+		} else if (covering.getLocationInParent() == SingleVariableDeclaration.NAME_PROPERTY &&
+				((SingleVariableDeclaration) parent).getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
+			lambda= (LambdaExpression) covering.getParent().getParent();
+		} else {
+			return false;
+		}
+
+		List<VariableDeclaration> lambdaParameters= lambda.parameters();
+		int noOfLambdaParams= lambdaParameters.size();
+		if (noOfLambdaParams == 0)
+			return false;
+
+		if (!(lambdaParameters.get(0) instanceof SingleVariableDeclaration))
+			return false;
+
+		IMethodBinding methodBinding= lambda.resolveMethodBinding();
+		if (methodBinding == null)
+			return false;
+
+		if (resultingCollections == null)
+			return true;
+
+		AST ast= lambda.getAST();
+		ASTRewrite rewrite= ASTRewrite.create(ast);
+
+		ImportRemover remover= new ImportRemover(context.getCompilationUnit().getJavaProject(), context.getASTRoot());
+
+		ImportRewrite importRewrite= StubUtility.createImportRewrite(context.getASTRoot(), true);
+
+		rewrite.set(lambda, LambdaExpression.PARENTHESES_PROPERTY, Boolean.valueOf(true), null);
+		boolean removeImports= false;
+		for (int i= 0; i < noOfLambdaParams; i++) {
+			VariableDeclaration param= lambdaParameters.get(i);
+			Type oldType= null;
+			if (param instanceof SingleVariableDeclaration) {
+				SingleVariableDeclaration curParent= (SingleVariableDeclaration) param;
+				oldType= curParent.getType();
+				if (oldType != null && (!checkForVarTypes || (checkForVarTypes && !oldType.isVar()))) {
+					remover.registerRemovedNode(oldType);
+					removeImports= true;
+				}
+				VariableDeclarationFragment newParam= ast.newVariableDeclarationFragment();
+				newParam.setName(ast.newSimpleName(param.getName().getIdentifier()));
+				rewrite.replace(param, newParam, null);
+			}
+		}
+
+		// add proposal
+		ASTRewriteCorrectionProposal proposal;
+		String label= null;
+		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
+		label= CorrectionMessages.QuickAssistProcessor_remove_lambda_parameter_types;
+		if (removeImports) {
+			ASTRewriteRemoveImportsCorrectionProposal newProposal= new ASTRewriteRemoveImportsCorrectionProposal(label, context.getCompilationUnit(), rewrite,
+					IProposalRelevance.ADD_INFERRED_LAMBDA_PARAMETER_TYPES, image);
+			newProposal.setImportRemover(remover);
+			proposal= newProposal;
+		} else {
+			proposal= new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(), rewrite, IProposalRelevance.ADD_INFERRED_LAMBDA_PARAMETER_TYPES, image);
+		}
 		proposal.setImportRewrite(importRewrite);
 		resultingCollections.add(proposal);
 		return true;
@@ -2568,6 +2795,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			return false;
 		}
 		SimpleName name= (SimpleName) node;
+		if (name.getAST().apiLevel() >= AST.JLS10 && name.isVar()) {
+			return false;
+		}
 		IBinding binding= name.resolveBinding();
 		if (binding != null && (binding.getKind() == IBinding.PACKAGE || binding.getKind() == IBinding.MODULE)) {
 			return false;
@@ -2603,6 +2833,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			return false;
 		}
 		SimpleName name= (SimpleName) node;
+		if (name.getAST().apiLevel() >= AST.JLS10 && name.isVar()) {
+			return false;
+		}
 		IBinding binding= name.resolveBinding();
 		if (binding == null) {
 			return false;
@@ -3637,6 +3870,138 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		return true;
 	}
 
+	private static boolean getConvertVarTypeToResolvedTypeProposal(IInvocationContext context, ASTNode node, Collection<ICommandAccess> proposals) {
+		CompilationUnit astRoot= context.getASTRoot();
+		boolean isValid= ASTNodes.isVarType(node, astRoot);
+		if (!isValid) {
+			return false;
+		}
+
+		if (!(node instanceof SimpleName)) {
+			return false;
+		}
+
+		SimpleName name= (SimpleName) node;
+		IBinding binding= name.resolveBinding();
+		if (!(binding instanceof IVariableBinding)) {
+			return false;
+		}
+		IVariableBinding varBinding= (IVariableBinding) binding;
+		if (varBinding.isField() || varBinding.isParameter()) {
+			return false;
+		}
+
+		ITypeBinding typeBinding= varBinding.getType();
+		if (typeBinding == null || typeBinding.isAnonymous() || typeBinding.isIntersectionType() || typeBinding.isWildcardType()) {
+			return false;
+		}
+
+		proposals.add(new TypeChangeCorrectionProposal(context.getCompilationUnit(), varBinding, astRoot, typeBinding, false, IProposalRelevance.CHANGE_VARIABLE));
+		return true;
+	}
+
+	private static boolean getConvertResolvedTypeToVarTypeProposal(IInvocationContext context, ASTNode node, Collection<ICommandAccess> proposals) {
+		CompilationUnit astRoot= context.getASTRoot();
+		IJavaElement root= astRoot.getJavaElement();
+		if (root == null) {
+			return false;
+		}
+		IJavaProject javaProject= root.getJavaProject();
+		if (javaProject == null) {
+			return false;
+		}
+		if (!JavaModelUtil.is10OrHigher(javaProject)) {
+			return false;
+		}
+
+		if (!(node instanceof SimpleName)) {
+			return false;
+		}
+		SimpleName name= (SimpleName) node;
+		IBinding binding= name.resolveBinding();
+		if (!(binding instanceof IVariableBinding)) {
+			return false;
+		}
+		IVariableBinding varBinding= (IVariableBinding) binding;
+		if (varBinding.isField() || varBinding.isParameter()) {
+			return false;
+		}
+
+		ASTNode varDeclaration= astRoot.findDeclaringNode(varBinding);
+		if (varDeclaration == null) {
+			return false;
+		}
+
+		Type type= null;
+		Expression expression= null;
+
+		ITypeBinding typeBinding= varBinding.getType();
+		if (typeBinding == null) {
+			return false;
+		}
+		ITypeBinding expressionTypeBinding= null;
+
+		if (varDeclaration instanceof SingleVariableDeclaration) {
+			SingleVariableDeclaration svDecl= (SingleVariableDeclaration) varDeclaration;
+			type= svDecl.getType();
+			expression= svDecl.getInitializer();
+			if (expression != null) {
+				expressionTypeBinding= expression.resolveTypeBinding();
+			} else {
+				ASTNode parent= svDecl.getParent();
+				if (parent instanceof EnhancedForStatement) {
+					EnhancedForStatement efStmt= (EnhancedForStatement) parent;
+					expression= efStmt.getExpression();
+					if (expression != null) {
+						ITypeBinding expBinding= expression.resolveTypeBinding();
+						if (expBinding != null) {
+							if (expBinding.isArray()) {
+								expressionTypeBinding= expBinding.getElementType();
+							} else {
+								ITypeBinding iterable= Bindings.findTypeInHierarchy(expBinding, "java.lang.Iterable"); //$NON-NLS-1$
+								if (iterable != null) {
+									ITypeBinding[] typeArguments= iterable.getTypeArguments();
+									if (typeArguments.length == 1) {
+										expressionTypeBinding= typeArguments[0];
+										expressionTypeBinding= Bindings.normalizeForDeclarationUse(expressionTypeBinding, context.getASTRoot().getAST());
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if (varDeclaration instanceof VariableDeclarationFragment) {
+			ASTNode parent= varDeclaration.getParent();
+			expression= ((VariableDeclarationFragment) varDeclaration).getInitializer();
+			if (expression != null) {
+				expressionTypeBinding= expression.resolveTypeBinding();
+			}
+			if (parent instanceof VariableDeclarationStatement) {
+				type= ((VariableDeclarationStatement) parent).getType();
+			} else if (parent instanceof VariableDeclarationExpression) {
+				VariableDeclarationExpression varDecl= (VariableDeclarationExpression) parent;
+				// cannot convert a VariableDeclarationExpression with multiple fragments to var.
+				if (varDecl.fragments().size() > 1) {
+					return false;
+				}
+				type= varDecl.getType();
+			}
+		}
+
+		if (type == null || type.isVar()) {
+			return false;
+		}
+		if (expression == null || expression instanceof ArrayInitializer || expression instanceof LambdaExpression || expression instanceof MethodReference) {
+			return false;
+		}
+		if (expressionTypeBinding == null || !expressionTypeBinding.isEqualTo(typeBinding)) {
+			return false;
+		}
+
+		proposals.add(new TypeChangeCorrectionProposal(context.getCompilationUnit(), varBinding, astRoot, typeBinding, IProposalRelevance.CHANGE_VARIABLE));
+		return true;
+	}
 
 	private static boolean getConvertLocalToFieldProposal(IInvocationContext context, final ASTNode node, Collection<ICommandAccess> proposals) throws CoreException {
 		if (!(node instanceof SimpleName))
@@ -3670,5 +4035,182 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			proposals.add(proposal);
 		}
 		return true;
+	}
+
+	/**
+	 * Create static import proposal
+	 * @param context the invocation context
+	 * @param node the node to work on
+	 * @param proposals the receiver of proposals, may be {@code null}
+	 * @return {@code true} if the operation could or has been performed, {@code false otherwise}
+	 */
+	private static boolean getAddStaticImportProposals(IInvocationContext context, ASTNode node, Collection<ICommandAccess> proposals) {
+		if (!(node instanceof SimpleName)) {
+			return false;
+		}
+
+		final SimpleName name= (SimpleName) node;
+		final IBinding binding;
+		final ITypeBinding declaringClass;
+
+		// get bindings for method invocation or variable access
+
+		if (name.getParent() instanceof MethodInvocation) {
+			MethodInvocation mi= (MethodInvocation) name.getParent();
+
+			if (mi.getExpression() != null && mi.getExpression().equals(name)) {
+				return false;
+			}
+
+			binding= mi.resolveMethodBinding();
+			if (binding == null) {
+				return false;
+			}
+
+			declaringClass= ((IMethodBinding) binding).getDeclaringClass();
+		} else if (name.getParent() instanceof QualifiedName) {
+			QualifiedName qn= (QualifiedName) name.getParent();
+
+			if (name.equals(qn.getQualifier())) {
+				return false;
+			}
+
+			binding= qn.resolveBinding();
+			if (!(binding instanceof IVariableBinding)) {
+				return false;
+			}
+			declaringClass= ((IVariableBinding) binding).getDeclaringClass();
+		} else {
+			return false;
+		}
+
+		// at this point binding cannot be null
+
+		if (!Modifier.isStatic(binding.getModifiers())) {
+			// only work with static bindings
+			return false;
+		}
+
+		boolean needImport= false;
+		if (!isDirectlyAccessible(name, declaringClass)) {
+			if (Modifier.isPrivate(declaringClass.getModifiers())) {
+				return false;
+			}
+			needImport= true;
+		}
+
+		if (proposals == null) {
+			return true; // return early, just testing if we could do it
+		}
+
+		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
+
+		try {
+			ImportRewrite importRewrite= StubUtility.createImportRewrite(context.getCompilationUnit(), true);
+			ImportRewrite importRewriteReplaceAllOccurences= StubUtility.createImportRewrite(context.getCompilationUnit(), true);
+			ASTRewrite astRewrite= ASTRewrite.create(node.getAST());
+			ASTRewrite astRewriteReplaceAllOccurrences= ASTRewrite.create(node.getAST());
+			
+			int[] allReferencesToDeclaringClass= new int[1];
+			allReferencesToDeclaringClass[0]= 0;
+			int[] referencesFromOtherOccurences= new int[1];
+			referencesFromOtherOccurences[0]= 0;
+			MethodInvocation mi= null;
+			QualifiedName qn= null;
+			if (name.getParent() instanceof MethodInvocation) {
+				mi= (MethodInvocation) name.getParent();
+				// convert the method invocation
+				astRewrite.remove(mi.getExpression(), null);
+				mi.typeArguments().forEach(type -> astRewrite.remove((Type) type, null));
+			} else if (name.getParent() instanceof QualifiedName) {
+				qn= (QualifiedName) name.getParent();
+				// convert the field access
+				astRewrite.replace(qn, ASTNodeFactory.newName(node.getAST(), name.getFullyQualifiedName()), null);
+			} else {
+				return false;
+			}
+
+			MethodInvocation miFinal= mi;
+			name.getRoot().accept(new ASTVisitor() {
+				@Override
+				public boolean visit(MethodInvocation methodInvocation) {
+					if (methodInvocation.getExpression() == null) {
+						return super.visit(methodInvocation);
+					}
+
+					if (miFinal != null &&
+							miFinal.getExpression().toString().equals(methodInvocation.getExpression().toString()) && miFinal.getName().toString().equals(methodInvocation.getName().toString())) {
+						methodInvocation.typeArguments().forEach(type -> astRewriteReplaceAllOccurrences.remove((Type) type, null));
+						astRewriteReplaceAllOccurrences.remove(methodInvocation.getExpression(), null);
+						allReferencesToDeclaringClass[0]++;
+					} else if (declaringClass.getName().equals(methodInvocation.getExpression().toString())) {
+						allReferencesToDeclaringClass[0]++;
+						referencesFromOtherOccurences[0]++;
+					}
+					return super.visit(methodInvocation);
+				}
+			});
+			QualifiedName qnFinal= qn;
+			name.getRoot().accept(new ASTVisitor() {
+				@Override
+				public boolean visit(QualifiedName qualifiedName) {
+					if (qnFinal != null &&
+							qualifiedName.getFullyQualifiedName().equals(qnFinal.getFullyQualifiedName())) {
+						astRewriteReplaceAllOccurrences.replace(qualifiedName, ASTNodeFactory.newName(node.getAST(), name.getFullyQualifiedName()), null);
+						allReferencesToDeclaringClass[0]++;
+					} else if (declaringClass.getName().equals(qualifiedName.getQualifier().getFullyQualifiedName())) {
+						allReferencesToDeclaringClass[0]++;
+						referencesFromOtherOccurences[0]++;
+					}
+					return super.visit(qualifiedName);
+				}
+			});
+
+			// add the static import
+			if (needImport) {
+				importRewrite.addStaticImport(binding);
+				if (allReferencesToDeclaringClass[0] == 1) { // If there are exactly 1 visits, the import can be removed
+					importRewrite.removeImport(declaringClass.getQualifiedName());
+				}
+				importRewriteReplaceAllOccurences.addStaticImport(binding);
+				if (referencesFromOtherOccurences[0] == 0) {
+					importRewriteReplaceAllOccurences.removeImport(declaringClass.getQualifiedName());
+				}
+			}
+
+			ASTRewriteCorrectionProposal proposal= new ASTRewriteCorrectionProposal(CorrectionMessages.QuickAssistProcessor_convert_to_static_import, context.getCompilationUnit(), astRewrite,
+					IProposalRelevance.ADD_STATIC_IMPORT, image);
+			proposal.setImportRewrite(importRewrite);
+			proposals.add(proposal);
+			ASTRewriteCorrectionProposal proposalReplaceAllOccurrences= new ASTRewriteCorrectionProposal(CorrectionMessages.QuickAssistProcessor_convert_to_static_import_replace_all, context.getCompilationUnit(), astRewriteReplaceAllOccurrences,
+					IProposalRelevance.ADD_STATIC_IMPORT, image);
+			proposalReplaceAllOccurrences.setImportRewrite(importRewriteReplaceAllOccurences);
+			proposals.add(proposalReplaceAllOccurrences);
+		} catch (JavaModelException e) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private static boolean isDirectlyAccessible(ASTNode nameNode, ITypeBinding declaringClass) {
+		ASTNode node= nameNode.getParent();
+		while (node != null) {
+
+			if (node instanceof AbstractTypeDeclaration) {
+				ITypeBinding binding= ((AbstractTypeDeclaration) node).resolveBinding();
+				if (binding != null && binding.isSubTypeCompatible(declaringClass)) {
+					return true;
+				}
+			} else if (node instanceof AnonymousClassDeclaration) {
+				ITypeBinding binding= ((AnonymousClassDeclaration) node).resolveBinding();
+				if (binding != null && binding.isSubTypeCompatible(declaringClass)) {
+					return true;
+				}
+			}
+
+			node= node.getParent();
+		}
+		return false;
 	}
 }

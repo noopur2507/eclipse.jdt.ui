@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -359,17 +362,17 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 					ImportCompletionProposal proposal= new ImportCompletionProposal(requiredProposals[i], fInvocationContext, coreProposal.getKind());
 					proposal.setReplacementOffset(getReplacementOffset());
 					proposal.apply(document);
-					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
+					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen - proposal.getLengthOfImportsAddedBehindReplacementOffset());
 				} else if (requiredProposals[i].getKind() == CompletionProposal.METHOD_IMPORT) {
 					ImportCompletionProposal proposal= new ImportCompletionProposal(requiredProposals[i], fInvocationContext, coreProposal.getKind());
 					proposal.setReplacementOffset(getReplacementOffset());
 					proposal.apply(document);
-					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
+					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen - proposal.getLengthOfImportsAddedBehindReplacementOffset());
 				} else if (requiredProposals[i].getKind() == CompletionProposal.FIELD_IMPORT) {
 					ImportCompletionProposal proposal= new ImportCompletionProposal(requiredProposals[i], fInvocationContext, coreProposal.getKind());
 					proposal.setReplacementOffset(getReplacementOffset());
 					proposal.apply(document);
-					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
+					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen - proposal.getLengthOfImportsAddedBehindReplacementOffset());
 				} else {
 					/*
 					 * In 3.3 we only support the above required proposals, see
@@ -393,7 +396,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 					setReplacementString(replacement);
 				}
 			} else {
-				StringBuffer buffer= new StringBuffer(getReplacementString());
+				StringBuilder buffer= new StringBuilder(getReplacementString());
 
 				// fix for PR #5533. Assumes that no eating takes place.
 				if ((getCursorPosition() > 0 && getCursorPosition() <= buffer.length() && buffer.charAt(getCursorPosition() - 1) != trigger)) {
@@ -602,7 +605,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 		if (getProposalInfo() != null) {
 			String info= getProposalInfo().getInfo(monitor);
 			if (info != null && info.length() > 0) {
-				StringBuffer buffer= new StringBuffer();
+				StringBuilder buffer= new StringBuilder();
 
 				ColorRegistry registry = JFaceResources.getColorRegistry();
 				RGB fgRGB = registry.getRGB("org.eclipse.jdt.ui.Javadoc.foregroundColor"); //$NON-NLS-1$ 
@@ -652,7 +655,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 				try {
 					url= FileLocator.toFileURL(url);
 					reader= new BufferedReader(new InputStreamReader(url.openStream()));
-					StringBuffer buffer= new StringBuffer(200);
+					StringBuilder buffer= new StringBuilder(200);
 					String line= reader.readLine();
 					while (line != null) {
 						buffer.append(line);

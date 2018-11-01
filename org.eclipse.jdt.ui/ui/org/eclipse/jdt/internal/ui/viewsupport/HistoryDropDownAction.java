@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Jesper Kamstrup Linnet (eclipse@kamstrup-linnet.dk) - initial API and implementation
@@ -43,7 +46,7 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 			String label= fHistory.getText(element);
 		    if (accelerator < 10) {
 		    		//add the numerical accelerator
-			    label= new StringBuffer().append('&').append(accelerator).append(' ').append(label).toString();
+			    label= new StringBuilder().append('&').append(accelerator).append(' ').append(label).toString();
 			}
 
 			setText(label);
@@ -74,6 +77,9 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 			manager.addMenuListener(new IMenuListener() {
 				@Override
 				public void menuAboutToShow(IMenuManager manager2) {
+					if (fHistory == null) {
+						return;
+					}
 					List<E> entries= fHistory.getHistoryEntries();
 					boolean checkOthers= addEntryMenuItems(manager2, entries);
 

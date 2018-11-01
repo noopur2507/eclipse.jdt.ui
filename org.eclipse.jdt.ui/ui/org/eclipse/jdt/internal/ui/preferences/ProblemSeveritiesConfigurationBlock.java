@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -82,6 +85,7 @@ import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.dialogs.StatusUtil;
 import org.eclipse.jdt.internal.ui.dialogs.TableTextCellEditor;
 import org.eclipse.jdt.internal.ui.dialogs.TextFieldNavigationHandler;
+import org.eclipse.jdt.internal.ui.preferences.FilteredPreferenceTree.PreferenceTreeNode;
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.CompletionContextRequestor;
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.ControlContentAssistHelper;
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaTypeCompletionProcessor;
@@ -557,6 +561,7 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 	private static final Key PREF_PB_TERMINAL_DEPRECATION= getJDTCoreKey(JavaCore.COMPILER_PB_TERMINAL_DEPRECATION);
 
 	private static final Key PREF_PB_API_LEAKS= getJDTCoreKey(JavaCore.COMPILER_PB_API_LEAKS);
+	private static final Key PREF_PB_UNSTABLE_AUTO_MODULE_NAME= getJDTCoreKey(JavaCore.COMPILER_PB_UNSTABLE_AUTO_MODULE_NAME);
 
 	private static final Key PREF_PB_HIDDEN_CATCH_BLOCK= getJDTCoreKey(JavaCore.COMPILER_PB_HIDDEN_CATCH_BLOCK);
 	private static final Key PREF_PB_UNUSED_LOCAL= getJDTCoreKey(JavaCore.COMPILER_PB_UNUSED_LOCAL);
@@ -687,7 +692,7 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 
 	private PixelConverter fPixelConverter;
 
-	private FilteredPreferenceTree fFilteredPrefTree;
+	private PreferenceTree fFilteredPrefTree;
 
 	public ProblemSeveritiesConfigurationBlock(IStatusChangeListener context, IProject project, IWorkbenchPreferenceContainer container) {
 		super(context, project, getKeys(), container);
@@ -703,6 +708,7 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 				PREF_PB_OVERRIDING_PACKAGE_DEFAULT_METHOD,
 				PREF_PB_METHOD_WITH_CONSTRUCTOR_NAME, PREF_PB_DEPRECATION, PREF_PB_TERMINAL_DEPRECATION, PREF_PB_HIDDEN_CATCH_BLOCK, PREF_PB_UNUSED_LOCAL,
 				PREF_PB_API_LEAKS,
+				PREF_PB_UNSTABLE_AUTO_MODULE_NAME,
 				PREF_PB_UNUSED_PARAMETER, PREF_PB_UNUSED_EXCEPTION_PARAMETER, PREF_PB_UNUSED_PARAMETER_INCLUDE_DOC_COMMENT_REFERENCE,
 				PREF_PB_SYNTHETIC_ACCESS_EMULATION, PREF_PB_NON_EXTERNALIZED_STRINGS,
 				PREF_PB_UNUSED_IMPORT, PREF_PB_UNUSED_LABEL,
@@ -807,7 +813,7 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 		String[] enabledDisabled= new String[] { ENABLED, DISABLED };
 		String[] disabledEnabled= new String[] { DISABLED, ENABLED };
 
-		fFilteredPrefTree= new FilteredPreferenceTree(this, folder, PreferencesMessages.ProblemSeveritiesConfigurationBlock_common_description);
+		fFilteredPrefTree= new PreferenceTree(this, folder, PreferencesMessages.ProblemSeveritiesConfigurationBlock_common_description);
 		final ScrolledPageContent sc1= fFilteredPrefTree.getScrolledPageContent();
 		
 		int nColumns= 3;
@@ -824,8 +830,8 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 		String label;
 		ExpandableComposite excomposite;
 		Composite inner;
-		PreferenceTreeNode section;
-		PreferenceTreeNode node;
+		PreferenceTreeNode<?> section;
+		PreferenceTreeNode<?> node;
 		Key twistieKey;
 
 		// --- style
@@ -1023,6 +1029,9 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 		label= PreferencesMessages.ProblemSeveritiesConfigurationBlock_pb_api_leak_label;
 		node= fFilteredPrefTree.addComboBox(inner, label, PREF_PB_API_LEAKS, errorWarningInfoIgnore, errorWarningInfoIgnoreLabels, defaultIndent, section);
 
+		label= PreferencesMessages.ProblemSeveritiesConfigurationBlock_pb_unstable_auto_module_name_label;
+		node= fFilteredPrefTree.addComboBox(inner, label, PREF_PB_UNSTABLE_AUTO_MODULE_NAME, errorWarningInfoIgnore, errorWarningInfoIgnoreLabels, defaultIndent, section);
+
 		// --- unnecessary_code
 
 		label= PreferencesMessages.ProblemSeveritiesConfigurationBlock_section_unnecessary_code;
@@ -1188,7 +1197,7 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 		fFilteredPrefTree.addComboBox(inner, label, PREF_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, errorWarningInfoIgnore, errorWarningInfoIgnoreLabels, extraIndent, node);
 		
 		label= PreferencesMessages.NullAnnotationsConfigurationDialog_use_default_annotations_for_null;
-		fFilteredPrefTree.addCheckBoxWithLink(inner, label, INTR_DEFAULT_NULL_ANNOTATIONS, enabledDisabled, extraIndent, node, true, SWT.DEFAULT,
+		fFilteredPrefTree.addCheckBoxWithLink(inner, label, INTR_DEFAULT_NULL_ANNOTATIONS, enabledDisabled, extraIndent, node, SWT.DEFAULT,
 				new SelectionAdapter() {
 					@Override
 					public void widgetSelected(SelectionEvent e) {
@@ -1277,20 +1286,15 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 				ask |= (badNullRef || badPotNullRef) && PREF_ANNOTATION_NULL_ANALYSIS.equals(changedKey);
 				if (ask) {
 					final Combo comboBoxNullRef= getComboBox(PREF_PB_NULL_REFERENCE);
-					final Label labelNullRef= fLabels.get(comboBoxNullRef);
-					int highlightNullRef= getHighlight(labelNullRef);
+					final PreferenceHighlight highlightNullRef= (PreferenceHighlight) fLabels.get(comboBoxNullRef).getData(DATA_PREF_HIGHLIGHT);
 					final Combo comboBoxPotNullRef= getComboBox(PREF_PB_POTENTIAL_NULL_REFERENCE);
-					final Label labelPotNullRef= fLabels.get(comboBoxPotNullRef);
-					int highlightPotNullRef= getHighlight(labelPotNullRef);
-					
-					getShell().getDisplay().asyncExec(new Runnable() {
-						@Override
-						public void run() {
-							highlight(comboBoxNullRef.getParent(), labelNullRef, comboBoxNullRef, HIGHLIGHT_FOCUS);
-							highlight(comboBoxPotNullRef.getParent(), labelPotNullRef, comboBoxPotNullRef, HIGHLIGHT_FOCUS);
-						}
+					final PreferenceHighlight highlightPotNullRef= (PreferenceHighlight) fLabels.get(comboBoxPotNullRef).getData(DATA_PREF_HIGHLIGHT);
+
+					getShell().getDisplay().asyncExec(() -> {
+						highlightNullRef.setFocus(true);
+						highlightPotNullRef.setFocus(true);
 					});
-					
+
 					MessageDialog messageDialog= new MessageDialog(
 							getShell(),
 							PreferencesMessages.ProblemSeveritiesConfigurationBlock_adapt_null_pointer_access_settings_dialog_title,
@@ -1312,9 +1316,9 @@ public class ProblemSeveritiesConfigurationBlock extends OptionsConfigurationBlo
 							updateCombo(getComboBox(PREF_PB_POTENTIAL_NULL_REFERENCE));
 						}
 					}
-					
-					highlight(comboBoxNullRef.getParent(), labelNullRef, comboBoxNullRef, highlightNullRef);
-					highlight(comboBoxPotNullRef.getParent(), labelPotNullRef, comboBoxPotNullRef, highlightPotNullRef);
+
+					highlightNullRef.setFocus(false);
+					highlightPotNullRef.setFocus(false);
 				}
 
 			} else if (PREF_PB_SIGNAL_PARAMETER_IN_OVERRIDING.equals(changedKey)) {

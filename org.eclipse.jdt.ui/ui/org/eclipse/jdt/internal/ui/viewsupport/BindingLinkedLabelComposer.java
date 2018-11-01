@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2015 GK Software AG and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2015, 2018 GK Software AG and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - initial API and implementation
@@ -281,7 +284,8 @@ public class BindingLinkedLabelComposer extends JavaElementLinkedLabelComposer {
 					appendTypeArgumentsBindingLabel(method.getTypeParameters(), String.valueOf(' '), flags|TP_BOUNDS);
 				}
 				if (getFlag(flags, JavaElementLabels.COLORIZE) && offset != fBuffer.length()) {
-					fBuffer.setStyle(offset, fBuffer.length() - offset, StyledString.DECORATIONS_STYLER);
+					if (fBuffer instanceof FlexibleBuffer)
+						((FlexibleBuffer)fBuffer).setStyle(offset, fBuffer.length() - offset, StyledString.DECORATIONS_STYLER);
 				}
 			}
 		}
@@ -578,8 +582,12 @@ public class BindingLinkedLabelComposer extends JavaElementLinkedLabelComposer {
 		if (qualifiedName.length() > 0) {
 			IJavaElement packageElement= binding.getJavaElement();
 			try {
-				String uri= createURI(JAVADOC_SCHEME, packageElement);
-				fBuffer.append(createHeaderLink(uri, qualifiedName));
+				if (packageElement != null) {
+					String uri= createURI(JAVADOC_SCHEME, packageElement);
+					fBuffer.append(createHeaderLink(uri, qualifiedName));
+				} else {
+					fBuffer.append(qualifiedName);
+				}
 			} catch (URISyntaxException e) {
 				JavaPlugin.log(e);
 				fBuffer.append(qualifiedName);

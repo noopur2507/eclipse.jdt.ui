@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -37,6 +40,8 @@ import org.eclipse.jdt.core.JavaModelException;
 
 import org.eclipse.jdt.internal.corext.util.Messages;
 
+import org.eclipse.jdt.ui.PreferenceConstants;
+
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
@@ -48,15 +53,18 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 
 	private IClasspathEntry fClassPathEntry;
 	private IClasspathContainer fContainer;
+	private boolean fDecorateTestCodeContainerIcons;
 
 	public static class RequiredProjectWrapper implements IAdaptable, IWorkbenchAdapter {
 
 		private final ClassPathContainer fParent;
 		private final IJavaProject fProject;
+		private final IClasspathEntry fClasspathEntry;
 
-		public RequiredProjectWrapper(ClassPathContainer parent, IJavaProject project) {
+		public RequiredProjectWrapper(ClassPathContainer parent, IJavaProject project, IClasspathEntry classpathEntry) {
 			fParent= parent;
 			fProject= project;
+			fClasspathEntry= classpathEntry;
 		}
 
 		public IJavaProject getProject() {
@@ -65,6 +73,10 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 
 		public ClassPathContainer getParentClassPathContainer() {
 			return fParent;
+		}
+
+		public IClasspathEntry getClasspathEntry() {
+			return fClasspathEntry;
 		}
 
 		@Override
@@ -82,7 +94,10 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 
 		@Override
 		public ImageDescriptor getImageDescriptor(Object object) {
-			return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(IDE.SharedImages.IMG_OBJ_PROJECT);
+			if (fClasspathEntry.isTest())
+				return JavaPluginImages.DESC_OBJS_PROJECT_TEST;
+			else
+				return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(IDE.SharedImages.IMG_OBJ_PROJECT);
 		}
 
 		@Override
@@ -94,6 +109,44 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 		public Object getParent(Object o) {
 			return fParent;
 		}
+
+		@Override
+		public int hashCode() {
+			final int prime= 31;
+			int result= 1;
+			result= prime * result + ((fClasspathEntry == null) ? 0 : fClasspathEntry.hashCode());
+			result= prime * result + ((fParent == null) ? 0 : fParent.hashCode());
+			result= prime * result + ((fProject == null) ? 0 : fProject.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null || obj!=this)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			RequiredProjectWrapper other= (RequiredProjectWrapper) obj;
+			if (fClasspathEntry == null) {
+				if (other.fClasspathEntry != null)
+					return false;
+			} else if (!fClasspathEntry.equals(other.fClasspathEntry))
+				return false;
+			if (fParent == null) {
+				if (other.fParent != null)
+					return false;
+			} else if (!fParent.equals(other.fParent))
+				return false;
+			if (fProject == null) {
+				if (other.fProject != null)
+					return false;
+			} else if (!fProject.equals(other.fProject))
+				return false;
+			return true;
+		}
+		
 	}
 
 	public ClassPathContainer(IJavaProject parent, IClasspathEntry entry) {
@@ -104,6 +157,7 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 		} catch (JavaModelException e) {
 			fContainer= null;
 		}
+		fDecorateTestCodeContainerIcons= PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.DECORATE_TEST_CODE_CONTAINER_ICONS);
 	}
 
 	@Override
@@ -148,7 +202,7 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 					if (entry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
 						IResource resource= root.findMember(entry.getPath());
 						if (resource instanceof IProject)
-							list.add(new RequiredProjectWrapper(this, JavaCore.create((IProject) resource)));
+							list.add(new RequiredProjectWrapper(this, JavaCore.create((IProject) resource), entry));
 					}
 				}
 			}
@@ -158,7 +212,7 @@ public class ClassPathContainer extends PackageFragmentRootContainer {
 
 	@Override
 	public ImageDescriptor getImageDescriptor() {
-		return JavaPluginImages.DESC_OBJS_LIBRARY;
+		return fDecorateTestCodeContainerIcons && fClassPathEntry.isTest() ? JavaPluginImages.DESC_OBJS_LIBRARY_TEST : JavaPluginImages.DESC_OBJS_LIBRARY;
 	}
 
 	@Override

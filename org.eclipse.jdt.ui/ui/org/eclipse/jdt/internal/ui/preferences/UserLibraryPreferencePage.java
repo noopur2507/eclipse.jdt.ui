@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -51,6 +54,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.FileDialog;
@@ -363,7 +367,7 @@ public class UserLibraryPreferencePage extends PreferencePage implements IWorkbe
 		@Override
 		public void changeControlPressed(DialogField field) {
 			String label= isSave() ? PreferencesMessages.UserLibraryPreferencePage_LoadSaveDialog_filedialog_save_title : PreferencesMessages.UserLibraryPreferencePage_LoadSaveDialog_filedialog_load_title;
-			FileDialog dialog= new FileDialog(getShell(), isSave() ? SWT.SAVE : SWT.OPEN);
+			FileDialog dialog= new FileDialog(getShell(), SWT.SHEET | (isSave() ? SWT.SAVE : SWT.OPEN));
 			dialog.setText(label);
 			dialog.setFilterExtensions(new String[] {"*.userlibraries", "*.*"}); //$NON-NLS-1$ //$NON-NLS-2$
 			String lastPath= fLocationField.getText();
@@ -1027,6 +1031,11 @@ public class UserLibraryPreferencePage extends PreferencePage implements IWorkbe
 				IClasspathAttribute result= config.performEdit(getShell(), elem.getClasspathAttributeAccess());
 				if (result != null) {
 					elem.setValue(result.getValue());
+					if(key.equals(CPListElement.TEST) || key.equals(CPListElement.WITHOUT_TEST_CODE)) {
+						fLibraryList.refresh(elem.getParent());
+					} else { 
+						fLibraryList.refresh(elem);
+					}
 					fLibraryList.refresh(parentContainer);
 				}
 			}
@@ -1035,6 +1044,21 @@ public class UserLibraryPreferencePage extends PreferencePage implements IWorkbe
 
 	protected void doSelectionChanged(TreeListDialogField<CPUserLibraryElement> field) {
 		List<Object> list= field.getSelectedElements();
+		String text;
+		if (list.size() == 1
+				&& list.get(0) instanceof CPListElementAttribute) {
+			String key= ((CPListElementAttribute) list.get(0)).getKey();
+			if (CPListElement.TEST.equals(key) || CPListElement.WITHOUT_TEST_CODE.equals(key)) {
+				text= PreferencesMessages.UserLibraryPreferencePage_libraries_toggle_button;
+			} else {
+				text= PreferencesMessages.UserLibraryPreferencePage_libraries_edit_button;
+			}
+		} else {
+			text= PreferencesMessages.UserLibraryPreferencePage_libraries_edit_button;
+		}
+		Button editButton= field.getButton(IDX_EDIT);
+		if (editButton != null)
+			editButton.setText(text);
 		field.enableButton(IDX_REMOVE, canRemove(list));
 		field.enableButton(IDX_EDIT, canEdit(list));
 		field.enableButton(IDX_ADD, canAdd(list));
@@ -1440,7 +1464,7 @@ public class UserLibraryPreferencePage extends PreferencePage implements IWorkbe
 		}
 		String title= (existing == null) ? PreferencesMessages.UserLibraryPreferencePage_browsejar_new_title : PreferencesMessages.UserLibraryPreferencePage_browsejar_edit_title;
 
-		FileDialog dialog= new FileDialog(getShell(), existing == null ? SWT.MULTI : SWT.SINGLE);
+		FileDialog dialog= new FileDialog(getShell(), SWT.SHEET | (existing == null ? SWT.MULTI : SWT.SINGLE));
 		dialog.setText(title);
 		dialog.setFilterExtensions(ArchiveFileFilter.ALL_ARCHIVES_FILTER_EXTENSIONS);
 		dialog.setFilterPath(lastUsedPath);

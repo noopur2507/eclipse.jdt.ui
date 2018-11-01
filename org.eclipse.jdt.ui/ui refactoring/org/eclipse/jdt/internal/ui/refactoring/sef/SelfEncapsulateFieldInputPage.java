@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -321,13 +324,13 @@ public class SelfEncapsulateFieldInputPage extends UserInputWizardPage {
 		Integer[] data= null;
 		if (Flags.isPrivate(visibility)) {
 			labels= new String[] { pub, pro, def, priv };
-			data= new Integer[] {new Integer(Flags.AccPublic), new Integer(Flags.AccProtected), new Integer(0), new Integer(Flags.AccPrivate) };
+			data= new Integer[] {Integer.valueOf(Flags.AccPublic), Integer.valueOf(Flags.AccProtected), Integer.valueOf(0), Integer.valueOf(Flags.AccPrivate) };
 		} else if (Flags.isProtected(visibility)) {
 			labels= new String[] { pub, pro };
-			data= new Integer[] {new Integer(Flags.AccPublic), new Integer(Flags.AccProtected)};
+			data= new Integer[] {Integer.valueOf(Flags.AccPublic), Integer.valueOf(Flags.AccProtected)};
 		} else {
 			labels= new String[] { pub, def };
-			data= new Integer[] {new Integer(Flags.AccPublic), new Integer(0)};
+			data= new Integer[] {Integer.valueOf(Flags.AccPublic), Integer.valueOf(0)};
 		}
 		return new Object[] {labels, data};
 	}

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -186,7 +189,7 @@ public abstract class ProfileConfigurationBlock {
 		 * @since 3.6
 		 */
 		private void exportAllButtonPressed() {
-			final FileDialog dialog= new FileDialog(fComposite.getShell(), SWT.SAVE);
+			final FileDialog dialog= new FileDialog(fComposite.getShell(), SWT.SAVE | SWT.SHEET);
 			dialog.setText(FormatterMessages.CodingStyleConfigurationBlock_export_profiles_dialog_title);
 			dialog.setFilterExtensions(new String [] {"*.xml"}); //$NON-NLS-1$
 			final String lastPath= JavaPlugin.getDefault().getDialogSettings().get(fLastSaveLoadPathKey + ".loadpath"); //$NON-NLS-1$
@@ -248,7 +251,7 @@ public abstract class ProfileConfigurationBlock {
 		}
 
 		private void loadButtonPressed() {
-			final FileDialog dialog= new FileDialog(fComposite.getShell(), SWT.OPEN);
+			final FileDialog dialog= new FileDialog(fComposite.getShell(), SWT.OPEN | SWT.SHEET);
 			dialog.setText(FormatterMessages.CodingStyleConfigurationBlock_load_profile_dialog_title);
 			dialog.setFilterExtensions(new String [] {"*.xml"}); //$NON-NLS-1$
 			final String lastPath= JavaPlugin.getDefault().getDialogSettings().get(fLastSaveLoadPathKey + ".loadpath"); //$NON-NLS-1$

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2010 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -90,7 +93,7 @@ public class PropertiesFileEscapes {
 	 * @return escaped string
 	 */
 	public static String escape(String s, boolean escapeWhitespaceChars, boolean escapeBackslash, boolean escapeUnicodeChars) {
-		StringBuffer sb= new StringBuffer(s.length());
+		StringBuilder sb= new StringBuilder(s.length());
 		int length= s.length();
 		for (int i= 0; i < length; i++) {
 			char c= s.charAt(i);
@@ -123,7 +126,7 @@ public class PropertiesFileEscapes {
 			default:
 				if (escapeUnicodeChars && ((c < 0x0020) || (c > 0x007e && c <= 0x00a0) || (c > 0x00ff))) {
 					//NBSP (0x00a0) is escaped to differentiate from normal space character
-					return new StringBuffer()
+					return new StringBuilder()
 							.append('\\')
 							.append('u')
 							.append(toHex((c >> 12) & 0xF))
@@ -150,7 +153,7 @@ public class PropertiesFileEscapes {
 
 		char aChar;
 		int len= s.length();
-		StringBuffer outBuffer= new StringBuffer(len);
+		StringBuilder outBuffer= new StringBuilder(len);
 
 		for (int x= 0; x < len;) {
 			aChar= s.charAt(x++);
@@ -166,7 +169,7 @@ public class PropertiesFileEscapes {
 						String exceptionMessage= Messages.format(PropertiesFileEditorMessages.PropertiesFileHover_MalformedEncoding, outBuffer.toString() + s.substring(x - 2));
 						throw new CoreException(new StatusInfo(IStatus.WARNING, exceptionMessage));
 					}
-					StringBuffer buf= new StringBuffer("\\u"); //$NON-NLS-1$
+					StringBuilder buf= new StringBuilder("\\u"); //$NON-NLS-1$
 					int digit= 0;
 					for (int i= 0; i < 4; i++) {
 						aChar= s.charAt(x++);
@@ -214,7 +217,7 @@ public class PropertiesFileEscapes {
 	
 		char c;
 		int length= s.length();
-		StringBuffer outBuffer= new StringBuffer(length);
+		StringBuilder outBuffer= new StringBuilder(length);
 	
 		for (int i= 0; i < length;) {
 			c= s.charAt(i++);

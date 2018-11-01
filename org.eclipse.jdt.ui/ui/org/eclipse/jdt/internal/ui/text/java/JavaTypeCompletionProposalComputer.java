@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -150,7 +153,7 @@ public class JavaTypeCompletionProposalComputer extends JavaCompletionProposalCo
 		else
 			sourceVersion= JavaCore.getOption(JavaCore.COMPILER_SOURCE);
 
-		return sourceVersion != null && JavaCore.VERSION_1_5.compareTo(sourceVersion) <= 0;
+		return sourceVersion != null && JavaCore.compareJavaVersions(JavaCore.VERSION_1_5, sourceVersion) <= 0;
 	}
 
 	@Override

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2012, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -92,11 +95,12 @@ public interface IProposalRelevance {
 	public static final int INSERT_INFERRED_TYPE_ARGUMENTS= 7;
 	public static final int RETURN_ALLOCATED_OBJECT_MATCH= 7;
 	public static final int CREATE_LOCAL= 7;
+	public static final int CHANGE_WORKSPACE_COMPLIANCE= 7;
 	
 	public static final int REMOVE_SEMICOLON= 6;
 	public static final int CREATE_METHOD_IN_SUPER= 6;
 	public static final int QUALIFY_LHS= 6;
-	public static final int CHANGE_WORKSPACE_COMPLIANCE= 6;
+	public static final int CHANGE_PROJECT_COMPLIANCE= 6;
 	public static final int ARRAY_CHANGE_TO_METHOD= 6;
 	public static final int CAST_ARGUMENT_1= 6;
 	public static final int CHANGE_METHOD= 6;
@@ -181,10 +185,10 @@ public interface IProposalRelevance {
 	public static final int ADD_CONSTRUCTOR_FROM_SUPER_CLASS= 5;
 	public static final int GETTER_SETTER_UNQUALIFIED_FIELD_ACCESS= 5;
 	public static final int RENAME_TYPE= 5;
-	public static final int CHANGE_PROJECT_COMPLIANCE= 5;
 	public static final int CORRECT_PACKAGE_DECLARATION= 5;
 	public static final int TYPE_ARGUMENTS_FROM_CONTEXT= 5;
 	public static final int REMOVE_REDUNDANT_NULLNESS_ANNOTATION= 5;
+	public static final int ADD_MISSING_NULLNESS_ANNOTATION= 5;
 	public static final int REPLACE_WITH_UNQUALIFIED_ENUM_CONSTANT= 5;
 	public static final int OVERRIDE_DEFAULT_METHOD= 5;
 

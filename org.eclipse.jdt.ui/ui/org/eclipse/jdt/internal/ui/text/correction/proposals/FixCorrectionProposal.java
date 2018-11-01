@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -109,7 +112,7 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 
 	@Override
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
-		StringBuffer result= new StringBuffer();
+		StringBuilder result= new StringBuilder();
 
 		IStatus status= getFixStatus();
 		if (status != null && !status.isOK()) {
@@ -248,7 +251,7 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 		} else if (count < 2) {
 			return null;
 		} else {
-			return Messages.format(CorrectionMessages.FixCorrectionProposal_hitCtrlEnter_variable_description, new Integer(count));
+			return Messages.format(CorrectionMessages.FixCorrectionProposal_hitCtrlEnter_variable_description, Integer.valueOf(count));
 		}
 	}
 

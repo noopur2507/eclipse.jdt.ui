@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -486,8 +489,14 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 
 	private void updateTestLoaderFromConfig(ILaunchConfiguration config) {
 		ITestKind testKind= JUnitLaunchConfigurationConstants.getTestRunnerKind(config);
-		if (testKind.isNull())
-			testKind= TestKindRegistry.getDefault().getKind(TestKindRegistry.JUNIT3_TEST_KIND_ID);
+		if (testKind.isNull()) {
+			if (fContainerElement != null) {
+				testKind= TestKindRegistry.getContainerTestKind(fContainerElement);
+			}
+			if (testKind.isNull()) {
+				testKind= TestKindRegistry.getDefault().getKind(TestKindRegistry.JUNIT3_TEST_KIND_ID);
+			}
+		}
 		fTestLoaderViewer.setSelection(new StructuredSelection(testKind));
 	}
 
@@ -843,7 +852,7 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 		String methodName= fTestMethodText.getText();
 
 		if (methodNames.contains(methodName)) {
-			dialog.setInitialSelections(new String[] { methodName });
+			dialog.setInitialSelections(methodName);
 		}
 
 		dialog.setAllowDuplicates(false);
@@ -1146,6 +1155,10 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 		if (testKindId != null)
 			config.setAttribute(JUnitLaunchConfigurationConstants.ATTR_TEST_RUNNER_KIND, testKindId);
 		initializeName(config, name);
+		boolean isRunWithJUnitPlatform= TestKindRegistry.isRunWithJUnitPlatform(javaElement);
+		if (isRunWithJUnitPlatform) {
+			config.setAttribute(JUnitLaunchConfigurationConstants.ATTR_RUN_WITH_JUNIT_PLATFORM_ANNOTATION, true);
+		}
 	}
 
 	@Override

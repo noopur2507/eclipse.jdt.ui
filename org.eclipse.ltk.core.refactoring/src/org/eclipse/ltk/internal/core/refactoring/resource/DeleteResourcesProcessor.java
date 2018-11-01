@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2007, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -46,10 +49,10 @@ import org.eclipse.ltk.core.refactoring.participants.ResourceChangeChecker;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 import org.eclipse.ltk.core.refactoring.resource.DeleteResourceChange;
 import org.eclipse.ltk.core.refactoring.resource.DeleteResourcesDescriptor;
+import org.eclipse.ltk.core.refactoring.resource.Resources;
 import org.eclipse.ltk.internal.core.refactoring.BasicElementLabels;
 import org.eclipse.ltk.internal.core.refactoring.Messages;
 import org.eclipse.ltk.internal.core.refactoring.RefactoringCoreMessages;
-import org.eclipse.ltk.internal.core.refactoring.Resources;
 
 /**
  * A delete processor for {@link IResource resources}. The processor will delete the resources and
@@ -267,7 +270,7 @@ public class DeleteResourcesProcessor extends DeleteProcessor {
 		if (fResources.length == 1) {
 			return Messages.format(RefactoringCoreMessages.DeleteResourcesProcessor_description_single, BasicElementLabels.getPathLabel(fResources[0].getFullPath(), false));
 		}
-		return Messages.format(RefactoringCoreMessages.DeleteResourcesProcessor_description_multi, new Integer(fResources.length));
+		return Messages.format(RefactoringCoreMessages.DeleteResourcesProcessor_description_multi, Integer.valueOf(fResources.length));
 	}
 
 	@Override
@@ -336,6 +339,11 @@ public class DeleteResourcesProcessor extends DeleteProcessor {
 			}
 		}
 		result.add(curr);
+	}
+
+	public RefactoringStatus setResources(IResource[] resources, IProgressMonitor pm) throws OperationCanceledException, CoreException {
+		this.fResources = resources;
+		return checkInitialConditions(pm);
 	}
 
 

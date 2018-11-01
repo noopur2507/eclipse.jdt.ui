@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -71,12 +74,14 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddGetterSetterOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.GetterSetterUtil;
 import org.eclipse.jdt.internal.corext.codemanipulation.IRequestQuery;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -95,13 +100,11 @@ import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.actions.WorkbenchRunnableAdapter;
 import org.eclipse.jdt.internal.ui.dialogs.SourceActionDialog;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.jdt.internal.ui.util.BusyIndicatorRunnableContext;
 import org.eclipse.jdt.internal.ui.util.ElementValidator;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
 
 /**
@@ -305,7 +308,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 		dialog.setInput(type);
 
 		if (preselected.length > 0) {
-			dialog.setInitialSelections(preselected);
+			dialog.setInitialSelections((Object[]) preselected);
 			dialog.setExpandedElements(preselected);
 		}
 		final Set<IField> keySet= new LinkedHashSet<>(entries.keySet());
@@ -395,7 +398,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	 * @throws JavaModelException if getting the field's type signature fails
 	 */
 	private static String createSignatureKey(String methodName, IField field) throws JavaModelException {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		buffer.append(methodName);
 		String fieldType= field.getTypeSignature();
 		String signature= Signature.getSimpleName(Signature.toString(fieldType));
@@ -938,7 +941,16 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 		private boolean allowSettersForFinals() {
 			return fAllowSettersForFinals;
 		}
-
+		
+		@Override
+		protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
+			if(id == IDialogConstants.OK_ID) {
+				return super.createButton(parent, id, ActionMessages.GetterSetterTreeSelectionDialog_generate_button_label, defaultButton);
+			} else {
+				return super.createButton(parent, id, label, defaultButton);
+			}
+		}
+		
 		public void allowSettersForFinals(boolean allowSettersForFinals) {
 			if (fAllowSettersForFinals != allowSettersForFinals) {
 				fAllowSettersForFinals= allowSettersForFinals;

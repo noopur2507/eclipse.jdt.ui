@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2016, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -30,16 +33,20 @@ import org.eclipse.jdt.internal.junit.runner.IListensToTestExecutions;
 import org.eclipse.jdt.internal.junit.runner.ITestIdentifier;
 import org.eclipse.jdt.internal.junit.runner.MessageIds;
 import org.eclipse.jdt.internal.junit.runner.RemoteTestRunner;
+import org.eclipse.jdt.internal.junit.runner.TestIdMap;
 import org.eclipse.jdt.internal.junit.runner.TestReferenceFailure;
 
 public class JUnit5TestListener implements TestExecutionListener {
 
 	private final IListensToTestExecutions fNotified;
 
+	private RemoteTestRunner fRemoteTestRunner;
+
 	private TestPlan fTestPlan;
 
-	public JUnit5TestListener(IListensToTestExecutions notified) {
+	public JUnit5TestListener(IListensToTestExecutions notified, RemoteTestRunner remoteTestRunner) {
 		fNotified= notified;
+		fRemoteTestRunner= remoteTestRunner;
 	}
 
 	@Override
@@ -61,38 +68,30 @@ public class JUnit5TestListener implements TestExecutionListener {
 
 	@Override
 	public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
-		Status result= testExecutionResult.getStatus();
+		notifyIfNotSuccessful(testIdentifier, testExecutionResult);
 		if (testIdentifier.isTest()) {
-			if (result != Status.SUCCESSFUL) {
-				String trace= ""; //$NON-NLS-1$
-				FailedComparison comparison= null;
-				String status= MessageIds.TEST_FAILED;
-
-				boolean assumptionFailed= result == Status.ABORTED;
-				Optional<Throwable> throwableOp= testExecutionResult.getThrowable();
-				if (throwableOp.isPresent()) {
-					Throwable exception= throwableOp.get();
-					trace= getTrace(exception);
-					comparison= getFailedComparison(exception);
-					status= (assumptionFailed || exception instanceof AssertionError) ? MessageIds.TEST_FAILED : MessageIds.TEST_ERROR;
-				}
-
-				ITestIdentifier identifier= getIdentifier(testIdentifier, false, assumptionFailed);
-				fNotified.notifyTestFailed(new TestReferenceFailure(identifier, status, trace, comparison));
-			}
-
 			fNotified.notifyTestEnded(getIdentifier(testIdentifier, false, false));
+		}
+	}
 
-		} else { // container
-			if (result != Status.SUCCESSFUL) {
-				Optional<Throwable> throwableOp= testExecutionResult.getThrowable();
-				String trace= ""; //$NON-NLS-1$
-				if (throwableOp.isPresent()) {
-					trace= getTrace(throwableOp.get());
-				}
-				ITestIdentifier identifier= getIdentifier(testIdentifier, false, false);
-				fNotified.notifyTestFailed(new TestReferenceFailure(identifier, MessageIds.TEST_ERROR, trace));
+	private void notifyIfNotSuccessful(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
+		Status result= testExecutionResult.getStatus();
+		if (result != Status.SUCCESSFUL) {
+			String trace= ""; //$NON-NLS-1$
+			FailedComparison comparison= null;
+			String status= MessageIds.TEST_FAILED;
+
+			boolean assumptionFailed= result == Status.ABORTED;
+			Optional<Throwable> throwableOp= testExecutionResult.getThrowable();
+			if (throwableOp.isPresent()) {
+				Throwable exception= throwableOp.get();
+				trace= getTrace(exception);
+				comparison= getFailedComparison(exception);
+				status= (assumptionFailed || exception instanceof AssertionError) ? MessageIds.TEST_FAILED : MessageIds.TEST_ERROR;
 			}
+
+			ITestIdentifier identifier= getIdentifier(testIdentifier, false, assumptionFailed);
+			fNotified.notifyTestFailed(new TestReferenceFailure(identifier, status, trace, comparison));
 		}
 	}
 
@@ -111,7 +110,9 @@ public class JUnit5TestListener implements TestExecutionListener {
 				return null;
 			}
 			return new FailedComparison(expected.getStringRepresentation(), actual.getStringRepresentation());
-		} else if (exception instanceof MultipleFailuresError) {
+		}
+
+		if (exception instanceof MultipleFailuresError) {
 			String expectedStr= ""; //$NON-NLS-1$
 			String actualStr= ""; //$NON-NLS-1$
 			String delimiter= "\n\n"; //$NON-NLS-1$
@@ -132,6 +133,18 @@ public class JUnit5TestListener implements TestExecutionListener {
 			}
 			return new FailedComparison(expectedStr, actualStr);
 		}
+
+		// Avoid reference to ComparisonFailure initially to avoid NoClassDefFoundError for ComparisonFailure when junit.jar is not on the build path 
+		String classname= exception.getClass().getName();
+		if (classname.equals("junit.framework.ComparisonFailure")) { //$NON-NLS-1$
+			junit.framework.ComparisonFailure comparisonFailure= (junit.framework.ComparisonFailure) exception;
+			return new FailedComparison(comparisonFailure.getExpected(), comparisonFailure.getActual());
+		}
+		if (classname.equals("org.junit.ComparisonFailure")) { //$NON-NLS-1$
+			org.junit.ComparisonFailure comparisonFailure= (org.junit.ComparisonFailure) exception;
+			return new FailedComparison(comparisonFailure.getExpected(), comparisonFailure.getActual());
+		}
+
 		return null;
 	}
 
@@ -165,9 +178,20 @@ public class JUnit5TestListener implements TestExecutionListener {
 				hasChildren= false;
 				testCount= 1;
 			}
-			String parentId= JUnit5TestReference.getParentId(testIdentifier, fTestPlan);
-			RemoteTestRunner.fgTestRunServer.visitTreeEntry(dynamicTestIdentifier, hasChildren, testCount, true, parentId);
+			String parentId= getParentId(testIdentifier, fTestPlan);
+			fRemoteTestRunner.visitTreeEntry(dynamicTestIdentifier, hasChildren, testCount, true, parentId);
 		}
+	}
+
+	/**
+	 * @param testIdentifier the test identifier whose parent id is required
+	 * @param testPlan the test plan containing the test
+	 * @return the parent id from {@link TestIdMap} if the parent is present, otherwise
+	 *         <code>"-1"</code>
+	 */
+	private String getParentId(TestIdentifier testIdentifier, TestPlan testPlan) {
+		// Same as JUnit5TestReference.getParentId(TestIdentifier testIdentifier, TestPlan testPlan).
+		return testPlan.getParent(testIdentifier).map(parent -> fRemoteTestRunner.getTestId(new JUnit5Identifier(parent))).orElse("-1"); //$NON-NLS-1$
 	}
 
 	private ITestIdentifier getIdentifier(TestIdentifier testIdentifier, boolean ignored, boolean assumptionFailed) {

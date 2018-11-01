@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -62,8 +65,8 @@ import org.eclipse.jdt.internal.corext.SourceRangeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.SearchResultGroup;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStringStatusContext;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextChangeManager;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -302,7 +305,7 @@ class RenameAnalyzeUtil {
 		Map<Integer, SearchMatch> updatedOldOffsets= getUpdatedChangeOffsets(change, oldMatches);
 		for (int i= 0; i < newMatches.length; i++) {
 			SearchMatch newMatch= newMatches[i];
-			Integer offsetInNew= new Integer(newMatch.getOffset());
+			Integer offsetInNew= Integer.valueOf(newMatch.getOffset());
 			SearchMatch oldMatch= updatedOldOffsets.remove(offsetInNew);
 			if (oldMatch == null) {
 				addReferenceShadowedError(cu, newMatch, newElementName, result);
@@ -326,9 +329,9 @@ class RenameAnalyzeUtil {
 		Map<Integer, Integer> oldToUpdatedOffsets= getEditChangeOffsetUpdates(change);
 		for (int i= 0; i < oldMatches.length; i++) {
 			SearchMatch oldMatch= oldMatches[i];
-			Integer updatedOffset= oldToUpdatedOffsets.get(new Integer(oldMatch.getOffset()));
+			Integer updatedOffset= oldToUpdatedOffsets.get(Integer.valueOf(oldMatch.getOffset()));
 			if (updatedOffset == null)
-				updatedOffset= new Integer(-1); //match not updated
+				updatedOffset= Integer.valueOf(-1); //match not updated
 			updatedOffsets.put(updatedOffset, oldMatch);
 		}
 		return updatedOffsets;
@@ -351,7 +354,7 @@ class RenameAnalyzeUtil {
 			if (updatedRegion == null)
 				continue;
 
-			offsetUpdates.put(new Integer(oldRegion.getOffset()), new Integer(updatedRegion.getOffset()));
+			offsetUpdates.put(Integer.valueOf(oldRegion.getOffset()), Integer.valueOf(updatedRegion.getOffset()));
 		}
 		return offsetUpdates;
 	}
@@ -446,7 +449,7 @@ class RenameAnalyzeUtil {
 			return (VariableDeclaration) node.getParent();
 
 		if (binding != null && binding.getKind() == IBinding.VARIABLE) {
-			CompilationUnit cu= (CompilationUnit) ASTNodes.getParent(node, CompilationUnit.class);
+			CompilationUnit cu= ASTNodes.getParent(node, CompilationUnit.class);
 			return ASTNodes.findVariableDeclaration( ((IVariableBinding) binding), cu);
 		}
 		return null;

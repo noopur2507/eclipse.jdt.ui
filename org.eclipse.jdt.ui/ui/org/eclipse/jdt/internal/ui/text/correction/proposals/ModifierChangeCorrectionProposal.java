@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -32,6 +35,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
@@ -39,9 +43,9 @@ import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.dom.VariableDeclarationRewrite;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup;
-import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup.PositionInformation;
+import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroupCore.PositionInformation;
 
-import org.eclipse.jdt.ui.CodeGeneration;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 public class ModifierChangeCorrectionProposal extends LinkedCorrectionProposal {
 
@@ -112,7 +116,7 @@ public class ModifierChangeCorrectionProposal extends LinkedCorrectionProposal {
 							if (expression != null) {
 								ReturnStatement returnStatement= ast.newReturnStatement();
 								returnStatement.setExpression(expression);
-								bodyStatement= ASTNodes.asFormattedString(returnStatement, 0, delimiter, unit.getJavaProject().getOptions(true));
+								bodyStatement= ASTNodes.asFormattedString(returnStatement, 0, delimiter, FormatterProfileManager.getProjectSettings(unit.getJavaProject()));
 							}
 						}
 						String placeHolder= CodeGeneration.getMethodBodyContent(unit, methodBinding.getDeclaringClass().getName(), methodBinding.getName(), false, bodyStatement, delimiter);

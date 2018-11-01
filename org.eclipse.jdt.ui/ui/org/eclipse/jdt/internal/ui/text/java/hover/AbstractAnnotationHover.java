@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -53,6 +56,7 @@ import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.JFacePreferences;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.JFaceResources;
 
@@ -285,11 +289,11 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 			createAnnotationInformation(fParent, getAnnotationInfo().annotation);
 
 			ColorRegistry colorRegistry= JFaceResources.getColorRegistry();
-			Color foreground= colorRegistry.get("org.eclipse.ui.workbench.HOVER_FOREGROUND"); //$NON-NLS-1$
+			Color foreground= colorRegistry.get(JFacePreferences.INFORMATION_FOREGROUND_COLOR);
 			if (foreground == null) {
 				foreground= fParent.getForeground();
 			}
-			Color background= colorRegistry.get("org.eclipse.ui.workbench.HOVER_BACKGROUND"); //$NON-NLS-1$
+			Color background= colorRegistry.get(JFacePreferences.INFORMATION_BACKGROUND_COLOR);
 			if (background == null) {
 				background= fParent.getBackground();
 			}
@@ -518,7 +522,7 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 			GridData layoutData= new GridData(SWT.FILL, SWT.CENTER, true, false);
 			String linkText;
 			if (isMultiFix) {
-				linkText= Messages.format(JavaHoverMessages.AbstractAnnotationHover_multifix_variable_description, new Integer(count));
+				linkText= Messages.format(JavaHoverMessages.AbstractAnnotationHover_multifix_variable_description, Integer.valueOf(count));
 			} else {
 				linkText= proposal.getDisplayString();
 			}

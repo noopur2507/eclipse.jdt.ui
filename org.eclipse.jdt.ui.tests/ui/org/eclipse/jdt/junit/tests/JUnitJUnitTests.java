@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2010 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -32,6 +35,7 @@ public class JUnitJUnitTests {
 
 		suite.addTestSuite(TestRunListenerTest3.class);
 		suite.addTestSuite(TestRunListenerTest4.class);
+		suite.addTestSuite(TestRunListenerTest5.class);
 		
 		suite.addTestSuite(TestRunFilteredStandardRunnerTest4.class);
 		suite.addTestSuite(TestRunFilteredParameterizedRunnerTest4.class);

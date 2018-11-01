@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -47,6 +50,7 @@ import org.eclipse.ui.dialogs.IOverwriteQuery;
 import org.eclipse.ui.wizards.datatransfer.ImportOperation;
 import org.eclipse.ui.wizards.datatransfer.ZipFileStructureProvider;
 
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -96,6 +100,7 @@ public class JavaProjectHelper {
 	public static final IPath RT_STUBS_17= new Path("testresources/rtstubs17.jar");
 	public static final IPath RT_STUBS_18= new Path("testresources/rtstubs18.jar");
 	public static final IPath RT_STUBS_9= new Path("testresources/rtstubs9.jar");
+	public static final IPath RT_STUBS_10= new Path("testresources/rtstubs10.jar");
 	public static final IPath JUNIT_SRC_381= new Path("testresources/junit381-noUI-src.zip");
 	public static final String JUNIT_SRC_ENCODING= "ISO-8859-1";
 
@@ -209,6 +214,18 @@ public class JavaProjectHelper {
 	}
 
 	/**
+	 * Sets the compiler options to 10 for the given project.
+	 * 
+	 * @param project the java project
+	 * @since 3.14
+	 */
+	public static void set10CompilerOptions(IJavaProject project) {
+		Map<String, String> options= project.getOptions(false);
+		set10CompilerOptions(options);
+		project.setOptions(options);
+	}
+
+	/**
 	 * Sets the compiler options to 1.8 for the given project.
 	 * 
 	 * @param project the java project
@@ -269,6 +286,16 @@ public class JavaProjectHelper {
 	 */
 	public static void set9CompilerOptions(Map<String, String> options) {
 		JavaCore.setComplianceOptions(JavaCore.VERSION_9, options);
+	}
+
+	/**
+	 * Sets the compiler options to 10.
+	 * 
+	 * @param options the compiler options to configure
+	 * @since 3.14
+	 */
+	public static void set10CompilerOptions(Map<String, String> options) {
+		JavaCore.setComplianceOptions(JavaCore.VERSION_10, options);
 	}
 
 	/**
@@ -519,6 +546,21 @@ public class JavaProjectHelper {
 	 * @throws CoreException Creation failed
 	 */
 	public static IPackageFragmentRoot addSourceContainer(IJavaProject jproject, String containerName, IPath[] inclusionFilters, IPath[] exclusionFilters, String outputLocation) throws CoreException {
+		return addSourceContainer(jproject, containerName, inclusionFilters, exclusionFilters, outputLocation,
+				new IClasspathAttribute[0]);
+	}
+	/**
+	 * Adds a source container to a IJavaProject.
+	 * @param jproject The parent project
+	 * @param containerName The name of the new source container
+	 * @param inclusionFilters Inclusion filters to set
+	 * @param exclusionFilters Exclusion filters to set
+	 * @param outputLocation The location where class files are written to, <b>null</b> for project output folder
+	 * @param attributes The classpath attributes to set
+	 * @return The handle to the new source container
+	 * @throws CoreException Creation failed
+	 */
+	public static IPackageFragmentRoot addSourceContainer(IJavaProject jproject, String containerName, IPath[] inclusionFilters, IPath[] exclusionFilters, String outputLocation, IClasspathAttribute[] attributes) throws CoreException {
 		IProject project= jproject.getProject();
 		IContainer container= null;
 		if (containerName == null || containerName.length() == 0) {
@@ -540,7 +582,7 @@ public class JavaProjectHelper {
 			}
 			outputPath= folder.getFullPath();
 		}
-		IClasspathEntry cpe= JavaCore.newSourceEntry(root.getPath(), inclusionFilters, exclusionFilters, outputPath);
+		IClasspathEntry cpe= JavaCore.newSourceEntry(root.getPath(), inclusionFilters, exclusionFilters, outputPath, attributes);
 		addToClasspath(jproject, cpe);
 		return root;
 	}
@@ -754,6 +796,12 @@ public class JavaProjectHelper {
 	public static IPackageFragmentRoot addRTJar9(IJavaProject jproject) throws CoreException {
 		IPath[] rtJarPath= findRtJar(RT_STUBS_9);
 		set9CompilerOptions(jproject);
+		return addLibrary(jproject, rtJarPath[0], rtJarPath[1], rtJarPath[2]);
+	}
+
+	public static IPackageFragmentRoot addRTJar10(IJavaProject jproject) throws CoreException {
+		IPath[] rtJarPath= findRtJar(RT_STUBS_10);
+		set10CompilerOptions(jproject);
 		return addLibrary(jproject, rtJarPath[0], rtJarPath[1], rtJarPath[2]);
 	}
 

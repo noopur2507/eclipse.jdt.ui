@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -123,14 +126,26 @@ public class JavaPluginImages {
 	public static final String IMG_OBJS_EMPTY_PACK_RESOURCE= NAME_PREFIX + "empty_pack_fldr_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_EMPTY_PACKAGE= NAME_PREFIX + "empty_pack_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_PACKFRAG_ROOT= NAME_PREFIX + "packagefolder_obj.gif"; //$NON-NLS-1$
+	// workspace folder as classpath entry that is marked as only visible for tests
+	public static final String IMG_OBJS_PACKFRAG_ROOT_TEST= NAME_PREFIX + "packagefolder_test_obj.png"; //$NON-NLS-1$
+	// source folder that is marked to contain test sources
+	public static final String IMG_OBJS_PACKFRAG_ROOT_TESTSOURCES= NAME_PREFIX + "packagefolder_testsources_obj.png"; //$NON-NLS-1$
 	public static final String IMG_OBJS_JAR= NAME_PREFIX + "jar_obj.gif"; 				//$NON-NLS-1$
+	public static final String IMG_OBJS_JAR_TEST= NAME_PREFIX + "jar_test_obj.png"; 				//$NON-NLS-1$
 	public static final String IMG_OBJS_EXTJAR= NAME_PREFIX + "jar_l_obj.gif"; 			//$NON-NLS-1$
+	public static final String IMG_OBJS_EXTJAR_TEST= NAME_PREFIX + "jar_l_test_obj.gif"; 			//$NON-NLS-1$
 	public static final String IMG_OBJS_JAR_WSRC= NAME_PREFIX + "jar_src_obj.gif"; 		//$NON-NLS-1$
+	public static final String IMG_OBJS_JAR_WSRC_TEST= NAME_PREFIX + "jar_src_test_obj.gif"; 		//$NON-NLS-1$
 	public static final String IMG_OBJS_EXTJAR_WSRC= NAME_PREFIX + "jar_lsrc_obj.gif";	//$NON-NLS-1$
+	public static final String IMG_OBJS_EXTJAR_WSRC_TEST= NAME_PREFIX + "jar_lsrc_test_obj.gif";	//$NON-NLS-1$
 	public static final String IMG_OBJS_CLASSFOLDER= NAME_PREFIX + "cf_obj.gif"; 			//$NON-NLS-1$
+	public static final String IMG_OBJS_CLASSFOLDER_TEST= NAME_PREFIX + "cf_test_obj.gif"; 			//$NON-NLS-1$
 	public static final String IMG_OBJS_CLASSFOLDER_WSRC= NAME_PREFIX + "cf_src_obj.gif"; 		//$NON-NLS-1$
+	public static final String IMG_OBJS_CLASSFOLDER_WSRC_TEST= NAME_PREFIX + "cf_src_test_obj.gif"; 		//$NON-NLS-1$
+	public static final String IMG_OBJS_PROJECT_TEST= NAME_PREFIX + "project_test_obj.png"; //$NON-NLS-1$
 
 	public static final String IMG_OBJS_ENV_VAR= NAME_PREFIX + "envvar_obj.gif"; 			//$NON-NLS-1$
+	public static final String IMG_OBJS_ENV_VAR_TEST= NAME_PREFIX + "envvar_test_obj.gif"; 			//$NON-NLS-1$
 	public static final String IMG_OBJS_JAVA_MODEL= NAME_PREFIX + "java_model_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_MODULE= NAME_PREFIX + "module_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_ERROR_ALT= NAME_PREFIX + "error_alt_obj.gif"; //$NON-NLS-1$
@@ -141,6 +156,7 @@ public class JavaPluginImages {
 	public static final String IMG_OBJS_PROJECT_SETTINGS= NAME_PREFIX + "settings_obj.gif"; //$NON-NLS-1$
 
 	public static final String IMG_OBJS_LIBRARY= NAME_PREFIX + "library_obj.gif"; 		//$NON-NLS-1$
+	public static final String IMG_OBJS_LIBRARY_TEST= NAME_PREFIX + "library_test_obj.png"; 		//$NON-NLS-1$
 
 	public static final String IMG_OBJS_JAVADOCTAG= NAME_PREFIX + "jdoc_tag_obj.gif"; 	//$NON-NLS-1$
 	public static final String IMG_OBJS_EXTERNAL_ANNOTATIONS = NAME_PREFIX + "external_annotation_location_attrib.gif"; 	//$NON-NLS-1$
@@ -232,7 +248,11 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OBJS_EMPTY_PACKAGE_RESOURCES= createManagedFromKey(T_OBJ, IMG_OBJS_EMPTY_PACK_RESOURCE);
 	public static final ImageDescriptor DESC_OBJS_EMPTY_PACKAGE= createManagedFromKey(T_OBJ, IMG_OBJS_EMPTY_PACKAGE);
 	public static final ImageDescriptor DESC_OBJS_PACKFRAG_ROOT= createManagedFromKey(T_OBJ, IMG_OBJS_PACKFRAG_ROOT);
+	public static final ImageDescriptor DESC_OBJS_PACKFRAG_ROOT_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_PACKFRAG_ROOT_TEST);
+	public static final ImageDescriptor DESC_OBJS_PACKFRAG_ROOT_TESTSOURCES= createManagedFromKey(T_OBJ, IMG_OBJS_PACKFRAG_ROOT_TESTSOURCES);
 	public static final ImageDescriptor DESC_OBJS_PROJECT_SETTINGS= createManagedFromKey(T_OBJ, IMG_OBJS_PROJECT_SETTINGS);
+	public static final ImageDescriptor DESC_OBJS_PROJECT_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_PROJECT_TEST);
+
 
 	public static final ImageDescriptor DESC_OBJS_JAVA_MODEL= createManagedFromKey(T_OBJ, IMG_OBJS_JAVA_MODEL);
 	public static final ImageDescriptor DESC_OBJS_MODULE= createManagedFromKey(T_OBJ, IMG_OBJS_MODULE);
@@ -270,16 +290,24 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OBJS_ENUM_ALT= createManagedFromKey(T_OBJ, IMG_OBJS_ENUM_ALT);
 
 	public static final ImageDescriptor DESC_OBJS_JAR= createManagedFromKey(T_OBJ, IMG_OBJS_JAR);
+	public static final ImageDescriptor DESC_OBJS_JAR_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_JAR_TEST);
 	public static final ImageDescriptor DESC_OBJS_EXTJAR= createManagedFromKey(T_OBJ, IMG_OBJS_EXTJAR);
+	public static final ImageDescriptor DESC_OBJS_EXTJAR_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_EXTJAR_TEST);
 	public static final ImageDescriptor DESC_OBJS_JAR_WSRC= createManagedFromKey(T_OBJ, IMG_OBJS_JAR_WSRC);
+	public static final ImageDescriptor DESC_OBJS_JAR_WSRC_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_JAR_WSRC_TEST);
 	public static final ImageDescriptor DESC_OBJS_EXTJAR_WSRC= createManagedFromKey(T_OBJ, IMG_OBJS_EXTJAR_WSRC);
+	public static final ImageDescriptor DESC_OBJS_EXTJAR_WSRC_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_EXTJAR_WSRC_TEST);
 
 	public static final ImageDescriptor DESC_OBJS_CLASSFOLDER= createManagedFromKey(T_OBJ, IMG_OBJS_CLASSFOLDER);
+	public static final ImageDescriptor DESC_OBJS_CLASSFOLDER_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_CLASSFOLDER_TEST);
 	public static final ImageDescriptor DESC_OBJS_CLASSFOLDER_WSRC= createManagedFromKey(T_OBJ, IMG_OBJS_CLASSFOLDER_WSRC);
+	public static final ImageDescriptor DESC_OBJS_CLASSFOLDER_WSRC_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_CLASSFOLDER_WSRC_TEST);
 
 	public static final ImageDescriptor DESC_OBJS_ENV_VAR= createManagedFromKey(T_OBJ, IMG_OBJS_ENV_VAR);
+	public static final ImageDescriptor DESC_OBJS_ENV_VAR_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_ENV_VAR_TEST);
 
 	public static final ImageDescriptor DESC_OBJS_LIBRARY= createManagedFromKey(T_OBJ, IMG_OBJS_LIBRARY);
+	public static final ImageDescriptor DESC_OBJS_LIBRARY_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_LIBRARY_TEST);
 
 	public static final ImageDescriptor DESC_OBJS_JAVADOCTAG= createManagedFromKey(T_OBJ, IMG_OBJS_JAVADOCTAG);
 	public static final ImageDescriptor DESC_OBJS_HTMLTAG= createManagedFromKey(T_OBJ, IMG_OBJS_HTMLTAG);
@@ -306,6 +334,7 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OBJS_JAVADOC_LOCATION_ATTRIB= createUnManaged(T_OBJ, "javadoc_location_attrib.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_OBJS_MODULE_ATTRIB= createUnManaged(T_OBJ, "module_attrib.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OBJS_TEST_ATTRIB= createUnManaged(T_OBJ, "test_attrib.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_OBJS_EXTERNAL_ANNOTATION_LOCATION_ATTRIB= createManagedFromKey(T_OBJ, IMG_OBJS_EXTERNAL_ANNOTATIONS);
 
@@ -460,7 +489,38 @@ public class JavaPluginImages {
     public static final ImageDescriptor DESC_TOOL_NEWPACKROOT= createUnManaged(T_ETOOL, "newpackfolder_wiz.png");         //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_TOOL_CLASSPATH_ORDER= createUnManaged(T_OBJ, "cp_order_obj.png"); 		//$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_EXPANDALL= createUnManaged(T_ELCL, "expandall.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_EXPANDALL= createUnManaged(T_DLCL, "expandall.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_ELCL_COLLAPSEALL= createUnManaged(T_ELCL, "collapseall.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_COLLAPSEALL= createUnManaged(T_DLCL, "collapseall.png"); //$NON-NLS-1$
+
+	public static final ImageDescriptor DESC_ELCL_MODIFYALL= createUnManaged(T_ELCL, "modifyall.png"); //$NON-NLS-1$
+
+	// Image descriptors used for formatter line wrapping preferences
+	public static final ImageDescriptor DESC_ELCL_INDENT_COLUMN= createUnManaged(T_ELCL, "indent_column.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_INDENT_COLUMN= createUnManaged(T_DLCL, "indent_column.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_INDENT_DEFAULT= createUnManaged(T_ELCL, "indent_default.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_INDENT_DEFAULT= createUnManaged(T_DLCL, "indent_default.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_INDENT_ONE= createUnManaged(T_ELCL, "indent_one.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_INDENT_ONE= createUnManaged(T_DLCL, "indent_one.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_AFTER= createUnManaged(T_ELCL, "wrap_after.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_AFTER= createUnManaged(T_DLCL, "wrap_after.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_ALL= createUnManaged(T_ELCL, "wrap_all.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_ALL= createUnManaged(T_DLCL, "wrap_all.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_ALL_INDENT= createUnManaged(T_ELCL, "wrap_all_indent.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_ALL_INDENT= createUnManaged(T_DLCL, "wrap_all_indent.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_ALL_NOT_FIRST= createUnManaged(T_ELCL, "wrap_all_not_first.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_ALL_NOT_FIRST= createUnManaged(T_DLCL, "wrap_all_not_first.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_BEFORE= createUnManaged(T_ELCL, "wrap_before.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_BEFORE= createUnManaged(T_DLCL, "wrap_before.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_FIRST_NECESSARY= createUnManaged(T_ELCL, "wrap_first_necessary.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_FIRST_NECESSARY= createUnManaged(T_DLCL, "wrap_first_necessary.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_FORCE= createUnManaged(T_ELCL, "wrap_force.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_FORCE= createUnManaged(T_DLCL, "wrap_force.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_NECESSARY= createUnManaged(T_ELCL, "wrap_necessary.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_NECESSARY= createUnManaged(T_DLCL, "wrap_necessary.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_ELCL_WRAP_NOT= createUnManaged(T_ELCL, "wrap_not.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_WRAP_NOT= createUnManaged(T_DLCL, "wrap_not.png"); //$NON-NLS-1$
 
 	// Keys for correction proposal. We have to put the image into the registry since "code assist" doesn't
 	// have a life cycle. So no chance to dispose icons.

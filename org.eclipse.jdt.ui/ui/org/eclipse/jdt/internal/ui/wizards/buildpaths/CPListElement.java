@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -66,6 +69,8 @@ public class CPListElement {
 	public static final String JAVADOC= IClasspathAttribute.JAVADOC_LOCATION_ATTRIBUTE_NAME;
 	public static final String SOURCE_ATTACHMENT_ENCODING= IClasspathAttribute.SOURCE_ATTACHMENT_ENCODING;
 	public static final String IGNORE_OPTIONAL_PROBLEMS= IClasspathAttribute.IGNORE_OPTIONAL_PROBLEMS;
+	public static final String TEST= IClasspathAttribute.TEST;
+	public static final String WITHOUT_TEST_CODE= IClasspathAttribute.WITHOUT_TEST_CODE;
 	public static final String NATIVE_LIB_PATH= JavaRuntime.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY;
 	public static final String MODULE= IClasspathAttribute.MODULE;
 
@@ -133,6 +138,7 @@ public class CPListElement {
 				createAttributeElement(EXCLUSION, new Path[0], true);
 				createAttributeElement(NATIVE_LIB_PATH, null, false);
 				createAttributeElement(IGNORE_OPTIONAL_PROBLEMS, null, false);
+				createAttributeElement(TEST, null, false);
 				break;
 			case IClasspathEntry.CPE_LIBRARY:
 			case IClasspathEntry.CPE_VARIABLE:
@@ -143,12 +149,15 @@ public class CPListElement {
 				createAttributeElement(SOURCE_ATTACHMENT_ENCODING, null, false);
 				createAttributeElement(NATIVE_LIB_PATH, null, false);
 				createAttributeElement(ACCESSRULES, new IAccessRule[0], true);
+				createAttributeElement(TEST, null, false);
 				break;
 			case IClasspathEntry.CPE_PROJECT:
 				createAttributeElement(MODULE, null, true);
 				createAttributeElement(ACCESSRULES, new IAccessRule[0], true);
 				createAttributeElement(COMBINE_ACCESSRULES, Boolean.FALSE, true); // not rendered
 				createAttributeElement(NATIVE_LIB_PATH, null, false);
+				createAttributeElement(TEST, null, false);
+				createAttributeElement(WITHOUT_TEST_CODE, null, false);
 				break;
 			case IClasspathEntry.CPE_CONTAINER:
 				createAttributeElement(ACCESSRULES, new IAccessRule[0], true);
@@ -157,6 +166,9 @@ public class CPListElement {
 				try {
 					IClasspathContainer container= JavaCore.getClasspathContainer(fPath, fProject);
 					if (container != null) {
+						if (container.getKind() == IClasspathContainer.K_APPLICATION) {
+							createAttributeElement(TEST, null, false);
+						}
 						IClasspathEntry[] entries= container.getClasspathEntries();
 						if (entries != null) { // catch invalid container implementation
 							if (entries.length == 1) {
@@ -1023,6 +1035,17 @@ public class CPListElement {
 	}
 	
 	public void updateExtraAttributeOfClasspathEntry() {
+		if (fChildren != null) {
+			for (int i= 0; i < fChildren.size(); i++) {
+				Object curr= fChildren.get(i);
+				if (curr instanceof CPListElementAttribute) {
+					CPListElementAttribute elem= (CPListElementAttribute) curr;
+					String key= elem.getKey();
+					if (MODULE.equals(key))
+						return;
+				}
+			}
+		}
 		this.createAttributeElement(MODULE, new ModuleEncapsulationDetail[0], true);
 		//refresh the cached classpath entry
 		fCachedEntry= null;

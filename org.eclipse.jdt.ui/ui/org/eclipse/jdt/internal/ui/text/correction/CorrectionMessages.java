@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,6 +15,8 @@
  *     Lukas Hanke <hanke@yatta.de> - Bug 241696 [quick fix] quickfix to iterate over a collection - https://bugs.eclipse.org/bugs/show_bug.cgi?id=241696
  *     Sandra Lions <sandra.lions-piron@oracle.com> - [quick fix] for qualified enum constants in switch-case labels - https://bugs.eclipse.org/bugs/90140
  *     Jeremie Bresson <dev@jmini.fr> - Bug 439912: [1.8][quick assist] Add quick assists to add and remove parentheses around single lambda parameter - https://bugs.eclipse.org/439912
+ *     Jens Reimann <jens.reimann@ibh-systems.com>, Fabian Pfaff <fabian.pfaff@vogella.com> - Bug 197850: [quick assist] Add import static field/method - https://bugs.eclipse.org/bugs/show_bug.cgi?id=197850
+ *     Jens Reimann <jreimann@redhat.com> Bug 38201: [quick assist] Allow creating abstract method - https://bugs.eclipse.org/38201
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.correction;
 
@@ -60,6 +65,8 @@ public final class CorrectionMessages extends NLS {
 	public static String QuickAssistProcessor_convert_to_string_buffer_description;
 	public static String QuickAssistProcessor_exceptiontothrows_description;
 	public static String QuickAssistProcessor_extract_to_constant_description;
+	public static String QuickAssistProcessor_convert_to_static_import;
+	public static String QuickAssistProcessor_convert_to_static_import_replace_all;
 	public static String QuickAssistProcessor_inline_local_description;
 	public static String QuickAssistProcessor_name_extension_from_class;
 	public static String QuickAssistProcessor_name_extension_from_interface;
@@ -88,13 +95,16 @@ public final class CorrectionMessages extends NLS {
 	public static String ReorgCorrectionsSubProcessor_organizeimports_description;
 	public static String ReorgCorrectionsSubProcessor_addcp_project_description;
 	public static String ReorgCorrectionsSubProcessor_addcp_archive_description;
+	public static String ReorgCorrectionsSubProcessor_move_cpentry_mpentry_description;
 	public static String ReorgCorrectionsSubProcessor_addcp_classfolder_description;
 	public static String ReorgCorrectionsSubProcessor_change_project_compliance_description;
 	public static String ReorgCorrectionsSubProcessor_change_workspace_compliance_description;
 	public static String ReorgCorrectionsSubProcessor_addcp_variable_description;
 	public static String ReorgCorrectionsSubProcessor_addcp_library_description;
 	public static String LocalCorrectionsSubProcessor_surroundwith_trycatch_description;
+	public static String LocalCorrectionsSubProcessor_surroundwith_trycatch_var_description;
 	public static String LocalCorrectionsSubProcessor_surroundwith_trymulticatch_description;
+	public static String LocalCorrectionsSubProcessor_surroundwith_trymulticatch_var_description;
 	public static String LocalCorrectionsSubProcessor_add_default_case_description;
 	public static String LocalCorrectionsSubProcessor_add_missing_cases_description;
 	public static String LocalCorrectionsSubProcessor_addthrows_description;
@@ -185,6 +195,8 @@ public final class CorrectionMessages extends NLS {
 	public static String UnresolvedElementsSubProcessor_create_loop_variable_description;
 	public static String UnresolvedElementsSubProcessor_createmethod_description;
 	public static String UnresolvedElementsSubProcessor_createmethod_other_description;
+	public static String UnresolvedElementsSubProcessor_createmethod_abstract_description;
+	public static String UnresolvedElementsSubProcessor_createmethod_abstract_other_description;
 	public static String UnresolvedElementsSubProcessor_createconstructor_description;
 	public static String UnresolvedElementsSubProcessor_changetype_description;
 	public static String UnresolvedElementsSubProcessor_changetype_nopack_description;
@@ -255,6 +267,10 @@ public final class CorrectionMessages extends NLS {
 	public static String NewCUCompletionUsingWizardProposal_createenum_info;
 	public static String NewCUCompletionUsingWizardProposal_createinterface_info;
 	public static String NewCUCompletionUsingWizardProposal_createannotation_info;
+	public static String NewCUCompletionUsingWizardProposal_createnewclass_inpackage_description;
+	public static String NewCUCompletionUsingWizardProposal_createnewinterface_inpackage_description;
+	public static String NewCUCompletionUsingWizardProposal_createnewannotation_inpackage_description;
+	public static String NewCUCompletionUsingWizardProposal_createnewenum_inpackage_description;
 	public static String ConfigureProblemSeveritySubProcessor_info;
 	public static String ConfigureProblemSeveritySubProcessor_name;
 	public static String ConstructorFromSuperclassProposal_description;
@@ -281,6 +297,10 @@ public final class CorrectionMessages extends NLS {
 	public static String QuickAssistProcessor_splitdeclaration_description;
 	public static String QuickAssistProcessor_joindeclaration_description;
 	public static String QuickAssistProcessor_add_inferred_lambda_parameter_types;
+	public static String QuickAssistProcessor_replace_var_with_inferred_lambda_parameter_types;
+	public static String QuickAssistProcessor_add_var_lambda_parameter_types;
+	public static String QuickAssistProcessor_replace_lambda_parameter_types_with_var;
+	public static String QuickAssistProcessor_remove_lambda_parameter_types;
 	public static String QuickAssistProcessor_addfinallyblock_description;
 	public static String QuickAssistProcessor_addelseblock_description;
 	public static String QuickAssistProcessor_addParenthesesInLambda;
@@ -414,4 +434,5 @@ public final class CorrectionMessages extends NLS {
 	public static String VarargsWarningsSubProcessor_add_safevarargs_to_method_label;
 	public static String VarargsWarningsSubProcessor_remove_safevarargs_label;
 	public static String NullAnnotationsCorrectionProcessor_change_local_variable_to_nonNull;
+	public static String NullAnnotationsCorrectionProcessor_create_packageInfo_with_defaultnullness;
 }

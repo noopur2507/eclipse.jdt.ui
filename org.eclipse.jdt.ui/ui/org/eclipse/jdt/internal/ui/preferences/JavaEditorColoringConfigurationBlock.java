@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -18,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -261,8 +265,16 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 		public Object[] getChildren(Object parentElement) {
 			if (parentElement instanceof String) {
 				String entry= (String) parentElement;
-				if (fJavaCategory.equals(entry))
-					return fListModel.subList(7, fListModel.size()).toArray();
+				if (fJavaCategory.equals(entry)) {
+					List<HighlightingColorListItem> subList= fListModel.subList(7, fListModel.size());
+					List<HighlightingColorListItem> visibleChildren= new ArrayList<>();
+					for (HighlightingColorListItem listItem : subList) {
+						if (!listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							visibleChildren.add(listItem);
+						}
+					}
+					return visibleChildren.toArray();
+				}
 				if (fJavadocCategory.equals(entry))
 					return fListModel.subList(0, 4).toArray();
 				if (fCommentsCategory.equals(entry))
@@ -712,6 +724,14 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item= getHighlightingColorListItem();
 				PreferenceConverter.setValue(getPreferenceStore(), item.getColorKey(), fSyntaxForegroundColorEditor.getColorValue());
+				if (item.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_keywords)) {
+					for (HighlightingColorListItem listItem : fListModel) {
+						if (listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							PreferenceConverter.setValue(getPreferenceStore(), listItem.getColorKey(), fSyntaxForegroundColorEditor.getColorValue());
+							break;
+						}
+					}
+				}
 			}
 		});
 
@@ -724,6 +744,14 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item= getHighlightingColorListItem();
 				getPreferenceStore().setValue(item.getBoldKey(), fBoldCheckBox.getSelection());
+				if (item.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_keywords)) {
+					for (HighlightingColorListItem listItem : fListModel) {
+						if (listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							getPreferenceStore().setValue(listItem.getBoldKey(), fBoldCheckBox.getSelection());
+							break;
+						}
+					}
+				}
 			}
 		});
 
@@ -736,6 +764,14 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item= getHighlightingColorListItem();
 				getPreferenceStore().setValue(item.getItalicKey(), fItalicCheckBox.getSelection());
+				if (item.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_keywords)) {
+					for (HighlightingColorListItem listItem : fListModel) {
+						if (listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							getPreferenceStore().setValue(listItem.getItalicKey(), fItalicCheckBox.getSelection());
+							break;
+						}
+					}
+				}
 			}
 		});
 		fStrikethroughCheckBox.addSelectionListener(new SelectionListener() {
@@ -747,6 +783,14 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item= getHighlightingColorListItem();
 				getPreferenceStore().setValue(item.getStrikethroughKey(), fStrikethroughCheckBox.getSelection());
+				if (item.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_keywords)) {
+					for (HighlightingColorListItem listItem : fListModel) {
+						if (listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							getPreferenceStore().setValue(listItem.getStrikethroughKey(), fStrikethroughCheckBox.getSelection());
+							break;
+						}
+					}
+				}
 			}
 		});
 
@@ -759,6 +803,14 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item= getHighlightingColorListItem();
 				getPreferenceStore().setValue(item.getUnderlineKey(), fUnderlineCheckBox.getSelection());
+				if (item.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_keywords)) {
+					for (HighlightingColorListItem listItem : fListModel) {
+						if (listItem.getDisplayName().equals(PreferencesMessages.JavaEditorPreferencePage_varKeyword)) {
+							getPreferenceStore().setValue(listItem.getUnderlineKey(), fUnderlineCheckBox.getSelection());
+							break;
+						}
+					}
+				}
 			}
 		});
 
@@ -865,7 +917,7 @@ class JavaEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 	private String loadPreviewContentFromFile(String filename) {
 		String line;
 		String separator= System.getProperty("line.separator"); //$NON-NLS-1$
-		StringBuffer buffer= new StringBuffer(512);
+		StringBuilder buffer= new StringBuilder(512);
 		BufferedReader reader= null;
 		try {
 			reader= new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filename)));

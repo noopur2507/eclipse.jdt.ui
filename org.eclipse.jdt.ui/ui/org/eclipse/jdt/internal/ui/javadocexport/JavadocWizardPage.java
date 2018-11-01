@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,6 +15,7 @@ package org.eclipse.jdt.internal.ui.javadocexport;
 
 import java.io.File;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -94,7 +98,7 @@ public abstract class JavadocWizardPage extends NewElementWizardPage {
 	}
 
 	protected void handleFileBrowseButtonPressed(Text text, String[] extensions, String title) {
-		FileDialog dialog= new FileDialog(text.getShell());
+		FileDialog dialog= new FileDialog(text.getShell(), SWT.SHEET);
 		dialog.setText(title);
 		dialog.setFilterExtensions(extensions);
 		String dirName= text.getText();
@@ -110,7 +114,7 @@ public abstract class JavadocWizardPage extends NewElementWizardPage {
 	}
 
 	protected String handleFolderBrowseButtonPressed(String dir, String title, String message) {
-		DirectoryDialog dialog= new DirectoryDialog(getShell());
+		DirectoryDialog dialog= new DirectoryDialog(getShell(), SWT.SHEET);
 		dialog.setFilterPath(dir);
 		dialog.setText(title);
 		dialog.setMessage(message);

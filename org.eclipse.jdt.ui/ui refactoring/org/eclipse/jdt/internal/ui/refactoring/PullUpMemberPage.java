@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2006, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -109,7 +112,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 			if (!ACTION_PROPERTY.equals(property))
 				return null;
 			final MemberActionInfo info= (MemberActionInfo) element;
-			return new Integer(info.getAction());
+			return Integer.valueOf(info.getAction());
 		}
 
 		@Override
@@ -296,7 +299,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 	}
 
 	private static void putToStringMapping(final Map<String, Integer> result, final String[] actionLabels, final int actionIndex) {
-		result.put(actionLabels[actionIndex], new Integer(actionIndex));
+		result.put(actionLabels[actionIndex], Integer.valueOf(actionIndex));
 	}
 
 	private static void setActionForInfos(final MemberActionInfo[] infos, final int action) {
@@ -974,7 +977,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 					return;
 				final MemberActionInfo info= (MemberActionInfo) structured.getFirstElement();
 				editor.setItems(info.getAllowedLabels());
-				editor.setValue(new Integer(info.getAction()));
+				editor.setValue(Integer.valueOf(info.getAction()));
 			}
 		});
 

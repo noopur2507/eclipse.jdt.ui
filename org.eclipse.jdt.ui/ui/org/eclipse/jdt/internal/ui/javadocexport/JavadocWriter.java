@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -191,7 +194,7 @@ public class JavadocWriter {
 	}
 
 	private String getPathString(IPath[] paths) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 
 		for (int i= 0; i < paths.length; i++) {
 			if (buf.length() != 0) {
@@ -238,7 +241,7 @@ public class JavadocWriter {
 	}
 
 	private String getRelativePath(IPath fullPath, int matchingSegments) {
-		StringBuffer res= new StringBuffer();
+		StringBuilder res= new StringBuilder();
 		int backSegments= fBasePath.segmentCount() - matchingSegments;
 		while (backSegments > 0) {
 			res.append(".."); //$NON-NLS-1$
@@ -287,7 +290,7 @@ public class JavadocWriter {
 	}
 
 	private String toSeparatedList(List<String> packages) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		Iterator<String> iter= packages.iterator();
 		int nAdded= 0;
 		while (iter.hasNext()) {

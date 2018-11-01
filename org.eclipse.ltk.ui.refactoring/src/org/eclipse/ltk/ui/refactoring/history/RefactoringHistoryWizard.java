@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -980,7 +983,7 @@ public class RefactoringHistoryWizard extends Wizard {
 				final String[] messages= { RefactoringUIMessages.RefactoringHistoryWizard_one_refactoring_undone + message, RefactoringUIMessages.RefactoringHistoryWizard_several_refactorings_undone + message};
 				final ChoiceFormat choice= new ChoiceFormat(new double[] { 1, Double.MAX_VALUE}, messages);
 				format.setFormatByArgumentIndex(0, choice);
-				final MessageDialogWithToggle dialog= new MessageDialogWithToggle(getShell(), getShell().getText(), null, format.format(new Object[] { new Integer(fExecutedRefactorings)}), MessageDialog.INFORMATION, new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL}, 0, RefactoringUIMessages.RefactoringHistoryWizard_do_not_show_message, false);
+				final MessageDialogWithToggle dialog= new MessageDialogWithToggle(getShell(), getShell().getText(), null, format.format(new Object[] { Integer.valueOf(fExecutedRefactorings)}), MessageDialog.INFORMATION, new String[] { IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL}, 0, RefactoringUIMessages.RefactoringHistoryWizard_do_not_show_message, false);
 				dialog.open();
 				store.setValue(PREFERENCE_DO_NOT_WARN_UNDO_ON_CANCEL, dialog.getToggleState());
 				if (dialog.getReturnCode() == 1)

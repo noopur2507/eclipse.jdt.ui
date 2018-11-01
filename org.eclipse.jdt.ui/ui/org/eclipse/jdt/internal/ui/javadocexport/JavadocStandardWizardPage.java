@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -381,17 +384,13 @@ public class JavadocStandardWizardPage extends JavadocWizardPage {
 		else
 			fStore.setTitle(""); //$NON-NLS-1$
 
-		//don't store the buttons if they are not enabled
-		//this will change when there is a single page aimed at the standard doclet
-		if (true) {
-			Object[] buttons= fButtonsList.toArray();
-			for (int i= 0; i < buttons.length; i++) {
-				FlaggedButton button= (FlaggedButton) buttons[i];
-				if (button.getButton().getEnabled())
-					fStore.setBoolean(button.getFlag(), !(button.getButton().getSelection() ^ button.show()));
-				else
-					fStore.setBoolean(button.getFlag(), false == button.show());
-			}
+		Object[] buttons= fButtonsList.toArray();
+		for (int i= 0; i < buttons.length; i++) {
+			FlaggedButton button= (FlaggedButton) buttons[i];
+			if (button.getButton().getEnabled())
+				fStore.setBoolean(button.getFlag(), !(button.getButton().getSelection() ^ button.show()));
+			else
+				fStore.setBoolean(button.getFlag(), false == button.show());
 		}
 
 		if (fStyleSheetText.getEnabled())

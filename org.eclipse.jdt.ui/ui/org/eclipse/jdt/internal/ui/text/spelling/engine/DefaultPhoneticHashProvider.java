@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -208,7 +211,7 @@ public final class DefaultPhoneticHashProvider implements IPhoneticHashProvider 
 		final char[] hashable= input.toCharArray();
 
 		final boolean has95= hasOneOf(meta95, input);
-		final StringBuffer buffer= new StringBuffer(hashable.length);
+		final StringBuilder buffer= new StringBuilder(hashable.length);
 
 		int offset= 0;
 		if (hasOneOf(meta26, hashable, 0, 2))

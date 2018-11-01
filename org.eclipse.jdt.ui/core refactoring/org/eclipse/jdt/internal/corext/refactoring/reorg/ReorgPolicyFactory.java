@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,6 +15,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.reorg;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,6 +77,7 @@ import org.eclipse.jdt.core.IJavaModel;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IOpenable;
 import org.eclipse.jdt.core.IPackageDeclaration;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -111,7 +116,6 @@ import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
 
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.BodyDeclarationRewrite;
@@ -146,6 +150,7 @@ import org.eclipse.jdt.internal.corext.util.JavaConventionsUtil;
 import org.eclipse.jdt.internal.corext.util.JavaElementResourceMapping;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -944,13 +949,13 @@ public final class ReorgPolicyFactory {
 			int flags= JavaRefactoringDescriptor.JAR_MIGRATION | JavaRefactoringDescriptor.JAR_REFACTORING | RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 			final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 			arguments.put(ATTRIBUTE_POLICY, getPolicyId());
-			arguments.put(ATTRIBUTE_FILES, new Integer(fFiles.length).toString());
+			arguments.put(ATTRIBUTE_FILES, Integer.valueOf(fFiles.length).toString());
 			for (int offset= 0; offset < fFiles.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.resourceToHandle(project, fFiles[offset]));
-			arguments.put(ATTRIBUTE_FOLDERS, new Integer(fFolders.length).toString());
+			arguments.put(ATTRIBUTE_FOLDERS, Integer.valueOf(fFolders.length).toString());
 			for (int offset= 0; offset < fFolders.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + fFiles.length + 1), JavaRefactoringDescriptorUtil.resourceToHandle(project, fFolders[offset]));
-			arguments.put(ATTRIBUTE_UNITS, new Integer(fCus.length).toString());
+			arguments.put(ATTRIBUTE_UNITS, Integer.valueOf(fCus.length).toString());
 			for (int offset= 0; offset < fCus.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + fFolders.length + fFiles.length + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fCus[offset]));
 			arguments.putAll(getRefactoringArguments(project));
@@ -969,8 +974,25 @@ public final class ReorgPolicyFactory {
 
 		protected IPackageFragment getDestinationAsPackageFragment() {
 			IPackageFragment javaAsPackage= getJavaDestinationAsPackageFragment(getJavaElementDestination());
-			if (javaAsPackage != null)
-				return javaAsPackage;
+			boolean copyFilesToDefaultPackage= true;
+			if (javaAsPackage != null) {
+				IJavaProject jProject= javaAsPackage.getJavaProject();
+				if (jProject != null && JavaModelUtil.is9OrHigher(jProject) && javaAsPackage.isDefaultPackage()) {
+					try {
+						IModuleDescription desc= jProject.getModuleDescription();
+						if (desc!= null && desc.exists()) {
+							copyFilesToDefaultPackage= false;
+						}
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+				if (copyFilesToDefaultPackage) {
+					return javaAsPackage;
+				}
+			}	
 			return getResourceDestinationAsPackageFragment(getResourceDestination());
 		}
 
@@ -2547,8 +2569,14 @@ public final class ReorgPolicyFactory {
 			Matcher m= p.matcher(fileNameNoExtension);
 			if (m.find()) {
 				// String ends with a number: increment it by 1
-				int newNumber= Integer.parseInt(m.group()) + 1;
-				String numberStr= m.replaceFirst(Integer.toString(newNumber));
+				String numberStr;
+				BigDecimal newNumber = null;
+				try {
+					newNumber = new BigDecimal(m.group()).add(new BigDecimal(1));
+					numberStr = m.replaceFirst(newNumber.toPlainString());
+				} catch (NumberFormatException e) {
+					numberStr = m.replaceFirst("2"); //$NON-NLS-1$
+				}
 				return numberStr + fileExtension;
 			} else {
 				return fileNameNoExtension + "2" + fileExtension; //$NON-NLS-1$
@@ -2928,7 +2956,7 @@ public final class ReorgPolicyFactory {
 			int flags= RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 			final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 			arguments.put(ATTRIBUTE_POLICY, getPolicyId());
-			arguments.put(ATTRIBUTE_ROOTS, new Integer(fPackageFragmentRoots.length).toString());
+			arguments.put(ATTRIBUTE_ROOTS, Integer.valueOf(fPackageFragmentRoots.length).toString());
 			for (int offset= 0; offset < fPackageFragmentRoots.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fPackageFragmentRoots[offset]));
 			arguments.putAll(getRefactoringArguments(project));
@@ -3158,7 +3186,7 @@ public final class ReorgPolicyFactory {
 			int flags= JavaRefactoringDescriptor.JAR_REFACTORING | JavaRefactoringDescriptor.JAR_MIGRATION | RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 			final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 			arguments.put(ATTRIBUTE_POLICY, getPolicyId());
-			arguments.put(ATTRIBUTE_FRAGMENTS, new Integer(fPackageFragments.length).toString());
+			arguments.put(ATTRIBUTE_FRAGMENTS, Integer.valueOf(fPackageFragments.length).toString());
 			for (int offset= 0; offset < fPackageFragments.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fPackageFragments[offset]));
 			arguments.putAll(getRefactoringArguments(project));
@@ -3904,7 +3932,7 @@ public final class ReorgPolicyFactory {
 			int flags= JavaRefactoringDescriptor.JAR_REFACTORING | JavaRefactoringDescriptor.JAR_MIGRATION | RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 			final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 			arguments.put(ATTRIBUTE_POLICY, getPolicyId());
-			arguments.put(ATTRIBUTE_MEMBERS, new Integer(fJavaElements.length).toString());
+			arguments.put(ATTRIBUTE_MEMBERS, Integer.valueOf(fJavaElements.length).toString());
 			for (int offset= 0; offset < fJavaElements.length; offset++)
 				arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + (offset + 1), JavaRefactoringDescriptorUtil.elementToHandle(project, fJavaElements[offset]));
 			arguments.putAll(getRefactoringArguments(project));
@@ -4370,7 +4398,7 @@ public final class ReorgPolicyFactory {
 
 	public static void storeCreateTargetExecutionLog(String project, Map<String, String> arguments, CreateTargetExecutionLog log) {
 		if (log != null) {
-			final StringBuffer buffer= new StringBuffer(64);
+			final StringBuilder buffer= new StringBuilder(64);
 			final Object[] selections= log.getSelectedElements();
 			for (int index= 0; index < selections.length; index++) {
 				final Object selection= selections[index];
@@ -4385,13 +4413,13 @@ public final class ReorgPolicyFactory {
 
 				}
 			}
-			final String value= new String(buffer.toString().trim());
+			final String value= buffer.toString().trim();
 			if (!"".equals(value)) //$NON-NLS-1$
 				arguments.put(ATTRIBUTE_LOG, value);
 		}
 	}
 
-	private static boolean storeLogElement(StringBuffer buffer, String project, Object object) {
+	private static boolean storeLogElement(StringBuilder buffer, String project, Object object) {
 		if (object instanceof IJavaElement) {
 			final IJavaElement element= (IJavaElement) object;
 			buffer.append(JavaRefactoringDescriptorUtil.elementToHandle(project, element));
@@ -4409,7 +4437,7 @@ public final class ReorgPolicyFactory {
 			final Set<Object> set= new HashSet<>();
 			set.addAll(Arrays.asList(log.getProcessedElements()));
 			set.addAll(Arrays.asList(log.getRenamedElements()));
-			final StringBuffer buffer= new StringBuffer(64);
+			final StringBuilder buffer= new StringBuilder(64);
 			for (final Iterator<Object> iterator= set.iterator(); iterator.hasNext();) {
 				final Object object= iterator.next();
 				if (storeLogElement(buffer, project, object)) {
@@ -4425,7 +4453,7 @@ public final class ReorgPolicyFactory {
 					buffer.append(DELIMITER_RECORD);
 				}
 			}
-			final String value= new String(buffer.toString().trim());
+			final String value= buffer.toString().trim();
 			if (!"".equals(value)) //$NON-NLS-1$
 				arguments.put(ATTRIBUTE_LOG, value);
 		}

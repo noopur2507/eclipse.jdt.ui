@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -133,8 +136,6 @@ public class RemoteTestRunner implements MessageSender, IVisitsTestTrees {
 
 	private boolean fConsoleMode = false;
 
-	public static final RemoteTestRunner fgTestRunServer= new RemoteTestRunner();
-
 	/**
 	 * Reader thread that processes messages from the client.
 	 */
@@ -203,8 +204,9 @@ public class RemoteTestRunner implements MessageSender, IVisitsTestTrees {
      */
 	public static void main(String[] args) {
 		try {
-			fgTestRunServer.init(args);
-			fgTestRunServer.run();
+			RemoteTestRunner testRunServer= new RemoteTestRunner();
+			testRunServer.init(args);
+			testRunServer.run();
 		} catch (Throwable e) {
 			e.printStackTrace(); // don't allow System.exit(0) to swallow exceptions
 		} finally {

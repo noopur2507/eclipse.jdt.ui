@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -20,6 +23,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 
 import org.eclipse.ui.ISharedImages;
@@ -42,6 +46,7 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 
 import org.eclipse.jdt.ui.JavaElementImageDescriptor;
+import org.eclipse.jdt.ui.PreferenceConstants;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
@@ -81,9 +86,13 @@ public class JavaElementImageProvider {
 	}
 
 	private ImageDescriptorRegistry fRegistry;
+	
+	private boolean fDecorateTestCodeContainerIcons;
 
 	public JavaElementImageProvider() {
 		fRegistry= null; // lazy initialization
+		IPreferenceStore store= PreferenceConstants.getPreferenceStore();
+		fDecorateTestCodeContainerIcons= store.getBoolean(PreferenceConstants.DECORATE_TEST_CODE_CONTAINER_ICONS);
 	}
 
 	/**
@@ -239,30 +248,52 @@ public class JavaElementImageProvider {
 				case IJavaElement.PACKAGE_FRAGMENT_ROOT: {
 					IPackageFragmentRoot root= (IPackageFragmentRoot) element;
 					IPath attach= root.getSourceAttachmentPath();
+					boolean isTest= fDecorateTestCodeContainerIcons && root.getResolvedClasspathEntry().isTest();
 					if (root.getKind() == IPackageFragmentRoot.K_BINARY) {
 						if (root.isArchive()) {
 							if (root.isExternal()) {
 								if (attach == null) {
-									return JavaPluginImages.DESC_OBJS_EXTJAR;
+									if(isTest)
+										return JavaPluginImages.DESC_OBJS_EXTJAR_TEST;
+									else
+										return JavaPluginImages.DESC_OBJS_EXTJAR;
 								} else {
-									return JavaPluginImages.DESC_OBJS_EXTJAR_WSRC;
+									if(isTest) 
+										return JavaPluginImages.DESC_OBJS_EXTJAR_WSRC_TEST;
+									else
+										return JavaPluginImages.DESC_OBJS_EXTJAR_WSRC;
 								}
 							} else {
 								if (attach == null) {
-									return JavaPluginImages.DESC_OBJS_JAR;
+									if(isTest)
+										return JavaPluginImages.DESC_OBJS_JAR_TEST;
+									else
+										return JavaPluginImages.DESC_OBJS_JAR;
 								} else {
-									return JavaPluginImages.DESC_OBJS_JAR_WSRC;
+									if(isTest)
+										return JavaPluginImages.DESC_OBJS_JAR_WSRC_TEST;
+									else
+										return JavaPluginImages.DESC_OBJS_JAR_WSRC;
 								}
 							}
 						} else {
 							if (attach == null) {
-								return JavaPluginImages.DESC_OBJS_CLASSFOLDER;
+								if(isTest)
+									return JavaPluginImages.DESC_OBJS_CLASSFOLDER_TEST;
+								else
+									return JavaPluginImages.DESC_OBJS_CLASSFOLDER;
 							} else {
-								return JavaPluginImages.DESC_OBJS_CLASSFOLDER_WSRC;
+								if(isTest)
+									return JavaPluginImages.DESC_OBJS_CLASSFOLDER_WSRC_TEST;
+								else
+									return JavaPluginImages.DESC_OBJS_CLASSFOLDER_WSRC;
 							}
 						}
 					} else {
-						return JavaPluginImages.DESC_OBJS_PACKFRAG_ROOT;
+						if(isTest)
+							return JavaPluginImages.DESC_OBJS_PACKFRAG_ROOT_TESTSOURCES;
+						else
+							return JavaPluginImages.DESC_OBJS_PACKFRAG_ROOT;
 					}
 				}
 

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -21,6 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.DragSourceListener;
+import org.eclipse.swt.dnd.FileTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -42,12 +51,15 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.PixelConverter;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
 
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 
 import org.eclipse.jdt.core.IAccessRule;
@@ -105,6 +117,10 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 
 	private final int IDX_REPLACE= 10;
 
+	private boolean dragDropEnabled;
+	private Object draggedItemsLibrary;
+	private boolean fromModularLibrary;
+	
 	public LibrariesWorkbookPage(CheckedListDialogField<CPListElement> classPathList, IWorkbenchPreferenceContainer pageContainer) {
 		fClassPathList= classPathList;
 		fPageContainer= pageContainer;
@@ -178,9 +194,20 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 		List<CPListElement> libelements= new ArrayList<>(cpelements.size());
 
 		int nElements= cpelements.size();
+		int size= fLibrariesList.getElements().size();
 		for (int i= 0; i < nElements; i++) {
 			CPListElement cpe= cpelements.get(i);
 			if (isEntryKind(cpe.getEntryKind())) {
+				if (size > 0) {
+					// only for update
+					cpe= checkAndUpdateIfModularJRE(cpe);
+				}
+				if (cpe.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+					if (cpe.getAttribute(CPListElement.MODULE) == null && !isJREContainer(cpe.getPath())) {
+						cpe.updateExtraAttributeOfClasspathEntry();
+						cpe.setAttribute(CPListElement.MODULE, null);
+					}
+				}
 				Object mod= cpe.getAttribute(CPListElement.MODULE);
 				if(mod == null) {
 					rootClasspath.addCPListElement(cpe);
@@ -192,6 +219,7 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 		}
 		libelements.add(rootModulepath);
 		libelements.add(rootClasspath);
+		fLibrariesList.setTreeExpansionLevel(2);
 		fLibrariesList.setElements(libelements);
 		
 		fLibrariesList.enableButton(IDX_ADDEXT, false);
@@ -200,6 +228,159 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 		fLibrariesList.enableButton(IDX_ADDJAR, false);
 		fLibrariesList.enableButton(IDX_ADDLIB, false);
 		fLibrariesList.enableButton(IDX_ADDVAR, false);
+		
+		if (!dragDropEnabled) {
+			enableDragDropSupport();
+		}
+		
+	}
+	
+	private CPListElement checkAndUpdateIfModularJRE(CPListElement cpe) {
+		boolean modularJava= false;
+		IVMInstall vmInstall= JavaRuntime.getVMInstall(cpe.getPath());
+		if (vmInstall != null) {
+			modularJava= JavaRuntime.isModularJava(vmInstall);
+		}
+		if (modularJava) {
+			// If JRE is updated to modular JRE, then cpe element has to be recreated
+			// so as to have the modular structure 
+			cpe= CPListElement.create(cpe.getClasspathEntry(), true, fCurrJProject);
+		}
+		return cpe;
+	}
+
+	private void enableDragDropSupport() {
+		dragDropEnabled= true;
+		int ops= DND.DROP_MOVE;
+		Transfer[] transfers= new Transfer[] { ResourceTransfer.getInstance(), FileTransfer.getInstance() };
+		fLibrariesList.getTreeViewer().addDragSupport(ops, transfers, new DragSourceListener() {
+			@Override
+			public void dragStart(DragSourceEvent event) {
+				IStructuredSelection ssel= (IStructuredSelection) fLibrariesList.getTreeViewer().getSelection();
+				if (ssel == null || ssel.isEmpty()) {
+					event.doit= false;
+				}
+				if (ssel != null) {
+					Object[] ele= ssel.toArray();
+					for (Object element : ele) {
+						// dont start drag on root nodes
+						if (element instanceof RootCPListElement) {
+							event.doit= false;
+							break;
+						}
+						if (element instanceof CPListElement) {
+							CPListElement cpe= (CPListElement) element;
+							List<CPListElement> elements= fLibrariesList.getElements();
+							for (Object cpListElement : elements) {
+								if (cpListElement instanceof RootCPListElement) {
+									RootCPListElement root= (RootCPListElement) cpListElement;
+									if (root.getChildren().contains(cpe)) {
+										fromModularLibrary= root.isModulePathRootNode();
+										break;
+									}
+								}
+							}
+							if (cpe.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+								IPath path= cpe.getPath();
+								if (path != null) {
+									IVMInstall vmInstall= JavaRuntime.getVMInstall(path);
+									if (vmInstall != null) {
+										boolean isJRE= isJREContainer(path);
+										if (isJRE == true) {
+											event.doit= false;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			@Override
+			public void dragSetData(DragSourceEvent event) {
+				IStructuredSelection ssel= (IStructuredSelection) fLibrariesList.getTreeViewer().getSelection();
+				event.data= ssel.toArray();
+				draggedItemsLibrary= ssel.toArray();
+			}
+
+			@Override
+			public void dragFinished(DragSourceEvent event) {
+				draggedItemsLibrary= null;
+			}
+		});
+
+		fLibrariesList.getTreeViewer().addDropSupport(ops, transfers, new ViewerDropAdapter(fLibrariesList.getTreeViewer()) {
+			@Override
+			public boolean performDrop(Object data) {
+				Object[] objects= (data == null) ? (Object[]) draggedItemsLibrary : (Object[]) data;
+				if (objects == null)
+					return false;
+				Object target= getCurrentTarget();
+				if (target instanceof RootCPListElement) {
+					for (Object object : objects) {
+						if (!(object instanceof CPListElement))
+							return false;
+						if(object instanceof RootCPListElement)
+							return false;
+						boolean contains= ((RootCPListElement) target).getChildren().contains(object);
+						if (contains == true)
+							return false;
+						RootCPListElement rootNode= (RootCPListElement) target;
+						boolean isModular= rootNode.isModulePathRootNode();
+						RootNodeChange direction= RootNodeChange.fromOldAndNew(!isModular, isModular);
+						if (direction != RootNodeChange.NoChange) {
+							// pre-process container items while moving to modulepath
+							CPListElement cpe= (CPListElement) object;
+							if (cpe.getEntryKind() == IClasspathEntry.CPE_CONTAINER && isModular) {
+								IClasspathEntry entry= cpe.getClasspathEntry();
+								IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
+								boolean hasModAttr= false;
+								for (IClasspathAttribute attr : extraAttributes) {
+									if (IClasspathAttribute.MODULE.equals(attr.getName())) {
+										hasModAttr= true;
+										break;
+									}
+								}
+								if (!hasModAttr) {
+									cpe.updateExtraAttributeOfClasspathEntry();
+								}
+							}
+
+							moveCPElementAcrossNode(fLibrariesList, (CPListElement) object, direction);
+						}
+						((CPListElement) object).setAttribute(IClasspathAttribute.MODULE, isModular ? new ModuleEncapsulationDetail[0] : null);
+					}
+					return true;
+
+				}
+				return false;
+			}
+
+			@Override
+			public boolean validateDrop(Object target, int operation, TransferData transferType) {
+				if (!(target instanceof RootCPListElement))
+					return false;
+				RootCPListElement root= (RootCPListElement) target;
+				return fromModularLibrary ? root.isClassPathRootNode() : root.isModulePathRootNode();
+			}
+
+		});
+
+
+	}
+
+	private boolean isJREContainer(IPath path) {
+		if (path == null)
+			return false;
+		String[] segments= path.segments();
+		for (String seg : segments) {
+			if (seg.equals(JavaRuntime.JRE_CONTAINER)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	boolean hasRootNodes(){
@@ -352,33 +533,42 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 				if(selectedElements.size() != 1) {
 					return;
 				}
+				boolean isClassRootExpanded= getRootExpansionState(fLibrariesList, true);
+				boolean isModuleRootExpanded= getRootExpansionState(fLibrariesList, false);
 				fLibrariesList.removeAllElements();
 				RootCPListElement selectedCPElement= (RootCPListElement) selectedElements.get(0);
 				if(selectedCPElement.isClassPathRootNode()) {
 					for (CPListElement cpListElement : elementsToAdd) {
 						cpListElement.setAttribute(IClasspathAttribute.MODULE, null);
 					}
-				} else if(selectedCPElement.isModulePathRootNode()) {
+					isClassRootExpanded= true;
+				} else if (selectedCPElement.isModulePathRootNode()) {
 					for (CPListElement cpListElement : elementsToAdd) {
 						Object attribute= cpListElement.getAttribute(IClasspathAttribute.MODULE);
-						if(attribute == null) {
+						if (attribute == null) {
 							cpListElement.setAttribute(IClasspathAttribute.MODULE, new ModuleEncapsulationDetail[0]);
 						}
 					}
+					isModuleRootExpanded= true;
 				}
 				selectedCPElement.addCPListElement(elementsToAdd);					
 				
 				fLibrariesList.setElements(elements);
 				fLibrariesList.refresh();
-				fLibrariesList.getTreeViewer().expandToLevel(2);		
-			}	
-			
+				fLibrariesList.getTreeViewer().expandToLevel(2);
+				setRootExpansionState(fLibrariesList, isClassRootExpanded, true);
+				setRootExpansionState(fLibrariesList, isModuleRootExpanded, false);
+			}
+
 			if (index == IDX_ADDLIB || index == IDX_ADDVAR) {
 				fLibrariesList.refresh();
 			}
 			fLibrariesList.postSetSelection(new StructuredSelection(libentries));
 		}
 	}
+
+
+
 
 	private boolean hasCurrentElement(List<CPListElement> cplist, CPListElement curr) {
 		//note that the same cpelement with different attribute can be added
@@ -656,7 +846,11 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 			if (editCustomAttribute(getShell(), elem)) {
 				String[] changedAttributes= { key };
 				attributeUpdated(selElement, changedAttributes);
-				fLibrariesList.refresh(elem);
+				if(key.equals(CPListElement.TEST) || key.equals(CPListElement.WITHOUT_TEST_CODE)) {
+					fLibrariesList.refresh(elem.getParent());
+				} else { 
+					fLibrariesList.refresh(elem);
+				}
 				fClassPathList.dialogFieldChanged(); // validate
 				updateEnabledState();
 				if (key.equals(IClasspathAttribute.EXTERNAL_ANNOTATION_PATH)) {
@@ -733,8 +927,13 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 		}
 		if (res != null && res.length > 0) {
 			CPListElement curr= res[0];
+			Object attrib= curr.getAttribute(CPListElement.MODULE);
 			curr.setExported(elem.isExported());
 			curr.setAttributesFromExisting(elem);
+			// the module attribute may be changed in curr with respect to elem
+			if (attrib != null) {
+				curr.setAttribute(IClasspathAttribute.MODULE, attrib);
+			}
 			if (hasRootNodes()) {
 				for (int i= 0; i < fLibrariesList.getElements().size(); i++) {
 					CPListElement cpe= fLibrariesList.getElement(i);
@@ -818,6 +1017,20 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 	 * @param field  the dilaog field
 	 */
 	private void libaryPageSelectionChanged(DialogField field) {
+		List<Object> selected= fLibrariesList.getSelectedElements();
+		String text;
+		if (selected.size() == 1
+				&& selected.get(0) instanceof CPListElementAttribute) {
+			String key= ((CPListElementAttribute) selected.get(0)).getKey();
+			if (CPListElement.TEST.equals(key) || CPListElement.WITHOUT_TEST_CODE.equals(key)) {
+				text= NewWizardMessages.LibrariesWorkbookPage_libraries_toggle_button;
+			} else {
+				text= NewWizardMessages.LibrariesWorkbookPage_libraries_edit_button;
+			}
+		} else {
+			text= NewWizardMessages.LibrariesWorkbookPage_libraries_edit_button;
+		}
+		fLibrariesList.getButton(IDX_EDIT).setText(text);
 		updateEnabledState();
 	}
 
@@ -1158,8 +1371,13 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 				CPListElement[] res= new CPListElement[created.length];
 				for (int i= 0; i < res.length; i++) {
 					res[i]= CPListElement.create(created[i], true, fCurrJProject);
-					if(shouldAddModule && res[i].getClasspathEntry().getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
-						res[i].updateExtraAttributeOfClasspathEntry();
+					if (res[i].getClasspathEntry().getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+						if (!isJREContainer(res[i].getPath())) {
+							res[i].updateExtraAttributeOfClasspathEntry();
+						}
+						if (!shouldAddModule) {
+							res[i].setAttribute(CPListElement.MODULE, null);
+						}
 					}
 				}
 				return res;
@@ -1169,6 +1387,12 @@ public class LibrariesWorkbookPage extends BuildPathBasePage {
 			IClasspathEntry created= BuildPathDialogAccess.configureContainerEntry(getShell(), existingEntry, fCurrJProject, getRawClasspath());
 			if (created != null) {
 				CPListElement elem= new CPListElement(null, fCurrJProject, created, IClasspathEntry.CPE_CONTAINER, created.getPath(), null, ! created.equals(existingEntry), null, null);
+				IVMInstall vmInstall= JavaRuntime.getVMInstall(created.getPath());
+				if (vmInstall != null) {
+					if(JavaRuntime.isModularJava(vmInstall)) {
+						elem.updateExtraAttributeOfClasspathEntry();
+					}
+				}
 				return new CPListElement[] { elem };
 			}
 		}

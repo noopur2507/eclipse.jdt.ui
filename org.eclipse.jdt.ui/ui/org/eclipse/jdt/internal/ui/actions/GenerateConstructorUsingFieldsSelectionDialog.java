@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -44,7 +47,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.Modifier;
 
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -154,6 +157,12 @@ public class GenerateConstructorUsingFieldsSelectionDialog extends SourceActionD
 		});
 
 		return composite;
+	}
+
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.OK_ID, ActionMessages.GenerateConstructorUsingFieldsSelectionDialog_button_generate, true);
+		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
 
 	@Override
@@ -335,8 +344,8 @@ public class GenerateConstructorUsingFieldsSelectionDialog extends SourceActionD
 		int numButtons= 2; // up, down
 		fButtonControls= new Button[numButtons];
 		fButtonsEnabled= new boolean[numButtons];
-		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.UP_INDEX]= createButton(buttonComposite, UP_BUTTON, ActionMessages.GenerateConstructorUsingFieldsSelectionDialog_up_button, false);
-		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.DOWN_INDEX]= createButton(buttonComposite, DOWN_BUTTON, ActionMessages.GenerateConstructorUsingFieldsSelectionDialog_down_button, false);
+		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.UP_INDEX]= createButton(buttonComposite, UP_BUTTON, ActionMessages.GenerateConstructorUsingFieldsSelectionDialog_up_button,false);
+		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.DOWN_INDEX]= createButton(buttonComposite, DOWN_BUTTON, ActionMessages.GenerateConstructorUsingFieldsSelectionDialog_down_button,false);
 		boolean defaultState= false;
 		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.UP_INDEX].setEnabled(defaultState);
 		fButtonControls[GenerateConstructorUsingFieldsSelectionDialog.DOWN_INDEX].setEnabled(defaultState);

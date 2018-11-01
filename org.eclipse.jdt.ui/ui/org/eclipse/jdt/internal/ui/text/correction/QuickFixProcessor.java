@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -67,6 +70,7 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.PublicClassMustMatchFileName:
 			case IProblem.PackageIsNotExpectedPackage:
 			case IProblem.UndefinedType:
+			case IProblem.VarIsNotAllowedHere:
 			case IProblem.TypeMismatch:
 			case IProblem.ReturnTypeMismatch:
 			case IProblem.UnhandledException:
@@ -207,6 +211,9 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.InvalidUsageOfAnnotationDeclarations:
 			case IProblem.FieldMissingDeprecatedAnnotation:
 			case IProblem.OverridingDeprecatedMethod:
+			case IProblem.OverridingDeprecatedSinceVersionMethod:
+			case IProblem.OverridingTerminallyDeprecatedMethod:
+			case IProblem.OverridingTerminallyDeprecatedSinceVersionMethod:
 			case IProblem.MethodMissingDeprecatedAnnotation:
 			case IProblem.TypeMissingDeprecatedAnnotation:
 			case IProblem.MissingOverrideAnnotation:
@@ -284,6 +291,9 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.TypeAnnotationAtQualifiedName:
 			case IProblem.NullAnnotationAtQualifyingType:
 			case IProblem.IllegalAnnotationForBaseType:
+			case IProblem.MissingNonNullByDefaultAnnotationOnPackage:
+			case IProblem.UndefinedModule:
+			case IProblem.PackageDoesNotExistOrIsEmpty:
 				return true;
 			default:
 				return SuppressWarningsSubProcessor.hasSuppressWarningsProposal(cu.getJavaProject(), problemId)
@@ -317,7 +327,7 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 		ArrayList<ICommandAccess> resultingCollections= new ArrayList<>();
 		for (int i= 0; i < locations.length; i++) {
 			IProblemLocation curr= locations[i];
-			Integer id= new Integer(curr.getProblemId());
+			Integer id= Integer.valueOf(curr.getProblemId());
 			if (handledProblems.add(id)) {
 				process(context, curr, resultingCollections);
 			}
@@ -378,6 +388,7 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				break;
 			case IProblem.UndefinedType:
 			case IProblem.JavadocUndefinedType:
+			case IProblem.VarIsNotAllowedHere:
 				UnresolvedElementsSubProcessor.getTypeProposals(context, problem, proposals);
 				break;
 			case IProblem.TypeMismatch:
@@ -667,6 +678,9 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				ModifierCorrectionSubProcessor.addDeprecatedAnnotationProposal(context, problem, proposals);
 				break;
 			case IProblem.OverridingDeprecatedMethod:
+			case IProblem.OverridingDeprecatedSinceVersionMethod:
+			case IProblem.OverridingTerminallyDeprecatedMethod:
+			case IProblem.OverridingTerminallyDeprecatedSinceVersionMethod:
 				ModifierCorrectionSubProcessor.addOverridingDeprecatedMethodProposal(context, problem, proposals);
 				break;
 			case IProblem.IsClassPathCorrect:
@@ -797,6 +811,19 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.NullAnnotationAtQualifyingType:
 			case IProblem.IllegalAnnotationForBaseType:
 				TypeAnnotationSubProcessor.addMoveTypeAnnotationToTypeProposal(context, problem, proposals);
+				break;
+			case IProblem.MissingNonNullByDefaultAnnotationOnPackage:
+				NullAnnotationsCorrectionProcessor.addAddMissingDefaultNullnessProposal(context, problem, proposals);
+				break;
+			case IProblem.UndefinedModule:
+				ModuleCorrectionsSubProcessor.getUndefinedModuleProposals(context, problem, proposals);
+				break;
+			case IProblem.NotAccessibleType:
+				// Handle the case in an import statement, if a requires needs to be added.
+				ReorgCorrectionsSubProcessor.importNotFoundProposals(context, problem, proposals);
+				break;
+			case IProblem.PackageDoesNotExistOrIsEmpty:
+				ModuleCorrectionsSubProcessor.getPackageDoesNotExistProposals(context, problem, proposals);
 				break;
 			default:
 		}

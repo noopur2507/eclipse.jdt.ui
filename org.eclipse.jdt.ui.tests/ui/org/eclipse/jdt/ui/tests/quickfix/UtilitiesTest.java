@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -31,6 +34,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.manipulation.TypeKinds;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 
@@ -38,7 +42,6 @@ import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.text.correction.SimilarElementsRequestor;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -194,27 +197,27 @@ public class UtilitiesTest extends QuickFixTest {
 		ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
 
 		int[] expected= {
-				SimilarElementsRequestor.ALL_TYPES,
-				SimilarElementsRequestor.ALL_TYPES,
-				SimilarElementsRequestor.CLASSES | SimilarElementsRequestor.INTERFACES, // X<String>
-				SimilarElementsRequestor.REF_TYPES_AND_VAR,
-				SimilarElementsRequestor.REF_TYPES_AND_VAR,
+				TypeKinds.ALL_TYPES,
+				TypeKinds.ALL_TYPES,
+				TypeKinds.CLASSES | TypeKinds.INTERFACES, // X<String>
+				TypeKinds.REF_TYPES_AND_VAR,
+				TypeKinds.REF_TYPES_AND_VAR,
 
-				SimilarElementsRequestor.REF_TYPES, // E<String>.X
-				SimilarElementsRequestor.CLASSES | SimilarElementsRequestor.INTERFACES, //X<String>.A
-				SimilarElementsRequestor.CLASSES, //new X();
-				SimilarElementsRequestor.CLASSES | SimilarElementsRequestor.INTERFACES, //new X() { };
-				SimilarElementsRequestor.ALL_TYPES,
+				TypeKinds.REF_TYPES, // E<String>.X
+				TypeKinds.CLASSES | TypeKinds.INTERFACES, //X<String>.A
+				TypeKinds.CLASSES, //new X();
+				TypeKinds.CLASSES | TypeKinds.INTERFACES, //new X() { };
+				TypeKinds.ALL_TYPES,
 
-				SimilarElementsRequestor.REF_TYPES,
-				SimilarElementsRequestor.REF_TYPES,
+				TypeKinds.REF_TYPES,
+				TypeKinds.REF_TYPES,
 		};
 
 		CompilationUnit astRoot= getASTRoot(cu);
 		FieldDeclaration[] fields= ((TypeDeclaration) astRoot.types().get(0)).getFields();
 		for (int i= 0; i < fields.length; i++) {
 			ASTNode node= NodeFinder.perform(astRoot, buf.indexOf("X", fields[i].getStartPosition()), 1);
-			int kinds= org.eclipse.jdt.internal.ui.text.correction.ASTResolving.getPossibleTypeKinds(node, true);
+			int kinds= ASTResolving.getPossibleTypeKinds(node, true);
 			if (kinds != expected[i]) {
 				assertEquals("Guessing failed for " + fields[i].toString(), expected[i], kinds);
 			}

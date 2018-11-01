@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -11,8 +14,10 @@
 
 package org.eclipse.jdt.internal.ui.text.correction.proposals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
@@ -23,6 +28,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnnotationTypeMemberDeclaration;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -31,6 +37,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TagElement;
@@ -49,6 +56,8 @@ import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRe
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.DimensionRewrite;
 import org.eclipse.jdt.internal.corext.dom.TypeAnnotationRewrite;
+import org.eclipse.jdt.internal.corext.fix.TypeParametersFix.InsertTypeArgumentsVisitor;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRemover;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -68,25 +77,47 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 	private final ITypeBinding fNewType;
 	private final ITypeBinding[] fTypeProposals;
 	private final TypeLocation fTypeLocation;
+	private final boolean fIsNewTypeVar;
+	private static String VAR_TYPE= "var"; //$NON-NLS-1$
 
 	public TypeChangeCorrectionProposal(ICompilationUnit targetCU, IBinding binding, CompilationUnit astRoot, ITypeBinding newType, boolean offerSuperTypeProposals, int relevance) {
+		this(targetCU, binding, astRoot, newType, false, offerSuperTypeProposals, relevance);
+	}
+
+	//This needs to be used to convert a given type to var type.
+	public TypeChangeCorrectionProposal(ICompilationUnit targetCU, IBinding binding, CompilationUnit astRoot, ITypeBinding oldType, int relevance) {
+		this(targetCU, binding, astRoot, oldType, true, false, relevance);
+	}
+
+	private TypeChangeCorrectionProposal(ICompilationUnit targetCU, IBinding binding, CompilationUnit astRoot, ITypeBinding newType, boolean isNewTypeVar, boolean offerSuperTypeProposals,
+			int relevance) {
 		super("", targetCU, null, relevance, JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE)); //$NON-NLS-1$
 
 		Assert.isTrue(binding != null && (binding.getKind() == IBinding.METHOD || binding.getKind() == IBinding.VARIABLE) && Bindings.isDeclarationBinding(binding));
 
 		fBinding= binding; // must be generic method or (generic) variable
 		fAstRoot= astRoot;
+		fIsNewTypeVar= isNewTypeVar;
 
 		if (offerSuperTypeProposals) {
 			fTypeProposals= ASTResolving.getRelaxingTypes(astRoot.getAST(), newType);
 			sortTypes(fTypeProposals);
 			fNewType= fTypeProposals[0];
 		} else {
-			fNewType= newType;
+			if (!fIsNewTypeVar) {
+				fNewType= newType;
+			} else {
+				fNewType= null;
+			}
 			fTypeProposals= null;
 		}
 		
-		String typeName= BindingLabelProvider.getBindingLabel(fNewType, JavaElementLabels.ALL_DEFAULT);
+		String typeName;
+		if (isNewTypeVar) {
+			typeName= VAR_TYPE;
+		} else {
+			typeName= BindingLabelProvider.getBindingLabel(fNewType, JavaElementLabels.ALL_DEFAULT);
+		}
 		if (binding.getKind() == IBinding.VARIABLE) {
 			IVariableBinding varBinding= (IVariableBinding) binding;
 			String[] args= { BasicElementLabels.getJavaElementName(varBinding.getName()),  BasicElementLabels.getJavaElementName(typeName)};
@@ -124,7 +155,13 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 			ImportRewrite imports= createImportRewrite(newRoot);
 
 			ImportRewriteContext context= new ContextSensitiveImportRewriteContext(newRoot, declNode.getStartPosition(), imports);
-			Type type= imports.addImport(fNewType, ast, context, fTypeLocation);
+			ImportRemover remover= new ImportRemover(getCompilationUnit().getJavaProject(), newRoot);
+			Type type;
+			if (fIsNewTypeVar) {
+				type= ast.newSimpleType(ast.newName(VAR_TYPE));
+			} else {
+				type= imports.addImport(fNewType, ast, context, fTypeLocation);
+			}
 
 			if (declNode instanceof MethodDeclaration) {
 				MethodDeclaration methodDecl= (MethodDeclaration) declNode;
@@ -187,21 +224,45 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 						} else {
 							listRewrite.insertAfter(newStat, parent, null);
 						}
+						if (fIsNewTypeVar) {
+							handledInferredParametrizedType(newStat, declNode, ast, rewrite, imports, context);
+						}
 					} else {
+						Type oldType= (Type) rewrite.get(varDecl, VariableDeclarationStatement.TYPE_PROPERTY);
 						rewrite.set(varDecl, VariableDeclarationStatement.TYPE_PROPERTY, type, null);
 						DimensionRewrite.removeAllChildren(declNode, VariableDeclarationFragment.EXTRA_DIMENSIONS2_PROPERTY, rewrite, null);
+						if (fIsNewTypeVar) {
+							handledInferredParametrizedType(parent, declNode, ast, rewrite, imports, context);
+							TypeAnnotationRewrite.removePureTypeAnnotations(parent, VariableDeclarationStatement.MODIFIERS2_PROPERTY, rewrite, null);
+							if (oldType != null) {
+								remover.registerRemovedNode(oldType);
+							}
+						}
 					}
 				} else if (parent instanceof VariableDeclarationExpression) {
 					VariableDeclarationExpression varDecl= (VariableDeclarationExpression) parent;
-
+					Type oldType= (Type) rewrite.get(varDecl, VariableDeclarationExpression.TYPE_PROPERTY);
 					rewrite.set(varDecl, VariableDeclarationExpression.TYPE_PROPERTY, type, null);
 					DimensionRewrite.removeAllChildren(declNode, VariableDeclarationFragment.EXTRA_DIMENSIONS2_PROPERTY, rewrite, null);
+					if (fIsNewTypeVar) {
+						handledInferredParametrizedType(parent, declNode, ast, rewrite, imports, context);
+						TypeAnnotationRewrite.removePureTypeAnnotations(parent, VariableDeclarationExpression.MODIFIERS2_PROPERTY, rewrite, null);
+						if (oldType != null) {
+							remover.registerRemovedNode(oldType);
+						}
+					}
 				}
 			} else if (declNode instanceof SingleVariableDeclaration) {
 				SingleVariableDeclaration variableDeclaration= (SingleVariableDeclaration) declNode;
+				Type oldType= (Type) rewrite.get(variableDeclaration, SingleVariableDeclaration.TYPE_PROPERTY);
 				rewrite.set(variableDeclaration, SingleVariableDeclaration.TYPE_PROPERTY, type, null);
 				DimensionRewrite.removeAllChildren(declNode, SingleVariableDeclaration.EXTRA_DIMENSIONS2_PROPERTY, rewrite, null);
 				TypeAnnotationRewrite.removePureTypeAnnotations(declNode, SingleVariableDeclaration.MODIFIERS2_PROPERTY, rewrite, null);
+				if (fIsNewTypeVar) {
+					if (oldType != null) {
+						remover.registerRemovedNode(oldType);
+					}
+				}
 			}
 
 			// set up linked mode
@@ -211,6 +272,9 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 				for (int i= 0; i < fTypeProposals.length; i++) {
 					addLinkedPositionProposal(KEY_TYPE, fTypeProposals[i]);
 				}
+			}
+			if (fIsNewTypeVar) {
+				remover.applyRemoves(imports);
 			}
 			return rewrite;
 		}
@@ -242,5 +306,52 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 		});
 	}
 
+	private void handledInferredParametrizedType(ASTNode node, ASTNode declaringNode, AST ast, ASTRewrite rewrite, ImportRewrite importRewrite, ImportRewriteContext context) {
+		if (ast == null || rewrite == null || importRewrite == null || context == null) {
+			return;
+		}
+		ASTNode processNode= null;
+		List<VariableDeclarationFragment> fragments= null;
+		if (node instanceof VariableDeclarationStatement) {
+			fragments= ((VariableDeclarationStatement) node).fragments();
+		} else if (node instanceof VariableDeclarationExpression) {
+			fragments= ((VariableDeclarationExpression) node).fragments();
+		}
+		if (fragments != null && fragments.size() == 1) {
+			VariableDeclarationFragment varFrag= fragments.get(0);
+			processNode= varFrag.getInitializer();
+			if (processNode == null && declaringNode instanceof VariableDeclarationFragment) {
+				processNode= ((VariableDeclarationFragment) declaringNode).getInitializer();
+			}
+		}
+		ParameterizedType createdType= null;
+		if (processNode instanceof ClassInstanceCreation) {
+			ClassInstanceCreation creation= (ClassInstanceCreation) processNode;
+			Type type= creation.getType();
+			if (type instanceof ParameterizedType) {
+				createdType= (ParameterizedType) type;
+			}
+		}
+		if (createdType == null) {
+			return;
+		}
+
+		final ArrayList<ASTNode> changedNodes= new ArrayList<>();
+		node.accept(new InsertTypeArgumentsVisitor(changedNodes));
+		if (changedNodes.isEmpty()) {
+			return;
+		}
+
+		ITypeBinding binding= createdType.resolveBinding();
+		if (binding != null) {
+			ITypeBinding[] typeArguments= binding.getTypeArguments();
+			ListRewrite argumentsRewrite= rewrite.getListRewrite(createdType, ParameterizedType.TYPE_ARGUMENTS_PROPERTY);
+			for (int i= 0; i < typeArguments.length; i++) {
+				ITypeBinding typeArgument= typeArguments[i];
+				Type argumentNode= importRewrite.addImport(typeArgument, ast, context, TypeLocation.TYPE_ARGUMENT);
+				argumentsRewrite.insertLast(argumentNode, null);
+			}
+		}
+	}
 
 }

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -129,7 +132,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 				if (proposals.length == 0)
 					return null;
 
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				for (int i= 0; i < proposals.length; i++) {
 					buf.append(proposals[i].getDisplayName());
 					if (i < proposals.length - 1)
@@ -401,7 +404,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	private String computeTypeParameterDisplayName(ITypeParameter parameter, String[] bounds) {
 		if (bounds.length == 0 || bounds.length == 1 && "java.lang.Object".equals(bounds[0])) //$NON-NLS-1$
 			return parameter.getElementName();
-		StringBuffer buf= new StringBuffer(parameter.getElementName());
+		StringBuilder buf= new StringBuilder(parameter.getElementName());
 		buf.append(" extends "); //$NON-NLS-1$
 		for (int i= 0; i < bounds.length; i++) {
 			buf.append(Signature.getSimpleName(bounds[i]));

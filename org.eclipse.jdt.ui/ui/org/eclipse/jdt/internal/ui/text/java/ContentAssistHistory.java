@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -404,7 +407,7 @@ public final class ContentAssistHistory {
 			int rank= 1;
 			for (Iterator<String> it= rhsCache.iterator(); it.hasNext(); rank++) {
 				String type= it.next();
-				history.put(type, new Integer(rank));
+				history.put(type, Integer.valueOf(rank));
 			}
 			return new RHSHistory(history);
 		}

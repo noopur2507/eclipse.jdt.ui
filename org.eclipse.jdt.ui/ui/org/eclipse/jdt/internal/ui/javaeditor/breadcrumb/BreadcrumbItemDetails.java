@@ -1,12 +1,16 @@
 /*******************************************************************************
  * Copyright (c) 2008, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Fabio Zadrozny - Bug 465666
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.javaeditor.breadcrumb;
 
@@ -25,13 +29,11 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
@@ -126,6 +128,12 @@ class BreadcrumbItemDetails {
 		});
 
 		fDetailComposite.setTabList(new Control[] { fTextComposite });
+
+		fDetailComposite.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDetailComposite"); //$NON-NLS-1$ //$NON-NLS-2$
+		fTextComposite.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDetailTextComposite"); //$NON-NLS-1$ //$NON-NLS-2$
+		fImageComposite.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDetailImageComposite"); //$NON-NLS-1$ //$NON-NLS-2$
+		fElementImage.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDetailImageLabel"); //$NON-NLS-1$ //$NON-NLS-2$
+		fElementText.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDetailTextLabel"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/**
@@ -221,7 +229,6 @@ class BreadcrumbItemDetails {
 				fImageComposite.setFocus();
 			}
 		}
-		updateSelection();
 	}
 
 	/**
@@ -253,7 +260,6 @@ class BreadcrumbItemDetails {
 		if (!fSelected)
 			fHasFocus= false;
 
-		updateSelection();
 	}
 
 	public void setFocus(boolean enabled) {
@@ -268,39 +274,6 @@ class BreadcrumbItemDetails {
 				fImageComposite.setFocus();
 			}
 		}
-		updateSelection();
-	}
-
-	private void updateSelection() {
-		Color background;
-		Color foreground;
-
-		if (fSelected && fHasFocus) {
-			background= Display.getDefault().getSystemColor(SWT.COLOR_LIST_SELECTION);
-			foreground= Display.getDefault().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
-		} else {
-			foreground= null;
-			background= null;
-		}
-
-		if (isTextVisible()) {
-			fTextComposite.setBackground(background);
-			fElementText.setBackground(background);
-			fElementText.setForeground(foreground);
-
-			fImageComposite.setBackground(null);
-			fElementImage.setBackground(null);
-		} else {
-			fImageComposite.setBackground(background);
-			fElementImage.setBackground(background);
-
-			fTextComposite.setBackground(null);
-			fElementText.setBackground(null);
-			fElementText.setForeground(null);
-		}
-
-		fTextComposite.redraw();
-		fImageComposite.redraw();
 	}
 
 	/**
@@ -406,7 +379,6 @@ class BreadcrumbItemDetails {
 			public void focusGained(FocusEvent e) {
 				if (!fHasFocus) {
 					fHasFocus= true;
-					updateSelection();
 				}
 			}
 
@@ -414,7 +386,6 @@ class BreadcrumbItemDetails {
 			public void focusLost(FocusEvent e) {
 				if (fHasFocus) {
 					fHasFocus= false;
-					updateSelection();
 				}
 			}
 		});

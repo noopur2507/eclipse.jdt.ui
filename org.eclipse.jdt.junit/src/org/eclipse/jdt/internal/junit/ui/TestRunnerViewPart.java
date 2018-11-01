@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -28,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
@@ -490,7 +494,7 @@ public class TestRunnerViewPart extends ViewPart {
 
 		@Override
 		public void run() {
-			FileDialog importDialog= new FileDialog(fShell, SWT.OPEN);
+			FileDialog importDialog= new FileDialog(fShell, SWT.OPEN | SWT.SHEET);
 			importDialog.setText(JUnitMessages.TestRunnerViewPart_ImportTestRunSessionAction_title);
 			IDialogSettings dialogSettings= JUnitPlugin.getDefault().getDialogSettings();
 			String lastPath= dialogSettings.get(PREF_LAST_PATH);
@@ -636,7 +640,7 @@ public class TestRunnerViewPart extends ViewPart {
 
 		@Override
 		public void run() {
-			FileDialog exportDialog= new FileDialog(fShell, SWT.SAVE);
+			FileDialog exportDialog= new FileDialog(fShell, SWT.SAVE | SWT.SHEET);
 			exportDialog.setText(JUnitMessages.TestRunnerViewPart_ExportTestRunSessionAction_title);
 			IDialogSettings dialogSettings= JUnitPlugin.getDefault().getDialogSettings();
 			String lastPath= dialogSettings.get(PREF_LAST_PATH);
@@ -1393,16 +1397,10 @@ public class TestRunnerViewPart extends ViewPart {
 			File file= File.createTempFile("testFailures", ".txt"); //$NON-NLS-1$ //$NON-NLS-2$
 			file.deleteOnExit();
 			TestElement[] failures= fTestRunSession.getAllFailedTestElements();
-			BufferedWriter bw= null;
-			try {
-				bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8")); //$NON-NLS-1$
+			try (BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))){
 				for (TestElement testElement : failures) {
 					bw.write(testElement.getTestName());
 					bw.newLine();
-				}
-			} finally {
-				if (bw != null) {
-					bw.close();
 				}
 			}
 			return file.getAbsolutePath();

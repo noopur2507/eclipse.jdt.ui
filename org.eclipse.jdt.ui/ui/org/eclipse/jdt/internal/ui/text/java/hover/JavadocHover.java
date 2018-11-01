@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -102,6 +105,7 @@ import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -114,7 +118,6 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.actions.OpenAttachedJavadocAction;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -717,7 +720,7 @@ public class JavadocHover extends AbstractJavaEditorTextHover {
 	 * @since 3.4
 	 */
 	public static JavadocBrowserInformationControlInput getHoverInfo(IJavaElement[] elements, ITypeRoot editorInputElement, IRegion hoverRegion, JavadocBrowserInformationControlInput previousInput) {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		boolean hasContents= false;
 		String base= null;
 		IJavaElement element= null;
@@ -1011,7 +1014,7 @@ public class JavadocHover extends AbstractJavaEditorTextHover {
 		if (editorInputElement == null)
 			return null;
 
-		CompilationUnit unit= SharedASTProvider.getAST(editorInputElement, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+		CompilationUnit unit= SharedASTProviderCore.getAST(editorInputElement, SharedASTProviderCore.WAIT_ACTIVE_ONLY, null);
 		if (unit == null)
 			return null;
 		
@@ -1142,7 +1145,7 @@ public class JavadocHover extends AbstractJavaEditorTextHover {
 		return buf.toString();
 	}
 
-	public static void addAnnotations(StringBuffer buf, IJavaElement element, ITypeRoot editorInputElement, IRegion hoverRegion) {
+	public static void addAnnotations(StringBuilder buf, IJavaElement element, ITypeRoot editorInputElement, IRegion hoverRegion) {
 		try {
 			if (element instanceof IAnnotatable) {
 				String annotationString= getAnnotations(element, editorInputElement, hoverRegion);

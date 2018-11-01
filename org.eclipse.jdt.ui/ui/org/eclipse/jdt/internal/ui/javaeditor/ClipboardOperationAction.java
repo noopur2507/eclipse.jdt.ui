@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -52,6 +55,7 @@ import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.commands.ICommandImageService;
 import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 
@@ -73,16 +77,15 @@ import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.manipulation.ImportReferencesCollector;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.ImportReferencesCollector;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 import org.eclipse.jdt.internal.ui.IJavaStatusConstants;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -231,16 +234,29 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		if (operationCode == ITextOperationTarget.CUT) {
 			setHelpContextId(IAbstractTextEditorHelpContextIds.CUT_ACTION);
 			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_CUT);
+			updateImages(IWorkbenchCommandConstants.EDIT_CUT);
 		} else if (operationCode == ITextOperationTarget.COPY) {
 			setHelpContextId(IAbstractTextEditorHelpContextIds.COPY_ACTION);
 			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
+			updateImages(IWorkbenchCommandConstants.EDIT_COPY);
 		} else if (operationCode == ITextOperationTarget.PASTE) {
 			setHelpContextId(IAbstractTextEditorHelpContextIds.PASTE_ACTION);
 			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_PASTE);
+			updateImages(IWorkbenchCommandConstants.EDIT_PASTE);
 		} else {
 			Assert.isTrue(false, "Invalid operation code"); //$NON-NLS-1$
 		}
 		update();
+	}
+
+	private void updateImages(String commandId) {
+		ICommandImageService imgService= getTextEditor().getSite().getService(ICommandImageService.class);
+		if (imgService == null) {
+			return;
+		}
+		setImageDescriptor(imgService.getImageDescriptor(commandId));
+		setDisabledImageDescriptor(imgService.getImageDescriptor(commandId, ICommandImageService.TYPE_DISABLED));
+		setHoverImageDescriptor(imgService.getImageDescriptor(commandId, ICommandImageService.TYPE_HOVER));
 	}
 
 	private boolean isReadOnlyOperation() {
@@ -428,7 +444,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 
 
 	private ClipboardData getClipboardData(ITypeRoot inputElement, int offset, int length) {
-		CompilationUnit astRoot= SharedASTProvider.getAST(inputElement, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+		CompilationUnit astRoot= SharedASTProviderCore.getAST(inputElement, SharedASTProviderCore.WAIT_ACTIVE_ONLY, null);
 		if (astRoot == null) {
 			return null;
 		}
@@ -481,7 +497,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 			Name curr= staticImportsRefs.get(i);
 			IBinding binding= curr.resolveBinding();
 			if (binding != null) {
-				StringBuffer buf= new StringBuffer(Bindings.getImportName(binding));
+				StringBuilder buf= new StringBuilder(Bindings.getImportName(binding));
 				if (binding.getKind() == IBinding.METHOD) {
 					buf.append("()"); //$NON-NLS-1$
 				}
@@ -555,7 +571,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 				@Override
 				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 					try {
-						JavaElementUtil.applyEdit(unit, rewrite.rewriteImports(monitor), false, null);
+						JavaModelUtil.applyEdit(unit, rewrite.rewriteImports(monitor), false, null);
 					} catch (CoreException e) {
 						throw new InvocationTargetException(e);
 					}

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -21,12 +24,14 @@ import org.eclipse.text.edits.TextEdit;
 import org.eclipse.jface.text.IDocument;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageDeclaration;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -36,6 +41,8 @@ import org.eclipse.jdt.ui.text.java.correction.CUCorrectionProposal;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.text.correction.CorrectionMessages;
+
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public class CorrectPackageDeclarationProposal extends CUCorrectionProposal {
@@ -89,5 +96,30 @@ public class CorrectPackageDeclarationProposal extends CUCorrectionProposal {
 			JavaPlugin.log(e);
 		}
 		return (Messages.format(CorrectionMessages.CorrectPackageDeclarationProposal_change_description, JavaElementLabels.getElementLabel(parentPack, JavaElementLabels.ALL_DEFAULT)));
+	}
+	
+	public static boolean isValidProposal(ICompilationUnit cu) {
+		boolean isValid= true;
+		IPackageFragment parentPack= (IPackageFragment) cu.getParent();
+		try {			
+			IPackageDeclaration[] decls= cu.getPackageDeclarations();
+			if (parentPack.isDefaultPackage() && decls.length > 0) {
+				IJavaProject jProject = parentPack.getJavaProject();
+				if (jProject != null && JavaModelUtil.is9OrHigher(jProject)) {
+					try {
+						IModuleDescription desc= jProject.getModuleDescription();
+						if (desc!= null && desc.exists()) {
+							isValid= false;
+						}
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		} catch(JavaModelException e) {
+			JavaPlugin.log(e);
+		}
+		return isValid;
 	}
 }

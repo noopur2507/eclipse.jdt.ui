@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials 
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials 
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -29,6 +32,10 @@ import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 
 import org.eclipse.ui.PlatformUI;
 
+import org.eclipse.ui.texteditor.AbstractDecoratedTextEditorPreferenceConstants;
+
+import org.eclipse.ui.editors.text.EditorsUI;
+
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.ASTNode;
 
@@ -41,7 +48,8 @@ public class ASTViewLabelProvider extends LabelProvider implements IColorProvide
 	
 	//to dispose:
 	private final Font fAllocatedBoldItalic;
-	private final Color fLightBlue, fLightRed;
+	private final Color fLightRed;
+	private Color fSelectedElemBGColor;
 	
 	public ASTViewLabelProvider() {
 		fSelectionStart= -1;
@@ -54,8 +62,17 @@ public class ASTViewLabelProvider extends LabelProvider implements IColorProvide
 		fBlue= display.getSystemColor(SWT.COLOR_DARK_BLUE);
 		fDarkGreen= display.getSystemColor(SWT.COLOR_DARK_GREEN);
 		fDarkRed= display.getSystemColor(SWT.COLOR_DARK_RED);
-		
-		fLightBlue= new Color(display, 232, 242, 254); // default for AbstractDecoratedTextEditorPreferenceConstants.EDITOR_CURRENT_LINE_COLOR
+
+		fSelectedElemBGColor= new Color(display, 232, 242, 254);
+		String currLineColor= EditorsUI.getPreferenceStore().getString(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_CURRENT_LINE_COLOR);
+		String[] rgb= currLineColor.split(","); //$NON-NLS-1$
+		if (rgb.length == 3) {
+			try {
+				fSelectedElemBGColor= new Color(display, Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
+			} catch (NumberFormatException e) {
+				// do nothing, colour would remain the backup value
+			}
+		}
 		fLightRed= new Color(display, 255, 190, 190);
 		
 		fBold= PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getFontRegistry().getBold(JFaceResources.DEFAULT_FONT);
@@ -157,7 +174,7 @@ public class ASTViewLabelProvider extends LabelProvider implements IColorProvide
 			return fLightRed;
 		}
 		if (fSelectionStart != -1 && isInside(element)) {
-			return fLightBlue;
+			return fSelectedElemBGColor;
 		}
 		return null;
 	}
@@ -225,7 +242,7 @@ public class ASTViewLabelProvider extends LabelProvider implements IColorProvide
 	@Override
 	public void dispose() {
 		super.dispose();
-		fLightBlue.dispose();
+		fSelectedElemBGColor.dispose();
 		fLightRed.dispose();
 		fAllocatedBoldItalic.dispose();
 	}

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -358,7 +361,7 @@ public class FindStringsToExternalizeAction extends SelectionDispatchAction {
 			setInput(Arrays.asList(input));
 			setTitle(ActionMessages.FindStringsToExternalizeAction_dialog_title);
 			String message= count == 1 ? ActionMessages.FindStringsToExternalizeAction_non_externalized_singular : Messages.format(
-					ActionMessages.FindStringsToExternalizeAction_non_externalized_plural, new Object[] { new Integer(count) });
+					ActionMessages.FindStringsToExternalizeAction_non_externalized_plural, new Object[] { Integer.valueOf(count) });
 			setMessage(message);
 			setContentProvider(new ArrayContentProvider());
 			setLabelProvider(createLabelProvider());
@@ -423,7 +426,7 @@ public class FindStringsToExternalizeAction extends SelectionDispatchAction {
 					String elementName= BasicElementLabels.getPathLabel(nlsel.cu.getResource().getFullPath(), false);
 					return Messages.format(
 						ActionMessages.FindStringsToExternalizeAction_foundStrings,
-						new Object[] {new Integer(nlsel.count), elementName} );
+						new Object[] {Integer.valueOf(nlsel.count), elementName} );
 				}
 				@Override
 				public Image getImage(Object element) {

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -31,25 +34,22 @@ import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.ui.IWorkbenchPartSite;
 
 import org.eclipse.jdt.core.ITypeRoot;
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.BooleanLiteral;
-import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
-
-import org.eclipse.jdt.internal.corext.dom.GenericVisitor;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlightingManager.HighlightedPosition;
 import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlightingManager.Highlighting;
 import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlightings.DeprecatedMemberHighlighting;
+import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlightings.VarKeywordHighlighting;
 import org.eclipse.jdt.internal.ui.text.java.IJavaReconcilingListener;
 
 
@@ -63,48 +63,14 @@ public class SemanticHighlightingReconciler implements IJavaReconcilingListener,
 	/**
 	 * Collects positions from the AST.
 	 */
-	private class PositionCollector extends GenericVisitor {
+	private class PositionCollector extends PositionCollectorCore {
 
 		/** The semantic token */
 		private SemanticToken fToken= new SemanticToken();
 
-		/*
-		 * @see org.eclipse.jdt.internal.corext.dom.GenericVisitor#visitNode(org.eclipse.jdt.core.dom.ASTNode)
-		 */
-		@Override
-		protected boolean visitNode(ASTNode node) {
-			if ((node.getFlags() & ASTNode.MALFORMED) == ASTNode.MALFORMED) {
-				retainPositions(node.getStartPosition(), node.getLength());
-				return false;
-			}
-			return true;
-		}
 
-		/*
-		 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.BooleanLiteral)
-		 */
 		@Override
-		public boolean visit(BooleanLiteral node) {
-			return visitLiteral(node);
-		}
-
-		/*
-		 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.CharacterLiteral)
-		 */
-		@Override
-		public boolean visit(CharacterLiteral node) {
-			return visitLiteral(node);
-		}
-
-		/*
-		 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.NumberLiteral)
-		 */
-		@Override
-		public boolean visit(NumberLiteral node) {
-			return visitLiteral(node);
-		}
-
-		private boolean visitLiteral(Expression node) {
+		protected boolean visitLiteral(Expression node) {
 			fToken.update(node);
 			for (int i= 0, n= fJobSemanticHighlightings.length; i < n; i++) {
 				SemanticHighlighting semanticHighlighting= fJobSemanticHighlightings[i];
@@ -153,6 +119,24 @@ public class SemanticHighlightingReconciler implements IJavaReconcilingListener,
 					int length= 5;
 					if (offset > -1 && length > 0)
 						addPosition(offset, length, fJobDeprecatedMemberHighlighting);
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public boolean visit(SimpleType node) {
+			if (node.getAST().apiLevel() >= AST.JLS10 && node.isVar()) {
+				int offset= node.getStartPosition();
+				int length= node.getLength();
+				if (offset > -1 && length > 0) {
+					for (int i= 0; i < fJobSemanticHighlightings.length; i++) {
+						SemanticHighlighting semanticHighlighting= fJobSemanticHighlightings[i];
+						if (semanticHighlighting instanceof VarKeywordHighlighting) {
+							addPosition(offset, length, fJobHighlightings[i]);
+							return false;
+						}
+					}
 				}
 			}
 			return true;
@@ -210,7 +194,8 @@ public class SemanticHighlightingReconciler implements IJavaReconcilingListener,
 		 * @param offset The range offset
 		 * @param length The range length
 		 */
-		private void retainPositions(int offset, int length) {
+		@Override
+		protected void retainPositions(int offset, int length) {
 			// TODO: use binary search
 			for (int i= 0, n= fRemovedPositions.size(); i < n; i++) {
 				HighlightedPosition position= (HighlightedPosition) fRemovedPositions.get(i);
@@ -493,7 +478,7 @@ public class SemanticHighlightingReconciler implements IJavaReconcilingListener,
 						}
 						if (monitor.isCanceled())
 							return Status.CANCEL_STATUS;
-						CompilationUnit ast= SharedASTProvider.getAST(element, SharedASTProvider.WAIT_YES, monitor);
+						CompilationUnit ast= SharedASTProviderCore.getAST(element, SharedASTProviderCore.WAIT_YES, monitor);
 						reconciled(ast, false, monitor);
 						synchronized (fJobLock) {
 							// allow the job to be gc'ed

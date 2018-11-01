@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -52,6 +55,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -62,11 +66,9 @@ import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.CollectingSearchRequestor;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringScopeFactory;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.util.SearchUtils;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 /**
  * A TargetProvider provides all targets that have to be adapted, i.e. all method invocations that should be inlined.
@@ -187,7 +189,7 @@ abstract class TargetProvider {
 				return new BodyDeclaration[0];
 			fastDone(pm);
 			return new BodyDeclaration[] {
-				(BodyDeclaration)ASTNodes.getParent(fInvocation, BodyDeclaration.class)
+				ASTNodes.getParent(fInvocation, BodyDeclaration.class)
 			};
 		}
 
@@ -389,7 +391,7 @@ abstract class TargetProvider {
 					@Override
 					public void endVisit(Block node) {
 						if (fCurrent.hasInvocations()) {
-							result.put((BodyDeclaration) ASTNodes.getParent(node, BodyDeclaration.class), fCurrent);
+							result.put(ASTNodes.getParent(node, BodyDeclaration.class), fCurrent);
 						}
 						endVisitBodyDeclaration();
 					}
@@ -482,7 +484,7 @@ abstract class TargetProvider {
 
 		@Override
 		public BodyDeclaration[] getAffectedBodyDeclarations(ICompilationUnit unit, IProgressMonitor pm) {
-			ASTNode root= SharedASTProvider.getAST(unit, SharedASTProvider.WAIT_YES, pm);
+			ASTNode root= SharedASTProviderCore.getAST(unit, SharedASTProviderCore.WAIT_YES, pm);
 			InvocationFinder finder= new InvocationFinder(fMethodBinding);
 			root.accept(finder);
 			fCurrentBodies= finder.result;

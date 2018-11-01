@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -43,8 +46,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 
 /**
@@ -144,7 +146,7 @@ public class NLSHint {
 					if (superType != null && NLS.class.getName().equals(superType.getQualifiedName())) {
 						Integer line;
 						try {
-							line = new Integer(document.getLineOfOffset(node.getStartPosition()));
+							line = Integer.valueOf(document.getLineOfOffset(node.getStartPosition()));
 						} catch (BadLocationException e) {
 							return true; // ignore and continue
 						}
@@ -162,7 +164,7 @@ public class NLSHint {
 						if (fCache_CU == null || !fCache_CU.equals(bundleCU) || fCache_AST == null) {
 							fCache_CU= bundleCU;
 							if (fCache_CU != null)
-								fCache_AST= SharedASTProvider.getAST(fCache_CU, SharedASTProvider.WAIT_YES, null);
+								fCache_AST= SharedASTProviderCore.getAST(fCache_CU, SharedASTProviderCore.WAIT_YES, null);
 							else
 								fCache_AST= null;
 						}

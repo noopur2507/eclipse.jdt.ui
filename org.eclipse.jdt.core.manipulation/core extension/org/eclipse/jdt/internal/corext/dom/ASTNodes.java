@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -114,6 +117,7 @@ import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 /**
  * JDT-UI-internal helper methods that deal with {@link ASTNode}s:
@@ -1009,11 +1013,11 @@ public class ASTNodes {
 	 * @param parentClass the class of the sought ancestor node
 	 * @return the closest ancestor of <code>node</code> that is an instance of <code>parentClass</code>, or <code>null</code> if none
 	 */
-	public static ASTNode getParent(ASTNode node, Class<? extends ASTNode> parentClass) {
+	public static <T extends ASTNode> T getParent(ASTNode node, Class<T> parentClass) {
 		do {
 			node= node.getParent();
 		} while (node != null && !parentClass.isInstance(node));
-		return node;
+		return parentClass.cast(node);
 	}
 
 	/**
@@ -1153,7 +1157,7 @@ public class ASTNodes {
 			return exp.resolveTypeBinding();
 		}
 		else {
-			AbstractTypeDeclaration type= (AbstractTypeDeclaration)getParent(invocation, AbstractTypeDeclaration.class);
+			AbstractTypeDeclaration type= getParent(invocation, AbstractTypeDeclaration.class);
 			if (type != null)
 				return type.resolveBinding();
 		}
@@ -1166,29 +1170,6 @@ public class ASTNodes {
 				return ((AbstractTypeDeclaration)node).resolveBinding();
 			} else if (node instanceof AnonymousClassDeclaration) {
 				return ((AnonymousClassDeclaration)node).resolveBinding();
-			}
-			node= node.getParent();
-		}
-		return null;
-	}
-
-	public static IBinding getEnclosingDeclaration(ASTNode node) {
-		while(node != null) {
-			if (node instanceof AbstractTypeDeclaration) {
-				return ((AbstractTypeDeclaration)node).resolveBinding();
-			} else if (node instanceof AnonymousClassDeclaration) {
-				return ((AnonymousClassDeclaration)node).resolveBinding();
-			} else if (node instanceof MethodDeclaration) {
-				return ((MethodDeclaration)node).resolveBinding();
-			} else if (node instanceof FieldDeclaration) {
-				List<?> fragments= ((FieldDeclaration)node).fragments();
-				if (fragments.size() > 0)
-					return ((VariableDeclarationFragment)fragments.get(0)).resolveBinding();
-			} else if (node instanceof VariableDeclarationFragment) {
-				IVariableBinding variableBinding= ((VariableDeclarationFragment)node).resolveBinding();
-				if (variableBinding.getDeclaringMethod() != null || variableBinding.getDeclaringClass() != null)
-					return variableBinding;
-				// workaround for incomplete wiring of DOM bindings: keep searching when variableBinding is unparented
 			}
 			node= node.getParent();
 		}
@@ -1399,12 +1380,12 @@ public class ASTNodes {
 						return declaration.resolveBinding();
 				}
 			} else {
-				final ClassInstanceCreation creation= (ClassInstanceCreation) getParent(NodeFinder.perform(root, type.getNameRange()), ClassInstanceCreation.class);
+				final ClassInstanceCreation creation= getParent(NodeFinder.perform(root, type.getNameRange()), ClassInstanceCreation.class);
 				if (creation != null)
 					return creation.resolveTypeBinding();
 			}
 		} else {
-			final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) getParent(NodeFinder.perform(root, type.getNameRange()), AbstractTypeDeclaration.class);
+			final AbstractTypeDeclaration declaration= getParent(NodeFinder.perform(root, type.getNameRange()), AbstractTypeDeclaration.class);
 			if (declaration != null)
 				return declaration.resolveBinding();
 		}
@@ -1498,11 +1479,9 @@ public class ASTNodes {
 		List<String> variableNames= new ArrayList<>();
 		CompilationUnit root= (CompilationUnit) node.getRoot();
 		IBinding[] bindings= new ScopeAnalyzer(root).
-				getDeclarationsInScope(node.getStartPosition(), ScopeAnalyzer.VARIABLES | ScopeAnalyzer.CHECK_VISIBILITY);
+				getDeclarationsInScope(node.getStartPosition(), ScopeAnalyzer.VARIABLES | ScopeAnalyzer.NO_FIELDS | ScopeAnalyzer.CHECK_VISIBILITY);
 		for (IBinding binding : bindings) {
-			if (binding instanceof IVariableBinding && !((IVariableBinding) binding).isField()) {
-				variableNames.add(binding.getName());
-			}
+			variableNames.add(binding.getName());
 		}
 		return variableNames;
 	}
@@ -1527,5 +1506,71 @@ public class ASTNodes {
 			}
 		}
 		return hasSemicolon;
+	}
+
+	/**
+	 * Checks if the given <code>node</code> is a {@link VariableDeclarationStatement}
+	 * or a {@link SimpleName} whose type is 'var'.
+	 *
+	 * @param node the AST node
+	 * @param astRoot the AST node of the compilation unit
+	 * @return <code>true</code> if the given {@link ASTNode} represents a
+	 * {@link SimpleName} or {@link VariableDeclarationStatement} that has a 'var' type
+	 * and <code>false</code> otherwise.
+	 */
+	public static boolean isVarType(ASTNode node, CompilationUnit astRoot) {
+		IJavaElement root= astRoot.getJavaElement();
+		if (root == null) {
+			return false;
+		}
+		IJavaProject javaProject= root.getJavaProject();
+		if (javaProject == null) {
+			return false;
+		}
+		if (!JavaModelUtil.is10OrHigher(javaProject)) {
+			return false;
+		}
+
+		Type type= null;
+		if (node instanceof SimpleName) {
+			IBinding binding= null;
+			SimpleName name= (SimpleName) node;
+			binding= name.resolveBinding();
+			if (!(binding instanceof IVariableBinding)) {
+				return false;
+			}
+
+			IVariableBinding varBinding= (IVariableBinding) binding;
+			if (varBinding.isField() || varBinding.isParameter()) {
+				return false;
+			}
+
+			ASTNode varDeclaration= astRoot.findDeclaringNode(varBinding);
+			if (varDeclaration == null) {
+				return false;
+			}
+
+			ITypeBinding typeBinding= varBinding.getType();
+			if (typeBinding == null || typeBinding.isAnonymous() || typeBinding.isIntersectionType() || typeBinding.isWildcardType()) {
+				return false;
+			}
+
+			if (varDeclaration instanceof SingleVariableDeclaration) {
+				type= ((SingleVariableDeclaration) varDeclaration).getType();
+			} else if (varDeclaration instanceof VariableDeclarationFragment) {
+				ASTNode parent= varDeclaration.getParent();
+				if (parent instanceof VariableDeclarationStatement) {
+					type= ((VariableDeclarationStatement) parent).getType();
+				} else if (parent instanceof VariableDeclarationExpression) {
+					type= ((VariableDeclarationExpression) parent).getType();
+				}
+			}
+		} else if (node instanceof VariableDeclarationStatement) {
+			type= ((VariableDeclarationStatement)node).getType();
+		} else {
+			return false;
+		}
+
+		return type == null ? false : type.isVar();
 	}
 }

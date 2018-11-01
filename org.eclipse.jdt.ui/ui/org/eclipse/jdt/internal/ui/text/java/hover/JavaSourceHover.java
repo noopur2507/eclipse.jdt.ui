@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -51,14 +54,13 @@ import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.TokenScanner;
 import org.eclipse.jdt.internal.corext.util.Messages;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
@@ -186,7 +188,7 @@ public class JavaSourceHover extends AbstractJavaEditorTextHover {
 
 			String delim= StubUtility.getLineDelimiterUsed(editorInput);
 
-			CompilationUnit ast= SharedASTProvider.getAST(editorInput, SharedASTProvider.WAIT_NO, null);
+			CompilationUnit ast= SharedASTProviderCore.getAST(editorInput, SharedASTProviderCore.WAIT_NO, null);
 			if (ast == null)
 				return null;
 			ASTNode bracketNode= NodeFinder.perform(ast, match.getOffset(),
@@ -265,7 +267,7 @@ public class JavaSourceHover extends AbstractJavaEditorTextHover {
 			if ((line1 < topLine) || (wLine1 != -1 && (wLine2 - wLine1 != line2 - line1))) {
 				// match not visible or content is folded - see bug 399997
 				if (isElsePart) {
-					return getBracketHoverInfo((IfStatement) node, bracketNode, document, editorInput, delim); // see bug 377141, 410650
+					return getBracketHoverInfo((IfStatement) node, bracketNode, document, editorInput, delim); // see bug 377141, 201850
 				}
 				noOfSourceLines= 3;
 				if ((line2 - line1) < noOfSourceLines) {
@@ -279,7 +281,7 @@ public class JavaSourceHover extends AbstractJavaEditorTextHover {
 				endLine= document.getLineInformation(line1 + noOfSourceLines);
 				fUpwardShiftInLines= noOfSourceLines;
 				if (skippedLines > 0) {
-					fBracketHoverStatus= Messages.format(JavaHoverMessages.JavaSourceHover_skippedLines, new Integer(skippedLines));
+					fBracketHoverStatus= Messages.format(JavaHoverMessages.JavaSourceHover_skippedLines, Integer.valueOf(skippedLines));
 				}
 			} else {
 				noOfSourceLines= line2 - line1;
@@ -403,7 +405,7 @@ public class JavaSourceHover extends AbstractJavaEditorTextHover {
 		if (fUpwardShiftInLines == 0)
 			return null;
 		if ((totalSkippedLines) > 0) {
-			fBracketHoverStatus= Messages.format(JavaHoverMessages.JavaSourceHover_skippedLines, new Integer(totalSkippedLines));
+			fBracketHoverStatus= Messages.format(JavaHoverMessages.JavaSourceHover_skippedLines, Integer.valueOf(totalSkippedLines));
 		}
 		return hoverText;
 	}

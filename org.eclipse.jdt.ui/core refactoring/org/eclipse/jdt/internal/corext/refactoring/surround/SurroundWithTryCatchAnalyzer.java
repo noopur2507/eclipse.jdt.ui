@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -20,6 +23,7 @@ import org.eclipse.jdt.core.dom.MethodReference;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
+import org.eclipse.jdt.internal.corext.refactoring.util.SurroundWithAnalyzer;
 
 public class SurroundWithTryCatchAnalyzer extends SurroundWithAnalyzer {
 	private ITypeBinding[] fExceptions;
@@ -36,7 +40,7 @@ public class SurroundWithTryCatchAnalyzer extends SurroundWithAnalyzer {
 	public void endVisit(CompilationUnit node) {
 		ASTNode enclosingNode= null;
 		if (!getStatus().hasFatalError() && hasSelectedNodes())
-			enclosingNode= getEnclosingNode(getFirstSelectedNode());
+			enclosingNode= SurroundWithAnalyzer.getEnclosingNode(getFirstSelectedNode());
 
 		super.endVisit(node);
 		if (enclosingNode != null && !getStatus().hasFatalError()) {

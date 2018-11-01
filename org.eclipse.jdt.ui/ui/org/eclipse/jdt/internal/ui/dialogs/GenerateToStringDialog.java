@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2008, 2016 Mateusz Matela and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Mateusz Matela <mateusz.matela@gmail.com> - [code manipulation] [dcr] toString() builder wizard - https://bugs.eclipse.org/bugs/show_bug.cgi?id=26070
@@ -430,7 +433,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 				int copyCount= 2;
 				String newName;
 				do {
-					newName= Messages.format(JavaUIMessages.GenerateToStringDialog_newTemplateNameArg, new Integer(copyCount));
+					newName= Messages.format(JavaUIMessages.GenerateToStringDialog_newTemplateNameArg, Integer.valueOf(copyCount));
 					copyCount++;
 				} while (templateNames.contains(newName));
 				return newName;
@@ -455,7 +458,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 				String systemLineDelimiter= Text.DELIMITER;
 				final String javaLineDelimiter= "\n"; //$NON-NLS-1$
 				if (!systemLineDelimiter.equals(javaLineDelimiter)) {
-					StringBuffer outputBuffer= new StringBuffer(input);
+					StringBuilder outputBuffer= new StringBuilder(input);
 					int pos= outputBuffer.indexOf(systemLineDelimiter);
 					while (pos >= 0) {
 						outputBuffer.delete(pos, pos + systemLineDelimiter.length());
@@ -1315,6 +1318,12 @@ public class GenerateToStringDialog extends SourceActionDialog {
 		return buttonComposite;
 	}
 
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.OK_ID, JavaUIMessages.GenerateToStringDialog_generate_button, true);
+		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
+	}
+	
 	@Override
 	protected void buttonPressed(int buttonId) {
 		super.buttonPressed(buttonId);

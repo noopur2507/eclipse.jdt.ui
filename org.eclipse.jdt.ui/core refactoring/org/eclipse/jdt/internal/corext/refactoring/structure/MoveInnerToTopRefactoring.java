@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -93,6 +96,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer;
 import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer.SourceRange;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.ConvertMemberTypeDescriptor;
@@ -103,7 +107,6 @@ import org.eclipse.jdt.core.search.SearchPattern;
 
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
@@ -116,11 +119,11 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringScopeFactory;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringSearchEngine2;
 import org.eclipse.jdt.internal.corext.refactoring.SearchResultGroup;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.CreateCompilationUnitChange;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MemberVisibilityAdjustor.OutgoingMemberVisibilityAdjustment;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavadocUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
@@ -131,12 +134,13 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.corext.util.SearchUtils;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 
-import org.eclipse.jdt.ui.CodeGeneration;
 import org.eclipse.jdt.ui.JavaElementLabels;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
+
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
 
@@ -611,7 +615,7 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 			fTypeImports= null;
 			fStaticImports= null;
 			TextEdit edits= rewrite.rewriteImports(new SubProgressMonitor(monitor, 1));
-			JavaElementUtil.applyEdit(targetUnit, edits, false, new SubProgressMonitor(monitor, 1));
+			JavaModelUtil.applyEdit(targetUnit, edits, false, new SubProgressMonitor(monitor, 1));
 		} finally {
 			monitor.done();
 		}
@@ -1089,7 +1093,7 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 				fileComment= CodeGeneration.getFileComment(unit, separator);
 			String content= CodeGeneration.getCompilationUnitContent(unit, fileComment, null, block, separator);
 			if (content == null) {
-				final StringBuffer buffer= new StringBuffer();
+				final StringBuilder buffer= new StringBuilder();
 				if (!fType.getPackageFragment().isDefaultPackage()) {
 					buffer.append("package ").append(fType.getPackageFragment().getElementName()).append(';'); //$NON-NLS-1$
 				}
@@ -1263,26 +1267,26 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 	}
 
 	private boolean isInAnonymousTypeInsideInputType(ASTNode node, AbstractTypeDeclaration declaration) {
-		final AnonymousClassDeclaration anonymous= (AnonymousClassDeclaration) ASTNodes.getParent(node, AnonymousClassDeclaration.class);
+		final AnonymousClassDeclaration anonymous= ASTNodes.getParent(node, AnonymousClassDeclaration.class);
 		return anonymous != null && ASTNodes.isParent(anonymous, declaration);
 	}
 
 	private boolean isInLocalTypeInsideInputType(ASTNode node, AbstractTypeDeclaration declaration) {
-		final TypeDeclarationStatement statement= (TypeDeclarationStatement) ASTNodes.getParent(node, TypeDeclarationStatement.class);
+		final TypeDeclarationStatement statement= ASTNodes.getParent(node, TypeDeclarationStatement.class);
 		return statement != null && ASTNodes.isParent(statement, declaration);
 	}
 
 	private boolean isInNonStaticMemberTypeInsideInputType(ASTNode node, AbstractTypeDeclaration declaration) {
-		final AbstractTypeDeclaration nested= (AbstractTypeDeclaration) ASTNodes.getParent(node, AbstractTypeDeclaration.class);
+		final AbstractTypeDeclaration nested= ASTNodes.getParent(node, AbstractTypeDeclaration.class);
 		return nested != null && !declaration.equals(nested) && !Modifier.isStatic(nested.getFlags()) && ASTNodes.isParent(nested, declaration);
 	}
 
 	private boolean isInsideSubclassOfDeclaringType(ASTNode node) {
 		Assert.isTrue((node instanceof ClassInstanceCreation) || (node instanceof SuperConstructorInvocation));
-		final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(node, AbstractTypeDeclaration.class);
+		final AbstractTypeDeclaration declaration= ASTNodes.getParent(node, AbstractTypeDeclaration.class);
 		Assert.isNotNull(declaration);
 
-		final AnonymousClassDeclaration anonymous= (AnonymousClassDeclaration) ASTNodes.getParent(node, AnonymousClassDeclaration.class);
+		final AnonymousClassDeclaration anonymous= ASTNodes.getParent(node, AnonymousClassDeclaration.class);
 		boolean isAnonymous= anonymous != null && ASTNodes.isParent(anonymous, declaration);
 		if (isAnonymous)
 			return anonymous != null && isSubclassBindingOfEnclosingType(anonymous.resolveBinding());
@@ -1291,7 +1295,7 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 
 	private boolean isInsideTypeNestedInDeclaringType(ASTNode node) {
 		Assert.isTrue((node instanceof ClassInstanceCreation) || (node instanceof SuperConstructorInvocation));
-		final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(node, AbstractTypeDeclaration.class);
+		final AbstractTypeDeclaration declaration= ASTNodes.getParent(node, AbstractTypeDeclaration.class);
 		Assert.isNotNull(declaration);
 		ITypeBinding enclosing= declaration.resolveBinding();
 		while (enclosing != null) {
@@ -1542,7 +1546,7 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 			final ImportRewrite rewriter= rewrite.getImportRewrite();
 			if (enclosingImport.isStatic()) {
 				final String oldImport= ASTNodes.asString(node);
-				final StringBuffer buffer= new StringBuffer(oldImport);
+				final StringBuilder buffer= new StringBuilder(oldImport);
 				final String typeName= fType.getDeclaringType().getElementName();
 				final int index= buffer.indexOf(typeName);
 				if (index >= 0) {
@@ -1565,7 +1569,7 @@ public final class MoveInnerToTopRefactoring extends Refactoring {
 	}
 
 	private void updateTypeReference(ITypeBinding[] parameters, ASTNode node, CompilationUnitRewrite rewrite, ICompilationUnit cu) {
-		ImportDeclaration enclosingImport= (ImportDeclaration) ASTNodes.getParent(node, ImportDeclaration.class);
+		ImportDeclaration enclosingImport= ASTNodes.getParent(node, ImportDeclaration.class);
 		if (enclosingImport != null)
 			updateReferenceInImport(enclosingImport, node, rewrite);
 		else {

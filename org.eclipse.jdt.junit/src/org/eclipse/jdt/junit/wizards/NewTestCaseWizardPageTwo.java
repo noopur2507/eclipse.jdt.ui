@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2010 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -440,9 +443,9 @@ public class NewTestCaseWizardPageTwo extends WizardPage {
 		}
 		String label= ""; //$NON-NLS-1$
 		if (checkedMethodCount == 1)
-			label= Messages.format(WizardMessages.NewTestCaseWizardPageTwo_selected_methods_label_one, new Integer(checkedMethodCount));
+			label= Messages.format(WizardMessages.NewTestCaseWizardPageTwo_selected_methods_label_one, Integer.valueOf(checkedMethodCount));
 		else
-			label= Messages.format(WizardMessages.NewTestCaseWizardPageTwo_selected_methods_label_many, new Integer(checkedMethodCount));
+			label= Messages.format(WizardMessages.NewTestCaseWizardPageTwo_selected_methods_label_many, Integer.valueOf(checkedMethodCount));
 		fSelectedMethodsLabel.setText(label);
 	}
 

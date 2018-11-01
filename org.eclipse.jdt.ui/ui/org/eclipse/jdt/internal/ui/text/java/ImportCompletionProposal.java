@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2007, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -29,13 +32,13 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -54,6 +57,7 @@ public class ImportCompletionProposal extends AbstractJavaCompletionProposal {
 	private ContextSensitiveImportRewriteContext fImportContext;
 	private final CompletionProposal fProposal;
 	private boolean fReplacementStringComputed;
+	private int fLengthOfImportsAddedBehindReplacementOffset;
 
 
 	public ImportCompletionProposal(CompletionProposal proposal, JavaContentAssistInvocationContext context, int parentProposalKind) {
@@ -137,7 +141,12 @@ public class ImportCompletionProposal extends AbstractJavaCompletionProposal {
 
 			if (fImportRewrite != null && fImportRewrite.hasRecordedChanges()) {
 				int oldLen= document.getLength();
-				fImportRewrite.rewriteImports(new NullProgressMonitor()).apply(document, TextEdit.UPDATE_REGIONS);
+				TextEdit textEdit= fImportRewrite.rewriteImports(new NullProgressMonitor());
+				textEdit.apply(document, TextEdit.UPDATE_REGIONS);
+				if (textEdit.getOffset() > getReplacementOffset())
+					fLengthOfImportsAddedBehindReplacementOffset= document.getLength() - oldLen;
+				else
+					fLengthOfImportsAddedBehindReplacementOffset= 0;
 				setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
 			}
 		} catch (CoreException e) {
@@ -174,7 +183,7 @@ public class ImportCompletionProposal extends AbstractJavaCompletionProposal {
 	}
 
 	private CompilationUnit getASTRoot(ICompilationUnit compilationUnit) {
-		return SharedASTProvider.getAST(compilationUnit, SharedASTProvider.WAIT_NO, null);
+		return SharedASTProviderCore.getAST(compilationUnit, SharedASTProviderCore.WAIT_NO, null);
 	}
 
 	/**
@@ -218,5 +227,14 @@ public class ImportCompletionProposal extends AbstractJavaCompletionProposal {
 		else
 			processJavadoc= JavaCore.ENABLED.equals(project.getOption(JavaCore.COMPILER_DOC_COMMENT_SUPPORT, true));
 		return processJavadoc;
+	}
+
+	/**
+	 * Returns the number of characters inserted behind the replacementOffset by the last invocation of {@link #apply(IDocument, char, int)}
+	 *
+	 * @return the number of characters inserted behind the replacementOffset by the last invocation of {@link #apply(IDocument, char, int)}
+	 */
+	public int getLengthOfImportsAddedBehindReplacementOffset() {
+		return fLengthOfImportsAddedBehindReplacementOffset;
 	}
 }

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -186,7 +189,7 @@ public class CustomFiltersDialog extends SelectionDialog {
 		fCheckBoxList.setContentProvider(new ArrayContentProvider());
 		Arrays.sort(fBuiltInFilters);
 		fCheckBoxList.setInput(fBuiltInFilters);
-		setInitialSelections(getEnabledFilterDescriptors());
+		setInitialSelections((Object[]) getEnabledFilterDescriptors());
 
 		List<Object[]> initialSelection= getInitialElementSelections();
 		if (initialSelection != null && !initialSelection.isEmpty())
@@ -404,7 +407,7 @@ public class CustomFiltersDialog extends SelectionDialog {
 
 	public static String convertToString(String[] patterns, String separator) {
 		int length= patterns.length;
-		StringBuffer strBuf= new StringBuffer();
+		StringBuilder strBuf= new StringBuilder();
 		if (length > 0)
 			strBuf.append(escapeSeparator(patterns[0], separator));
 		else
@@ -420,7 +423,7 @@ public class CustomFiltersDialog extends SelectionDialog {
 
 	private static String escapeSeparator(String pattern, String separator) {
 		int length= pattern.length();
-		StringBuffer buf= new StringBuffer(length);
+		StringBuilder buf= new StringBuilder(length);
 		for (int i= 0; i < length; i++) {
 			char ch= pattern.charAt(i);
 			if (separator.equals(String.valueOf(ch)))

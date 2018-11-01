@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2009 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -77,7 +80,7 @@ public class RefactoringDescriptorViewer extends Viewer {
 	 * @return the input text
 	 */
 	protected String getInputText(final RefactoringDescriptorProxy proxy) {
-		final StringBuffer buffer= new StringBuffer();
+		final StringBuilder buffer= new StringBuilder();
 
 		// XXX: should use style sheet and set dialog font.
 
@@ -114,7 +117,7 @@ public class RefactoringDescriptorViewer extends Viewer {
 		String text= getInputText(fDescriptor);
 		if (text != null && text.length() > 0) {
 			if ((fBrowser.getShell().getStyle() & SWT.RIGHT_TO_LEFT) != 0) {
-				final StringBuffer buffer= new StringBuffer(text);
+				final StringBuilder buffer= new StringBuilder(text);
 				HTMLPrinter.insertStyles(buffer, new String[] { "direction:rtl", "overflow:hidden"}); //$NON-NLS-1$ //$NON-NLS-2$
 				text= buffer.toString();
 			}

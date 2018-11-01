@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -88,13 +91,13 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.fix.CleanUpRefactoring.CleanUpChange;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.cleanup.CleanUpContext;
 import org.eclipse.jdt.ui.cleanup.CleanUpOptions;
 import org.eclipse.jdt.ui.cleanup.CleanUpRequirements;
@@ -584,7 +587,7 @@ public class CleanUpPostSaveListener implements IPostSaveListener {
 	private CompilationUnit createAst(ICompilationUnit unit, Map<String, String> cleanUpOptions, IProgressMonitor monitor) {
 		IJavaProject project= unit.getJavaProject();
 		if (compatibleOptions(project, cleanUpOptions)) {
-			CompilationUnit ast= SharedASTProvider.getAST(unit, SharedASTProvider.WAIT_NO, monitor);
+			CompilationUnit ast= SharedASTProviderCore.getAST(unit, SharedASTProviderCore.WAIT_NO, monitor);
 			if (ast != null)
 				return ast;
 		}
@@ -655,7 +658,7 @@ public class CleanUpPostSaveListener implements IPostSaveListener {
 
 	private void showSlowCleanUpsWarning(HashSet<ICleanUp> slowCleanUps) {
 
-		final StringBuffer cleanUpNames= new StringBuffer();
+		final StringBuilder cleanUpNames= new StringBuilder();
 		for (Iterator<ICleanUp> iterator= slowCleanUps.iterator(); iterator.hasNext();) {
 			ICleanUp cleanUp= iterator.next();
 			String[] descriptions= cleanUp.getStepDescriptions();
@@ -681,7 +684,7 @@ public class CleanUpPostSaveListener implements IPostSaveListener {
 		}
 	}
 
-	private void showSlowCleanUpDialog(final StringBuffer cleanUpNames) {
+	private void showSlowCleanUpDialog(final StringBuilder cleanUpNames) {
 		if (OptionalMessageDialog.isDialogEnabled(SlowCleanUpWarningDialog.ID)) {
 			Shell shell= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 			new SlowCleanUpWarningDialog(shell, FixMessages.CleanUpPostSaveListener_SlowCleanUpDialog_title, cleanUpNames.toString()).open();

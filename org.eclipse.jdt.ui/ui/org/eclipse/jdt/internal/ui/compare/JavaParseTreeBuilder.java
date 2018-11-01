@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -216,7 +219,7 @@ class JavaParseTreeBuilder extends ASTVisitor {
     }
 
     private String getFieldName(VariableDeclarationFragment node) {
-        StringBuffer buffer= new StringBuffer();
+    	StringBuilder buffer= new StringBuilder();
         buffer.append(node.getName().toString());
         ASTNode parent= node.getParent();
         if (parent instanceof FieldDeclaration) {
@@ -228,7 +231,7 @@ class JavaParseTreeBuilder extends ASTVisitor {
     }
 
     private String getSignature(MethodDeclaration node) {
-        StringBuffer buffer= new StringBuffer();
+    	StringBuilder buffer= new StringBuilder();
         buffer.append(node.getName().toString());
         buffer.append('(');
         boolean first= true;
@@ -247,7 +250,7 @@ class JavaParseTreeBuilder extends ASTVisitor {
     }
 
     private String getSignature(AnnotationTypeMemberDeclaration node) {
-        StringBuffer buffer= new StringBuffer();
+    	StringBuilder buffer= new StringBuilder();
         buffer.append(node.getName().toString());
         buffer.append('(');
         buffer.append(')');

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2016 GK Software AG, IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2014, 2018 GK Software AG, IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann <stephan.herrmann@berlin.de> - initial API and implementation - https://bugs.eclipse.org/425183
@@ -14,6 +17,7 @@ package org.eclipse.jdt.text.tests.contentassist;
 import java.util.Hashtable;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
+import org.eclipse.jdt.testplugin.NullTestUtils;
 import org.eclipse.jdt.testplugin.TestOptions;
 
 import org.eclipse.core.runtime.CoreException;
@@ -21,6 +25,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 
+import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.source.ISourceViewer;
@@ -41,8 +46,8 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
@@ -766,5 +771,81 @@ public class CodeCompletionTest18 extends AbstractCompletionTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		assertEquals(buf.toString(), doc.get());
+	}
+	private static void assertNumberOf(String name, int is, int expected) {
+		assertTrue("Wrong number of " + name + ", is: " + is + ", expected: " + expected, is == expected);
+	}
+
+	public void testBug528871() throws Exception {
+		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+		NullTestUtils.prepareNullTypeAnnotations(sourceFolder);
+		try {
+			IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
+			StringBuffer buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("\n");
+			buf.append("import annots.NonNull;\n");
+			buf.append("import annots.NonNullByDefault;\n");
+			buf.append("\n");
+			buf.append("interface A {\n");
+			buf.append("    @NonNull String m();\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("public class Test {\n");
+			buf.append("    void f() {\n");
+			buf.append("        new A()\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			buf.append("");
+			String contents= buf.toString();
+	
+			ICompilationUnit cu= pack1.createCompilationUnit("A.java", contents, false, null);
+	
+			String str= "new A(";
+	
+			int offset= contents.indexOf(str) + str.length();
+	
+			CompletionProposalCollector collector= createCollector(cu, offset);
+			collector.setReplacementLength(0);
+	
+			codeComplete(cu, offset, collector);
+	
+			IJavaCompletionProposal[] proposals= collector.getJavaCompletionProposals();
+	
+			assertNumberOf("proposals", proposals.length, 1);
+	
+			IDocument doc= new Document(contents);
+	
+			proposals[0].apply(doc);
+	
+			buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("\n");
+			buf.append("import annots.NonNull;\n");
+			buf.append("import annots.NonNullByDefault;\n");
+			buf.append("\n");
+			buf.append("interface A {\n");
+			buf.append("    @NonNull String m();\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("public class Test {\n");
+			buf.append("    void f() {\n");
+			buf.append("        new A() {\n");
+			buf.append("            \n");
+			buf.append("            @Override\n");
+			buf.append("            public String m() {\n");
+			buf.append("                //TODO\n");
+			buf.append("                return null;\n");
+			buf.append("            }\n");
+			buf.append("        }\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			buf.append("");
+			assertEquals(buf.toString(), doc.get());
+		} finally {
+			NullTestUtils.disableAnnotationBasedNullAnalysis(sourceFolder);
+		}
 	}
 }

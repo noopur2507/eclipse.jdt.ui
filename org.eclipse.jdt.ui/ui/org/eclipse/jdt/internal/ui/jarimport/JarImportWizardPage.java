@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -321,7 +324,7 @@ public final class JarImportWizardPage extends WizardPage {
 	 * Handles the browse button selected event.
 	 */
 	protected void handleBrowseButtonSelected() {
-		final FileDialog file= new FileDialog(getShell(), SWT.OPEN);
+		final FileDialog file= new FileDialog(getShell(), SWT.OPEN | SWT.SHEET);
 		file.setText(JarImportMessages.JarImportWizardPage_browse_caption);
 		file.setFilterNames(ArchiveFileFilter.ALL_ARCHIVES_FILTER_EXTENSIONS);
 		file.setFilterExtensions(ArchiveFileFilter.ALL_ARCHIVES_FILTER_EXTENSIONS);

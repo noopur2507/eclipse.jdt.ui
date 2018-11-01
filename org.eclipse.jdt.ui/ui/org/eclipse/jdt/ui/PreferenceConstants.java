@@ -1,13 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Guven Demir <guven.internet+eclipse@gmail.com> - [package explorer] Alternative package name shortening: abbreviation - https://bugs.eclipse.org/bugs/show_bug.cgi?id=299514
+ *     Red Hat Inc - modify to use CodeGenerationSettingsConstants
  *******************************************************************************/
 package org.eclipse.jdt.ui;
 
@@ -19,10 +23,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.RGB;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.InstanceScope;
-
-import org.eclipse.core.resources.ProjectScope;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -38,8 +39,12 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.manipulation.CodeStyleConfiguration;
+import org.eclipse.jdt.core.manipulation.JavaManipulation;
 
-import org.eclipse.jdt.internal.corext.fix.CleanUpConstants;
+import org.eclipse.jdt.internal.core.manipulation.MembersOrderPreferenceCacheCommon;
+import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettingsConstants;
+import org.eclipse.jdt.internal.corext.fix.CleanUpConstantsOptions;
 
 import org.eclipse.jdt.ui.text.IJavaColorConstants;
 
@@ -67,7 +72,7 @@ import org.eclipse.jdt.internal.ui.text.spelling.SpellCheckEngine;
  *
  * @noinstantiate This class is not intended to be instantiated by clients.
  * @noextend This class is not intended to be subclassed by clients.
-  */
+ */
 public class PreferenceConstants {
 
 	private PreferenceConstants() {
@@ -171,6 +176,16 @@ public class PreferenceConstants {
 	public static final String APPEARANCE_FOLD_PACKAGES_IN_PACKAGE_EXPLORER= "org.eclipse.jdt.ui.flatPackagesInPackageExplorer";//$NON-NLS-1$
 
 	/**
+	 * A named preference that controls if entries of library containers are sorted alphabetically.
+	 * <p>
+	 * Value is of type <code>Boolean</code>: if <code>true</code> entries are sorted alphabetically, otherwise
+	 * by their occurance order.
+	 * </p>
+	 * @since 3.14
+	 */
+	public static final String APPEARANCE_SORT_LIBRARY_ENTRIES_BY_NAME= "org.eclipse.jdt.ui.sortLibraryEntriesByName";//$NON-NLS-1$
+
+	/**
 	 * A named preference that defines how member elements are ordered by the
 	 * Java views using the <code>JavaElementSorter</code>.
 	 * <p>
@@ -190,7 +205,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 2.1
 	 */
-	public static final String APPEARANCE_MEMBER_SORT_ORDER= "outlinesortoption"; //$NON-NLS-1$
+	public static final String APPEARANCE_MEMBER_SORT_ORDER= MembersOrderPreferenceCacheCommon.APPEARANCE_MEMBER_SORT_ORDER;
 
 	/**
 	 * A named preference that defines how member elements are ordered by visibility in the
@@ -208,7 +223,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.0
 	 */
-	public static final String APPEARANCE_VISIBILITY_SORT_ORDER= "org.eclipse.jdt.ui.visibility.order"; //$NON-NLS-1$
+	public static final String APPEARANCE_VISIBILITY_SORT_ORDER= MembersOrderPreferenceCacheCommon.APPEARANCE_VISIBILITY_SORT_ORDER;
 
 	/**
 	 * A named preferences that controls if Java elements are also sorted by
@@ -218,7 +233,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.0
 	 */
-	public static final String APPEARANCE_ENABLE_VISIBILITY_SORT_ORDER= "org.eclipse.jdt.ui.enable.visibility.order"; //$NON-NLS-1$
+	public static final String APPEARANCE_ENABLE_VISIBILITY_SORT_ORDER= MembersOrderPreferenceCacheCommon.APPEARANCE_ENABLE_VISIBILITY_SORT_ORDER;
 
 	/**
 	 * A named preference that controls category rendering of Java elements in the UI.
@@ -292,7 +307,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.0
 	 */
-	public static final String CODEGEN_KEYWORD_THIS= "org.eclipse.jdt.ui.keywordthis"; //$NON-NLS-1$
+	public static final String CODEGEN_KEYWORD_THIS= CodeGenerationSettingsConstants.CODEGEN_KEYWORD_THIS;
 
 	/**
 	 * A named preference that controls whether automatically created getters which return a boolean
@@ -328,7 +343,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 2.1
 	 */
-	public static final String CODEGEN_ADD_COMMENTS= "org.eclipse.jdt.ui.javadoc"; //$NON-NLS-1$
+	public static final String CODEGEN_ADD_COMMENTS= CodeGenerationSettingsConstants.CODEGEN_ADD_COMMENTS;
 
 	/**
 	 * A named preference that controls if a comment stubs will be added
@@ -371,7 +386,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.1
 	 */
-	public static final String CODEGEN_USE_OVERRIDE_ANNOTATION= "org.eclipse.jdt.ui.overrideannotation"; //$NON-NLS-1$
+	public static final String CODEGEN_USE_OVERRIDE_ANNOTATION= CodeGenerationSettingsConstants.CODEGEN_USE_OVERRIDE_ANNOTATION;
 
 	/**
 	 * A named preference that holds a list of semicolon separated fully qualified type names with wild card characters.
@@ -394,7 +409,7 @@ public class PreferenceConstants {
 	 * names
 	 * </p>
 	 */
-	public static final String ORGIMPORTS_IMPORTORDER= "org.eclipse.jdt.ui.importorder"; //$NON-NLS-1$
+	public static final String ORGIMPORTS_IMPORTORDER= CodeStyleConfiguration.ORGIMPORTS_IMPORTORDER;
 
 	/**
 	 * A named preference that specifies the number of imports added before a star-import declaration is used.
@@ -402,7 +417,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>Integer</code>: positive value specifying the number of non star-import is used
 	 * </p>
 	 */
-	public static final String ORGIMPORTS_ONDEMANDTHRESHOLD= "org.eclipse.jdt.ui.ondemandthreshold"; //$NON-NLS-1$
+	public static final String ORGIMPORTS_ONDEMANDTHRESHOLD= CodeStyleConfiguration.ORGIMPORTS_ONDEMANDTHRESHOLD;
 
 	/**
 	 * A named preference that specifies the number of static imports added before a star-import declaration is used.
@@ -411,7 +426,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.2
 	 */
-	public static final String ORGIMPORTS_STATIC_ONDEMANDTHRESHOLD= "org.eclipse.jdt.ui.staticondemandthreshold"; //$NON-NLS-1$
+	public static final String ORGIMPORTS_STATIC_ONDEMANDTHRESHOLD= CodeStyleConfiguration.ORGIMPORTS_STATIC_ONDEMANDTHRESHOLD;
 
 	/**
 	 * A named preferences that controls if types that start with a lower case letters get added by the
@@ -420,7 +435,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
 	 */
-	public static final String ORGIMPORTS_IGNORELOWERCASE= "org.eclipse.jdt.ui.ignorelowercasenames"; //$NON-NLS-1$
+	public static final String ORGIMPORTS_IGNORELOWERCASE= CodeGenerationSettingsConstants.ORGIMPORTS_IGNORELOWERCASE;
 
 	/**
 	 * A named preference that specifies whether children of a compilation unit are shown in the package explorer.
@@ -2502,6 +2517,13 @@ public class PreferenceConstants {
 	public static final String EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX="semanticHighlighting."; //$NON-NLS-1$
 
 	/**
+	 * A named preference prefix for Java code mining preferences.
+	 *
+	 * @since 3.14
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_PREFIX="java.codemining."; //$NON-NLS-1$
+
+	/**
 	 * A named preference that controls if semantic highlighting is enabled.
 	 * <p>
 	 * Value is of type <code>Boolean</code>:<code>true</code> if enabled.
@@ -3742,6 +3764,21 @@ public class PreferenceConstants {
 	 */
 	public final static String EDITOR_SOURCE_HOVER_BACKGROUND_COLOR_SYSTEM_DEFAULT= "sourceHoverBackgroundColor.SystemDefault"; //$NON-NLS-1$
 
+
+	/**
+	 * A named preference that tells whether to use different icons
+	 * for source folders marked to contain test code and classpath entries
+	 * visible only for test sources.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @see org.eclipse.jface.resource.StringConverter
+	 * @see org.eclipse.jface.preference.PreferenceConverter
+	 * @since 3.14
+	 */
+	public final static String DECORATE_TEST_CODE_CONTAINER_ICONS= "decorateTestCodeContainerIcons"; //$NON-NLS-1$
+
 	/**
 	 * Initializes the given preference store with the default values.
 	 *
@@ -3947,6 +3984,8 @@ public class PreferenceConstants {
 
 		store.setDefault(EDITOR_SOURCE_HOVER_BACKGROUND_COLOR_SYSTEM_DEFAULT, true);
 
+		store.setDefault(PreferenceConstants.DECORATE_TEST_CODE_CONTAINER_ICONS, true);
+
 		store.setDefault(PreferenceConstants.FORMATTER_PROFILE, FormatterProfileManager.DEFAULT_PROFILE);
 
 		// mark occurrences
@@ -4058,7 +4097,7 @@ public class PreferenceConstants {
 
 
 		//Code Clean Up
-		CleanUpConstants.initDefaults(store);
+		CleanUpConstantsOptions.initDefaults(store);
 
 		// Colors that are set by the current theme
 		JavaUIPreferenceInitializer.setThemeBasedPreferences(store, false);
@@ -4094,7 +4133,7 @@ public class PreferenceConstants {
 	 * @param entries an array of classpath entries to be encoded
 	 *
 	 * @return the encoded string.
-	*/
+	 */
 	public static String encodeJRELibrary(String description, IClasspathEntry[] entries) {
 		return NewJavaProjectPreferencePage.encodeJRELibrary(description, entries);
 	}
@@ -4162,7 +4201,7 @@ public class PreferenceConstants {
 	 */
 	public static void setExcludedCompletionProposalCategories(String[] categories) {
 		Assert.isLegal(categories != null);
-		StringBuffer buf= new StringBuffer(50 * categories.length);
+		StringBuilder buf= new StringBuilder(50 * categories.length);
 		for (int i= 0; i < categories.length; i++) {
 			buf.append(categories[i]);
 			buf.append('\0');
@@ -4181,18 +4220,7 @@ public class PreferenceConstants {
 	 * @since 3.1
 	 */
 	public static String getPreference(String key, IJavaProject project) {
-		String val;
-		if (project != null) {
-			val= new ProjectScope(project.getProject()).getNode(JavaUI.ID_PLUGIN).get(key, null);
-			if (val != null) {
-				return val;
-			}
-		}
-		val= InstanceScope.INSTANCE.getNode(JavaUI.ID_PLUGIN).get(key, null);
-		if (val != null) {
-			return val;
-		}
-		return DefaultScope.INSTANCE.getNode(JavaUI.ID_PLUGIN).get(key, null);
+		return JavaManipulation.getPreference(key, project);
 	}
 
 	/**

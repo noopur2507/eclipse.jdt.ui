@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2015, 2017 GK Software AG and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - Initial API and implementation
@@ -200,7 +203,7 @@ public class ExternalNullAnnotationChangeProposals {
 
 		@Override
 		public String getAdditionalProposalInfo() {
-			StringBuffer buffer= new StringBuffer();
+			StringBuilder buffer= new StringBuilder();
 			buffer.append("<dl>"); //$NON-NLS-1$
 			buffer.append("<dt>").append(getHtmlRepresentation(fSelector)).append("</dt>"); //$NON-NLS-1$ //$NON-NLS-2$
 			buffer.append("<dd>").append(getHtmlRepresentation(fSignature)).append("</dd>"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -464,18 +467,18 @@ public class ExternalNullAnnotationChangeProposals {
 			StructuralPropertyDescriptor locationInParent= outer.getLocationInParent();
 			ProposalCreator creator= null;
 			if (locationInParent == MethodDeclaration.RETURN_TYPE2_PROPERTY) {
-				MethodDeclaration method= (MethodDeclaration) ASTNodes.getParent(coveringNode, MethodDeclaration.class);
+				MethodDeclaration method= ASTNodes.getParent(coveringNode, MethodDeclaration.class);
 				creator= new ReturnProposalCreator(cu, resolveBinding(method));
 			} else if (locationInParent == SingleVariableDeclaration.TYPE_PROPERTY) {
 				ASTNode param= outer.getParent();
 				if (param.getLocationInParent() == MethodDeclaration.PARAMETERS_PROPERTY) {
-					MethodDeclaration method= (MethodDeclaration) ASTNodes.getParent(coveringNode, MethodDeclaration.class);
+					MethodDeclaration method= ASTNodes.getParent(coveringNode, MethodDeclaration.class);
 					int paramIdx= method.parameters().indexOf(param);
 					if (paramIdx != -1)
 						creator= new ParameterProposalCreator(cu, resolveBinding(method), paramIdx);
 				}
 			} else if (locationInParent == FieldDeclaration.TYPE_PROPERTY) {
-				FieldDeclaration field= (FieldDeclaration) ASTNodes.getParent(coveringNode, FieldDeclaration.class);
+				FieldDeclaration field= ASTNodes.getParent(coveringNode, FieldDeclaration.class);
 				if (field.fragments().size() > 0) {
 					VariableDeclarationFragment fragment= (VariableDeclarationFragment) field.fragments().get(0);
 					creator= new FieldProposalCreator(cu, resolveBinding(fragment));

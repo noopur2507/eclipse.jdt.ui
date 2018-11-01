@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -84,10 +87,10 @@ public class QuickFixTest9 extends QuickFixTest {
 	@Override
 	protected void tearDown() throws Exception {
 		if (fJProject1 != null) {
-			JavaProjectHelper.clear(fJProject1, Java9ProjectTestSetup.getDefaultClasspath());
+			JavaProjectHelper.delete(fJProject1);
 		}
 		if (fJProject2 != null) {
-			JavaProjectHelper.clear(fJProject2, Java9ProjectTestSetup.getDefaultClasspath());
+			JavaProjectHelper.delete(fJProject2);
 		}
 		super.tearDown();
 	}
@@ -144,6 +147,51 @@ public class QuickFixTest9 extends QuickFixTest {
 		assertProposalExists(proposals, proposalStr);
 
 		proposals= collectCorrections(cu, astRoot, 2, 1);
+		assertProposalExists(proposals, proposalStr);
+	}
+	
+	public void testAddModuleRequiresProposalForFullyQualifiedType() throws Exception {
+		StringBuffer buf= new StringBuffer();
+		buf.append("module test {\n");
+		buf.append("}\n");
+		IPackageFragment def= fSourceFolder.createPackageFragment("", false, null);
+		def.createCompilationUnit("module-info.java", buf.toString(), false, null);
+
+		IPackageFragment pack= fSourceFolder.createPackageFragment("test", false, null);
+		buf= new StringBuffer();
+		buf.append("package test;\n\n");
+		buf.append("public class Cls {\n");
+		buf.append("    java.defaultProject.One one;\n");
+		buf.append("}\n");
+		ICompilationUnit cu= pack.createCompilationUnit("Cls.java", buf.toString(), false, null);
+		CompilationUnit astRoot= getASTRoot(cu);
+		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot, 1, 0);
+
+		String[] args= { "java.defaultProject" };
+		final String proposalStr= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_add_requires_module_info, args);
+
+		assertProposalExists(proposals, proposalStr);
+	}
+	
+	public void testAddNewTypeProposals() throws Exception {
+		StringBuffer buf= new StringBuffer();
+		buf.append("module test {\n");
+		buf.append("  exports test.examples;");
+		buf.append("}\n");
+		IPackageFragment def= fSourceFolder.createPackageFragment("", false, null);
+		ICompilationUnit cu= def.createCompilationUnit("module-info.java", buf.toString(), false, null);
+
+		CompilationUnit astRoot= getASTRoot(cu);
+		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot, 1, 0);
+
+		String[] args= { "test.examples" };
+		String proposalStr= Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewclass_inpackage_description, args);
+		assertProposalExists(proposals, proposalStr);
+		proposalStr= Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewinterface_inpackage_description, args);
+		assertProposalExists(proposals, proposalStr);
+		proposalStr= Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewannotation_inpackage_description, args);
+		assertProposalExists(proposals, proposalStr);
+		proposalStr= Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewenum_inpackage_description, args);
 		assertProposalExists(proposals, proposalStr);
 	}
 }

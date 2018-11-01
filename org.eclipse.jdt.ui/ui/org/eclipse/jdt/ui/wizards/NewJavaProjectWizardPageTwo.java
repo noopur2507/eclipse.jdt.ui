@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -24,6 +27,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+
+import org.eclipse.swt.widgets.Display;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileInfo;
@@ -49,6 +54,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jface.viewers.StructuredSelection;
 
 import org.eclipse.ui.actions.WorkspaceModifyDelegatingOperation;
 
@@ -56,16 +62,24 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
+
+import org.eclipse.jdt.launching.IVMInstall2;
+import org.eclipse.jdt.launching.JavaRuntime;
 
 import org.eclipse.jdt.ui.JavaUI;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.actions.CreateModuleInfoAction;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.util.CoreUtility;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 import org.eclipse.jdt.internal.ui.wizards.ClassPathDetector;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildPathsBlock;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildPathBasePage;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage.NewSourceContainerWorkbookPage;
 
 /**
  * The second page of the New Java project wizard. It allows to configure the build path and output location.
@@ -133,6 +147,13 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 		super.setVisible(visible);
 		if (isShownFirstTime) {
 			setFocus();
+		}
+		if (visible) {
+			String compilerCompliance= fFirstPage.getCompilerCompliance();
+			if (compilerCompliance == null) {
+				compilerCompliance= JavaModelUtil.getCompilerCompliance((IVMInstall2) JavaRuntime.getDefaultVMInstall(), JavaCore.VERSION_1_4);
+			}
+			setCompilerCompliance(compilerCompliance);
 		}
 	}
 
@@ -480,7 +501,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 			}
 			String newProjectCompliance= fKeepContent ? null : fFirstPage.getCompilerCompliance();
 			configureJavaProject(newProjectCompliance, new SubProgressMonitor(monitor, 2));
-			
+			createJavaProjectModuleInfoFile();
 		} finally {
 			monitor.done();
 			fCurrProject= null;
@@ -570,5 +591,52 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 		if (fCurrProject != null) {
 			removeProvisonalProject();
 		}
+	}
+
+	@Override
+	public void dispose() {
+		super.dispose();
+	}
+	
+	private void setCompilerCompliance(String compilerCompliance) {
+		BuildPathsBlock buildPathsBlock= getBuildPathsBlock();
+		if (buildPathsBlock != null) {
+			BuildPathBasePage sourceContainerPage= buildPathsBlock.getSourceContainerPage();
+			if (sourceContainerPage instanceof NewSourceContainerWorkbookPage) {
+				((NewSourceContainerWorkbookPage) sourceContainerPage).setCompilerCompliance(compilerCompliance);
+			}
+		}
+	}
+	
+	private void createJavaProjectModuleInfoFile() {
+		String compilerCompliance= fFirstPage.getCompilerCompliance();
+		if (compilerCompliance == null) {
+			compilerCompliance= JavaModelUtil.getCompilerCompliance((IVMInstall2) JavaRuntime.getDefaultVMInstall(), JavaCore.VERSION_1_4);
+		}
+		if (compilerCompliance!= null && JavaModelUtil.is9OrHigher(compilerCompliance)) {
+			boolean createModuleInfoFile= isCreateModuleInfoFile();
+			if (createModuleInfoFile) {
+				Display.getDefault().asyncExec(new Runnable() {
+					@Override
+					public void run() {
+						CreateModuleInfoAction action= new CreateModuleInfoAction();
+						action.selectionChanged(null, new StructuredSelection(getJavaProject()));
+						action.run(null);
+					}
+				});
+				
+			}
+		}
+	}
+	
+	boolean isCreateModuleInfoFile() {
+		BuildPathsBlock buildPathsBlock= getBuildPathsBlock();
+		if (buildPathsBlock != null) {		
+			BuildPathBasePage sourceContainerPage= buildPathsBlock.getSourceContainerPage();
+			if (sourceContainerPage instanceof NewSourceContainerWorkbookPage) {
+				return ((NewSourceContainerWorkbookPage) sourceContainerPage).isCreateModuleInfoFile();
+			}
+		}
+		return false;
 	}
 }

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,6 +15,7 @@ package org.eclipse.jdt.internal.ui.preferences.formatter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +23,9 @@ import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IScopeContext;
 
+import org.eclipse.core.resources.ProjectScope;
+
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
@@ -64,30 +71,21 @@ public class FormatterProfileManager extends ProfileManager {
 	 * @return Returns the settings for the default profile.
 	 */
 	public static Map<String, String> getEclipse21Settings() {
-		final Map<String, String> options= DefaultCodeFormatterConstants.getEclipse21Settings();
-
-		ProfileVersioner.setLatestCompliance(options);
-		return options;
+		return DefaultCodeFormatterConstants.getEclipse21Settings();
 	}
 
 	/**
 	 * @return Returns the settings for the new eclipse profile.
 	 */
 	public static Map<String, String> getEclipseSettings() {
-		final Map<String, String> options= DefaultCodeFormatterConstants.getEclipseDefaultSettings();
-
-		ProfileVersioner.setLatestCompliance(options);
-		return options;
+		return DefaultCodeFormatterConstants.getEclipseDefaultSettings();
 	}
 
 	/**
 	 * @return Returns the settings for the Java Conventions profile.
 	 */
 	public static Map<String, String> getJavaSettings() {
-		final Map<String, String> options= DefaultCodeFormatterConstants.getJavaConventionsSettings();
-
-		ProfileVersioner.setLatestCompliance(options);
-		return options;
+		return DefaultCodeFormatterConstants.getJavaConventionsSettings();
 	}
 
 	/**
@@ -97,6 +95,19 @@ public class FormatterProfileManager extends ProfileManager {
 		return getEclipseSettings();
 	}
 
+	public static Map<String, String> getProjectSettings(IJavaProject javaProject) {
+		Map<String, String> options= new HashMap<>(javaProject.getOptions(true));
+		ProfileVersioner versioner= new ProfileVersioner();
+		IEclipsePreferences prefs= new ProjectScope(javaProject.getProject()).getNode(JavaUI.ID_PLUGIN);
+		if (prefs == null)
+			return options;
+		int profileVersion= prefs.getInt(FORMATTER_SETTINGS_VERSION, versioner.getCurrentVersion());
+		if (profileVersion == versioner.getCurrentVersion())
+			return options;
+		CustomProfile profile= new CustomProfile(null, options, profileVersion, null);
+		versioner.update(profile);
+		return profile.getSettings();
+	}
 
 	@Override
 	protected String getSelectedProfileId(IScopeContext instanceScope) {

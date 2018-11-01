@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2006, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -142,7 +145,7 @@ public abstract class AbstractCodeCreationOperation implements IWorkspaceRunnabl
 			monitor= new NullProgressMonitor();
 		monitor.beginTask(getOperationLabel(), 100 * fPackages.size());
 		try {
-			final StringBuffer buffer= new StringBuffer(128);
+			final StringBuilder builder= new StringBuilder(128);
 			for (final Iterator<IPackageFragment> iterator= fPackages.iterator(); iterator.hasNext();) {
 				final IPackageFragment fragment= iterator.next();
 				final IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 100);
@@ -153,14 +156,14 @@ public abstract class AbstractCodeCreationOperation implements IWorkspaceRunnabl
 				IFileStore store= EFS.getStore(fOutputURI);
 				if (!"".equals(name)) { //$NON-NLS-1$
 					final String pack= name;
-					buffer.setLength(0);
-					buffer.append(name);
-					final int length= buffer.length();
+					builder.setLength(0);
+					builder.append(name);
+					final int length= builder.length();
 					for (int index= 0; index < length; index++) {
-						if (buffer.charAt(index) == '.')
-							buffer.setCharAt(index, '/');
+						if (builder.charAt(index) == '.')
+							builder.setCharAt(index, '/');
 					}
-					store= store.getChild(new Path(buffer.toString()));
+					store= store.getChild(new Path(builder.toString()));
 					if (!pack.startsWith(".")) //$NON-NLS-1$
 						createPackageFragment(store, pack, new SubProgressMonitor(subMonitor, 10));
 				} else

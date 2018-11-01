@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -44,7 +47,7 @@ public class CompositeOrTypeConstraint implements ITypeConstraint{
 
 	@Override
 	public String toResolvedString() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		for (int i= 0; i < fConstraints.length; i++) {
 			ITypeConstraint constraint= fConstraints[i];
 			if (i > 0)
@@ -61,7 +64,7 @@ public class CompositeOrTypeConstraint implements ITypeConstraint{
 
 	@Override
 	public String toString() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		for (int i= 0; i < fConstraints.length; i++) {
 			ITypeConstraint constraint= fConstraints[i];
 			if (i > 0)

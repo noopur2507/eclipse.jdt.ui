@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2003, 2005 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -37,10 +40,12 @@ public class JspIndexParser extends AbstractJspParser implements IIndexer {
 		fFile= resource;
 	}
 	
+	@Override
 	protected void startTag(boolean endTag, String name, int startName) {
 		fInUseBean= "jsp:useBean".equals(name); //$NON-NLS-1$
 	}
 	
+	@Override
 	protected void tagAttribute(String attrName, String value, int startName, int startValue) {
 		if (fInUseBean) {
 			if ("id".equals(attrName)) //$NON-NLS-1$
@@ -50,6 +55,7 @@ public class JspIndexParser extends AbstractJspParser implements IIndexer {
 		}
 	}
 	
+	@Override
 	protected void endTag(boolean end) {
 		if (fInUseBean) {
 			if (fId != null && fClass != null) {
@@ -64,6 +70,7 @@ public class JspIndexParser extends AbstractJspParser implements IIndexer {
 		}
 	}
 	
+	@Override
 	public void index(IIndex indexerOutput) throws IOException {
 		
 		String type= fFile.getFileExtension();

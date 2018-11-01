@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -244,7 +247,7 @@ public final class ConfigureWorkingSetAssignementAction extends SelectionDispatc
 			if (!modelElement.isGrayed()) {
 				return BasicElementLabels.getWorkingSetLabel(workingSet);
 			} else {
-				return Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_XofY_label, new Object[] { BasicElementLabels.getWorkingSetLabel(workingSet), new Integer(modelElement.getCheckCount()), new Integer(modelElement.getElementCount())});
+				return Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_XofY_label, new Object[] { BasicElementLabels.getWorkingSetLabel(workingSet), Integer.valueOf(modelElement.getCheckCount()), Integer.valueOf(modelElement.getElementCount())});
 			}
 
 		}
@@ -655,7 +658,7 @@ public final class ConfigureWorkingSetAssignementAction extends SelectionDispatc
 			}
 			dialog.setMessage(Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_DialogMessage_specific, elementName));
 		} else {
-			dialog.setMessage(Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_DialogMessage_multi, new Integer(elements.length)));
+			dialog.setMessage(Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_DialogMessage_multi, Integer.valueOf(elements.length)));
 		}
 		if (dialog.open() == Window.OK) {
 			updateWorkingSets(dialog.getSelection(), dialog.getGrayed(), elements);

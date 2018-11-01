@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -109,7 +112,7 @@ public class MoveMembersWizard extends RefactoringWizard {
 				String label= JavaElementLabels.getElementLabel(getMoveProcessor().getDeclaringType(), JavaElementLabels.ALL_FULLY_QUALIFIED);
 				String message= membersToMoveCount == 1 ? Messages.format(RefactoringMessages.MoveMembersInputPage_descriptionKey_singular, new String[] {
 						JavaElementLabels.getTextLabel(membersToMove[0], JavaElementLabels.ALL_FULLY_QUALIFIED), label }) : Messages.format(
-						RefactoringMessages.MoveMembersInputPage_descriptionKey_plural, new String[] { new Integer(membersToMoveCount).toString(), label });
+						RefactoringMessages.MoveMembersInputPage_descriptionKey_plural, new String[] { Integer.valueOf(membersToMoveCount).toString(), label });
 				setDescription(message);
 			}
 			super.setVisible(visible);

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -147,7 +150,10 @@ public class BuildPathsBlock {
 	private long fFileTimeStamp;
 
     private IRunnableContext fRunnableContext;
-    private boolean fUseNewPage;
+
+	private boolean fUseNewPage;
+
+	private boolean fIs9OrHigher;
 
 	private final IWorkbenchPreferenceContainer fPageContainer; // null when invoked from a non-property page context
 
@@ -269,6 +275,7 @@ public class BuildPathsBlock {
 			fSourceContainerPage.init(fCurrJProject);
 			fLibrariesPage.init(fCurrJProject);
 			fProjectsPage.init(fCurrJProject);
+			fIs9OrHigher= JavaModelUtil.is9OrHigher(fCurrJProject);
 		}
 
 		folder.setSelection(fPageIndex);
@@ -350,6 +357,7 @@ public class BuildPathsBlock {
 			fSourceContainerPage.init(fCurrJProject);
 			fProjectsPage.init(fCurrJProject);
 			fLibrariesPage.init(fCurrJProject);
+			fIs9OrHigher= JavaModelUtil.is9OrHigher(fCurrJProject);
 		}
 
 		initializeTimeStamps();
@@ -379,7 +387,13 @@ public class BuildPathsBlock {
 	protected void doUpdateUI() {
 		fBuildPathDialogField.refresh();
 		fClassPathList.refresh();
-
+		boolean is9OrHigherAfter= JavaModelUtil.is9OrHigher(fCurrJProject);
+		if (is9OrHigherAfter != fIs9OrHigher) {
+			// update the library and project page if fis9OrHigher changed
+			fLibrariesPage.init(fCurrJProject);
+			fProjectsPage.init(fCurrJProject);
+			fIs9OrHigher= is9OrHigherAfter;
+		}
 		doStatusLineUpdate();
 	}
 
@@ -744,7 +758,7 @@ public class BuildPathsBlock {
 
 		updateUI();
 	}
-
+	
 	/**
 	 * Sets the configured build path and output location to the given Java project.
 	 * If the project already exists, only build paths are updated.
@@ -1130,4 +1144,8 @@ public class BuildPathsBlock {
 	public void setFocus() {
 		fSourceContainerPage.setFocus();
     }
+	
+	public BuildPathBasePage getSourceContainerPage() {
+		return fSourceContainerPage;
+	}	
 }

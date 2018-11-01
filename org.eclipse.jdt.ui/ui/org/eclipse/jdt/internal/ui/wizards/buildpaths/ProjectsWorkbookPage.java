@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -16,6 +19,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.DragSourceListener;
+import org.eclipse.swt.dnd.FileTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -24,10 +33,13 @@ import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.jface.window.Window;
 
 import org.eclipse.ui.dialogs.ListSelectionDialog;
+import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 
 import org.eclipse.jdt.core.IAccessRule;
@@ -66,6 +78,10 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 	private Control fSWTControl;
 
 	private final IWorkbenchPreferenceContainer fPageContainer;
+	
+	private boolean dragDropEnabled;
+	private Object draggedItemsProject;
+	private boolean fromModularProject;
 
 	public ProjectsWorkbookPage(ListDialogField<CPListElement> classPathList, IWorkbenchPreferenceContainer pageContainer) {
 		fClassPathList= classPathList;
@@ -158,8 +174,102 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 		checkedProjects.add(rootModulepath);
 		checkedProjects.add(rootClasspath);
 		
+		fProjectsList.setTreeExpansionLevel(2);
 		fProjectsList.setElements(checkedProjects);
 		fProjectsList.enableButton(IDX_ADDPROJECT, false);
+		if (!dragDropEnabled) {
+			enableDragDropSupport();
+		}
+	}
+	
+	private void enableDragDropSupport() {
+		dragDropEnabled= true;
+		int ops= DND.DROP_MOVE;
+		Transfer[] transfers= new Transfer[] { ResourceTransfer.getInstance(), FileTransfer.getInstance() };
+
+		fProjectsList.getTreeViewer().addDragSupport(ops, transfers, new DragSourceListener() {
+			@Override
+			public void dragStart(DragSourceEvent event) {
+				IStructuredSelection ssel= (IStructuredSelection) fProjectsList.getTreeViewer().getSelection();
+				if (ssel == null || ssel.isEmpty()) {
+					event.doit= false;
+				}
+				if (ssel != null) {
+					Object[] ele= ssel.toArray();
+					for (Object element : ele) {
+						if (element instanceof RootCPListElement) {
+							event.doit= false;
+							break;
+						}
+						if (element instanceof CPListElement) {
+							CPListElement cpe= (CPListElement) element;
+							List<CPListElement> elements= fProjectsList.getElements();
+							for (Object cpListElement : elements) {
+								if (cpListElement instanceof RootCPListElement) {
+									RootCPListElement root= (RootCPListElement) cpListElement;
+									if (root.getChildren().contains(cpe)) {
+										fromModularProject= root.isModulePathRootNode();
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			@Override
+			public void dragSetData(DragSourceEvent event) {
+				IStructuredSelection ssel= (IStructuredSelection) fProjectsList.getTreeViewer().getSelection();
+				event.data= ssel.toArray();
+				draggedItemsProject= ssel.toArray();
+			}
+
+			@Override
+			public void dragFinished(DragSourceEvent event) {
+				draggedItemsProject= null;
+			}
+		});
+
+		fProjectsList.getTreeViewer().addDropSupport(ops, transfers, new ViewerDropAdapter(fProjectsList.getTreeViewer()) {
+			@Override
+			public boolean performDrop(Object data) {
+				Object[] objects= (data == null) ? (Object[]) draggedItemsProject : (Object[]) data;
+				if (objects == null)
+					return false;
+				Object target= getCurrentTarget();
+				if (target instanceof RootCPListElement) {
+					for (Object object : objects) {
+						if (!(object instanceof CPListElement))
+							return false;
+						if(object instanceof RootCPListElement)
+							return false;
+						boolean contains= ((RootCPListElement) target).getChildren().contains(object);
+						if (contains == true)
+							return false;
+						RootCPListElement rootNode= (RootCPListElement) target;
+						boolean isModular= rootNode.isModulePathRootNode();
+						RootNodeChange direction= RootNodeChange.fromOldAndNew(!isModular, isModular);
+						if (direction != RootNodeChange.NoChange) {
+							moveCPElementAcrossNode(fProjectsList, (CPListElement) object, direction);
+						}
+						((CPListElement) object).setAttribute(IClasspathAttribute.MODULE, isModular ? new ModuleEncapsulationDetail[0] : null);
+					}
+					return true;
+
+				}
+				return false;
+			}
+
+			@Override
+			public boolean validateDrop(Object target, int operation, TransferData transferType) {
+				if (!(target instanceof RootCPListElement))
+					return false;
+				RootCPListElement root= (RootCPListElement) target;
+				return fromModularProject ? root.isClassPathRootNode() : root.isModulePathRootNode();
+			}
+		});
+
 	}
 
 	// -------- UI creation ---------
@@ -320,12 +430,15 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 				// if nothing selected, do nothing
 				if(selectedElements.size()==0)
 					return;
+				boolean isClassRootExpanded= getRootExpansionState(fProjectsList, true);
+				boolean isModuleRootExpanded= getRootExpansionState(fProjectsList, false);
 				fProjectsList.removeAllElements();
 				for (int i= 0; i < selectedElements.size(); i++) {
 					if( ((CPListElement)selectedElements.get(i)).isClassPathRootNode()) {
 						for (CPListElement cpListElement : elementsToAdd) {
 							cpListElement.setAttribute(IClasspathAttribute.MODULE, null);
 						}
+						isClassRootExpanded= true;
 					}
 					if( ((CPListElement)selectedElements.get(i)).isModulePathRootNode()) {
 						for (CPListElement cpListElement : elementsToAdd) {
@@ -335,12 +448,15 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 								
 							}
 						}
+						isModuleRootExpanded= true;
 					}
 					((RootCPListElement)selectedElements.get(i)).addCPListElement(elementsToAdd);					
 				}
 				fProjectsList.setElements(elements);
 				fProjectsList.refresh();
-				fProjectsList.getTreeViewer().expandToLevel(2);	
+				fProjectsList.getTreeViewer().expandToLevel(2);
+				setRootExpansionState(fProjectsList, isClassRootExpanded, true);
+				setRootExpansionState(fProjectsList, isModuleRootExpanded, false);
 			}
 			
 			if (index == IDX_ADDPROJECT && !hasRootNodes()) {
@@ -491,7 +607,11 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 					moveCPElementAcrossNode(fProjectsList, selElement, changeDirection);
 				}
 			}
-			fProjectsList.refresh(elem);
+			if(key.equals(CPListElement.TEST) || key.equals(CPListElement.WITHOUT_TEST_CODE)) {
+				fProjectsList.refresh(elem.getParent());
+			} else { 
+				fProjectsList.refresh(elem);
+			}
 			fClassPathList.dialogFieldChanged(); // validate
 			fProjectsList.postSetSelection(new StructuredSelection(elem));
 			// if module attribute was changed - it will switch nodes and hence parent should be
@@ -617,6 +737,20 @@ public class ProjectsWorkbookPage extends BuildPathBasePage {
 	 */
 	private void projectPageSelectionChanged(DialogField field) {
 		List<Object> selElements= fProjectsList.getSelectedElements();
+
+		String text;
+		if (selElements.size() == 1
+				&& selElements.get(0) instanceof CPListElementAttribute) {
+			String key= ((CPListElementAttribute) selElements.get(0)).getKey();
+			if (CPListElement.TEST.equals(key) || CPListElement.WITHOUT_TEST_CODE.equals(key)) {
+				text= NewWizardMessages.ProjectsWorkbookPage_projects_toggle_button;
+			} else {
+				text= NewWizardMessages.ProjectsWorkbookPage_projects_edit_button;
+			}
+		} else {
+			text= NewWizardMessages.ProjectsWorkbookPage_projects_edit_button;
+		}
+		fProjectsList.getButton(IDX_EDIT).setText(text);
 
 		fProjectsList.enableButton(IDX_EDIT, canEdit(selElements));
 		fProjectsList.enableButton(IDX_REMOVE, canRemove(selElements));

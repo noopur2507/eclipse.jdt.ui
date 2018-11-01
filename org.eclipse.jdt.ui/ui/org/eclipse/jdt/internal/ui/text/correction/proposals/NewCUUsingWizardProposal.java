@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Renaud Waldura &lt;renaud+eclipse@waldura.com&gt;
@@ -45,12 +48,12 @@ import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ProvidesDirective;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -106,11 +109,22 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 		fNode= node;
 		fTypeKind= typeKind;
 		fTypeContainer= typeContainer;
-		fTypeNameWithParameters= getTypeName(typeKind, node);
+		if (fNode != null) {
+			fTypeNameWithParameters= getTypeName(typeKind, node);
+		}
 
 		fCreatedType= null;
 
-		String containerName= ASTNodes.getQualifier(node);
+		String containerName;
+		if (fNode != null) {
+			containerName= ASTNodes.getQualifier(node);
+		} else {
+			if (typeContainer instanceof IPackageFragment) {
+				containerName= ((IPackageFragment) typeContainer).getElementName();
+			} else {
+				containerName= ""; //$NON-NLS-1$
+			}
+		}
 		String typeName= fTypeNameWithParameters;
 		String containerLabel= BasicElementLabels.getJavaElementName(containerName);
 		String typeLabel= BasicElementLabels.getJavaElementName(typeName);
@@ -118,66 +132,82 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 		switch (typeKind) {
 			case K_CLASS:
 				setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_CLASS));
-				if (isInnerType) {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerclass_description, typeLabel));
+				if (fNode != null) {
+					if (isInnerType) {
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerclass_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerclass_intype_description, new String[] { typeLabel, containerLabel }));
+						}
 					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerclass_intype_description, new String[] { typeLabel, containerLabel }));
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createclass_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createclass_inpackage_description, new String[] { typeLabel, containerLabel }));
+						}
 					}
 				} else {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createclass_description, typeLabel));
-					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createclass_inpackage_description, new String[] { typeLabel, containerLabel }));
-					}
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewclass_inpackage_description, containerLabel));
 				}
 				break;
 			case K_INTERFACE:
 				setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_INTERFACE));
-				if (isInnerType) {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerinterface_description, typeLabel));
+				if (fNode != null) {
+					if (isInnerType) {
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerinterface_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerinterface_intype_description, new String[] { typeLabel, containerLabel }));
+						}
 					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerinterface_intype_description, new String[] { typeLabel, containerLabel }));
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinterface_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinterface_inpackage_description, new String[] { typeLabel, containerLabel }));
+						}
 					}
 				} else {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinterface_description, typeLabel));
-					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinterface_inpackage_description, new String[] { typeLabel, containerLabel }));
-					}
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewinterface_inpackage_description, containerLabel));
 				}
 				break;
 			case K_ENUM:
 				setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_ENUM));
-				if (isInnerType) {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerenum_description, typeLabel));
+				if (fNode != null) {
+					if (isInnerType) {
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerenum_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerenum_intype_description, new String[] { typeLabel, containerLabel }));
+						}
 					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerenum_intype_description, new String[] { typeLabel, containerLabel }));
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createenum_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createenum_inpackage_description, new String[] { typeLabel, containerLabel }));
+						}
 					}
 				} else {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createenum_description, typeLabel));
-					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createenum_inpackage_description, new String[] { typeLabel, containerLabel }));
-					}
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewenum_inpackage_description, containerLabel));					
 				}
 				break;
 			case K_ANNOTATION:
 				setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_ANNOTATION));
-				if (isInnerType) {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerannotation_description, typeLabel));
+				if (fNode != null) {
+					if (isInnerType) {
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerannotation_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerannotation_intype_description, new String[] { typeLabel, containerLabel }));
+						}
 					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createinnerannotation_intype_description, new String[] { typeLabel, containerLabel }));
+						if (containerName.length() == 0) {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createannotation_description, typeLabel));
+						} else {
+							setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createannotation_inpackage_description, new String[] { typeLabel, containerLabel }));
+						}
 					}
 				} else {
-					if (containerName.length() == 0) {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createannotation_description, typeLabel));
-					} else {
-						setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createannotation_inpackage_description, new String[] { typeLabel, containerLabel }));
-					}
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewannotation_inpackage_description, containerLabel));					
 				}
 				break;
 			default:
@@ -195,7 +225,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 				String typeArgBaseName= name.startsWith(String.valueOf('T')) ? String.valueOf('S') : String.valueOf('T'); // use 'S' or 'T'
 
 				int nTypeArgs= ((ParameterizedType) parent.getParent()).typeArguments().size();
-				StringBuffer buf= new StringBuffer(name);
+				StringBuilder buf= new StringBuilder(name);
 				buf.append('<');
 				if (nTypeArgs == 1) {
 					buf.append(typeArgBaseName);
@@ -256,7 +286,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 				try {
 					ImportRewrite rewrite= StubUtility.createImportRewrite(fCompilationUnit, true);
 					rewrite.addImport(createdType.getFullyQualifiedName('.'));
-					JavaElementUtil.applyEdit(fCompilationUnit, rewrite.rewriteImports(null), false, null);
+					JavaModelUtil.applyEdit(fCompilationUnit, rewrite.rewriteImports(null), false, null);
 				} catch (CoreException e) {
 				}
 			}
@@ -312,7 +342,9 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 	 */
 	private void fillInWizardPageName(NewTypeWizardPage page) {
 		// allow to edit when there are type parameters
-		page.setTypeName(fTypeNameWithParameters, fTypeNameWithParameters.indexOf('<') != -1);
+		if (fTypeNameWithParameters != null) {
+			page.setTypeName(fTypeNameWithParameters, fTypeNameWithParameters.indexOf('<') != -1);
+		}
 
 		boolean isInEnclosingType= fTypeContainer instanceof IType;
 		if (isInEnclosingType) {
@@ -328,25 +360,31 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 	 * @param page the wizard page.
 	 */
 	private void fillInWizardPageSuperTypes(NewTypeWizardPage page) {
-		ITypeBinding type= getPossibleSuperTypeBinding(fNode);
-		type= Bindings.normalizeTypeBinding(type);
-		if (type != null) {
-			if (type.isArray()) {
-				type= type.getElementType();
-			}
-			if (type.isTopLevel() || type.isMember()) {
-				if (type.isClass() && (fTypeKind == K_CLASS)) {
-					page.setSuperClass(type.getQualifiedName(), true);
-				} else if (type.isInterface()) {
-					List<String> superInterfaces= new ArrayList<>();
-					superInterfaces.add(type.getQualifiedName());
-					page.setSuperInterfaces(superInterfaces, true);
+		if (fNode != null) {
+			ITypeBinding type= getPossibleSuperTypeBinding(fNode);
+			type= Bindings.normalizeTypeBinding(type);
+			if (type != null) {
+				if (type.isArray()) {
+					type= type.getElementType();
+				}
+				if (type.isTopLevel() || type.isMember()) {
+					if (type.isClass() && (fTypeKind == K_CLASS)) {
+						page.setSuperClass(type.getQualifiedName(), true);
+					} else if (type.isInterface()) {
+						List<String> superInterfaces= new ArrayList<>();
+						superInterfaces.add(type.getQualifiedName());
+						page.setSuperInterfaces(superInterfaces, true);
+					}
 				}
 			}
 		}
 	}
 
 	private ITypeBinding getPossibleSuperTypeBinding(ASTNode node) {
+		if (node == null) {
+			return null;
+		}
+
 		if (fTypeKind == K_ANNOTATION) {
 			return null;
 		}
@@ -395,7 +433,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 	 */
 	@Override
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		switch (fTypeKind) {
 			case K_CLASS:
 				buf.append(CorrectionMessages.NewCUCompletionUsingWizardProposal_createclass_info);
@@ -437,7 +475,9 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 				buf.append("@interface <b>"); //$NON-NLS-1$
 				break;
 		}
-		nameToHTML(fTypeNameWithParameters, buf);
+		if (fTypeNameWithParameters != null) {
+			nameToHTML(fTypeNameWithParameters, buf);
+		}
 
 		ITypeBinding superclass= getPossibleSuperTypeBinding(fNode);
 		if (superclass != null) {
@@ -459,7 +499,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 		return buf.toString();
 	}
 
-	private void nameToHTML(String name, StringBuffer buf) {
+	private void nameToHTML(String name, StringBuilder buf) {
 		for (int i= 0; i < name.length(); i++) {
 			char ch= name.charAt(i);
 			if (ch == '>') {

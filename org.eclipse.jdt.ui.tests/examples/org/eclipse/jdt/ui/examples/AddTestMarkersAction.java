@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -126,10 +129,10 @@ public class AddTestMarkersAction extends Action implements IActionDelegate {
 		HashMap<String, Object> map= new HashMap<>();
 		map.put(IMarker.LOCATION, cu.getElementName());
 		map.put(IMarker.MESSAGE, "Test marker");
-		map.put(IMarker.SEVERITY, new Integer(IMarker.SEVERITY_ERROR));
-		map.put(IMarker.LINE_NUMBER, new Integer(line));
-		map.put(IMarker.CHAR_START, new Integer(offset));
-		map.put(IMarker.CHAR_END, new Integer(offset + len));
+		map.put(IMarker.SEVERITY, Integer.valueOf(IMarker.SEVERITY_ERROR));
+		map.put(IMarker.LINE_NUMBER, Integer.valueOf(line));
+		map.put(IMarker.CHAR_START, Integer.valueOf(offset));
+		map.put(IMarker.CHAR_END, Integer.valueOf(offset + len));
 
 		MarkerUtilities.createMarker(cu.getResource(), map, MARKER_TYPE);
 	}

@@ -1,86 +1,60 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Red Hat Inc. - modified to extend LinkedProposalModelCore
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.fix;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
-import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
+public class LinkedProposalModel extends LinkedProposalModelCore {
 
-import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup.PositionInformation;
-
-public class LinkedProposalModel {
-
-	private Map<String, LinkedProposalPositionGroup> fPositionGroups;
-	private LinkedProposalPositionGroup.PositionInformation fEndPosition;
-
-	public void addPositionGroup(LinkedProposalPositionGroup positionGroup) {
-		if (positionGroup == null) {
-			throw new IllegalArgumentException("positionGroup must not be null"); //$NON-NLS-1$
-		}
-
-		if (fPositionGroups == null) {
-			fPositionGroups= new HashMap<>();
-		}
-		fPositionGroups.put(positionGroup.getGroupId(), positionGroup);
-	}
-
-	public LinkedProposalPositionGroup getPositionGroup(String groupId, boolean createIfNotExisting) {
-		LinkedProposalPositionGroup group= fPositionGroups != null ? fPositionGroups.get(groupId) : null;
-		if (createIfNotExisting && group == null) {
-			group= new LinkedProposalPositionGroup(groupId);
-			addPositionGroup(group);
-		}
+	@Override
+	protected LinkedProposalPositionGroupCore createPositionGroup(String groupId) {
+		LinkedProposalPositionGroupCore group = new LinkedProposalPositionGroup(groupId);
 		return group;
 	}
 
-	public Iterator<LinkedProposalPositionGroup> getPositionGroupIterator() {
-		if (fPositionGroups == null) {
-			return new Iterator<LinkedProposalPositionGroup>() {
-				@Override
-				public boolean hasNext() {return false;}
-				@Override
-				public LinkedProposalPositionGroup next() {return null;}
-				@Override
-				public void remove() {throw new UnsupportedOperationException();}
-			};
+	@Override
+	public LinkedProposalPositionGroup getPositionGroup(String groupId, boolean createIfNotExisting) {
+		LinkedProposalPositionGroupCore group = super.getPositionGroup(groupId, createIfNotExisting);
+		return group instanceof LinkedProposalPositionGroup ? (LinkedProposalPositionGroup)group : null;
+	}
+
+	private class LinkedProposalPositionGroupIterator implements Iterator<LinkedProposalPositionGroup> {
+		private Iterator<LinkedProposalPositionGroupCore> iterator;
+
+		public LinkedProposalPositionGroupIterator(Iterator<LinkedProposalPositionGroupCore> iterator) {
+			this.iterator= iterator;
 		}
-		return fPositionGroups.values().iterator();
+
+		@Override
+		public boolean hasNext() {
+			return iterator.hasNext();
+		}
+
+		@Override
+		public LinkedProposalPositionGroup next() {
+			return (LinkedProposalPositionGroup)iterator.next();
+		}
+
+		@Override
+		public void remove() {
+			iterator.remove();
+		}
 	}
 
-
-	/**
-	 * Sets the end position of the linked mode to the end of the passed range.
-	 * @param position The position that describes the end position of the linked mode.
-	 */
-	public void setEndPosition(PositionInformation position) {
-		fEndPosition= position;
-	}
-
-	public void setEndPosition(ITrackedNodePosition position) {
-		setEndPosition(LinkedProposalPositionGroup.createPositionInformation(position, 1));
-	}
-
-	public PositionInformation getEndPosition() {
-		return fEndPosition;
-	}
-
-	public boolean hasLinkedPositions() {
-		return fPositionGroups != null && !fPositionGroups.isEmpty();
-	}
-
-	public void clear() {
-		fPositionGroups= null;
-		fEndPosition= null;
+	public Iterator<LinkedProposalPositionGroup> getPositionGroupIterator() {
+		return new LinkedProposalPositionGroupIterator(super.getPositionGroupCoreIterator());
 	}
 
 }

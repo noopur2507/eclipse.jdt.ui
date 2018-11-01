@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -273,13 +276,7 @@ public class CoreTestSearchEngine {
 	 * @return <code>true</code> iff version1 is less than version2
 	 */
 	public static boolean isVersionLessThan(String version1, String version2) {
-		if (JavaCore.VERSION_CLDC_1_1.equals(version1)) {
-			version1= JavaCore.VERSION_1_1 + 'a';
-		}
-		if (JavaCore.VERSION_CLDC_1_1.equals(version2)) {
-			version2= JavaCore.VERSION_1_1 + 'a';
-		}
-		return version1.compareTo(version2) < 0;
+		return JavaCore.compareJavaVersions(version1, version2) < 0;
 	}
 
 

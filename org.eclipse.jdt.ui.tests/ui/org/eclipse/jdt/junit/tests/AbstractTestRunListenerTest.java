@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -23,6 +26,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Path;
 
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 
@@ -114,6 +119,12 @@ public class AbstractTestRunListenerTest extends TestCase {
 	
 	protected void launchJUnit(IJavaElement aTest, String testKindID, String testName) throws CoreException {
 		ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, null);
+		IMarker[] markers= aTest.getJavaProject().getProject().findMarkers(null, true, IResource.DEPTH_INFINITE);
+		for (IMarker marker : markers) {
+			if(marker.getAttribute(IMarker.SEVERITY, 0) >= IMarker.SEVERITY_ERROR) {
+				fail("unexpected errors, e.g. :" + marker.toString());
+			}
+		}
 
 		ILaunchManager lm = DebugPlugin.getDefault().getLaunchManager();
 		lm.removeLaunches(lm.getLaunches());

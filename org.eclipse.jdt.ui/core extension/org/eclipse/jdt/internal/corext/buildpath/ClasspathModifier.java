@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -209,7 +212,7 @@ public class ClasspathModifier {
 		if (duplicateEntries.size() > 0) {
 			String message;
 			if (duplicateEntries.size() > 1) {
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				for (Iterator<CPListElement> iterator= duplicateEntries.iterator(); iterator.hasNext();) {
 	                CPListElement dup= iterator.next();
 	                buf.append('\n').append(BasicElementLabels.getResourceName(dup.getPath().lastSegment()));
@@ -380,8 +383,6 @@ public class ClasspathModifier {
 	 * @throws JavaModelException
 	 */
 	public static IPackageFragmentRoot getFragmentRoot(IResource resource, IJavaProject project, IProgressMonitor monitor) throws JavaModelException {
-		if (monitor == null)
-			monitor= new NullProgressMonitor();
 		IJavaElement javaElem= null;
 		if (resource.getFullPath().equals(project.getPath()))
 			return project.getPackageFragmentRoot(resource);
@@ -558,7 +559,7 @@ public class ClasspathModifier {
 	}
 
 	public static String escapeSpecialChars(String value) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < value.length(); i++) {
 			char c = value.charAt(i);
 
@@ -1219,8 +1220,6 @@ public class ClasspathModifier {
 	 * @throws JavaModelException
 	 */
 	private static List<Path> getFoldersOnCP(IPath path, IJavaProject project, IProgressMonitor monitor) throws JavaModelException {
-		if (monitor == null)
-			monitor= new NullProgressMonitor();
 		List<Path> srcFolders= new ArrayList<>();
 		IClasspathEntry[] cpEntries= project.getRawClasspath();
 		for (int i= 0; i < cpEntries.length; i++) {

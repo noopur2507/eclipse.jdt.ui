@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -29,10 +32,10 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.fix.CleanUpConstants;
 
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
 
 import junit.framework.Test;
@@ -71,13 +74,13 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		IFile file= (IFile)unit.getResource();
 
 		IMarker marker= file.createMarker(markerType);
-		marker.setAttribute(IMarker.LINE_NUMBER, new Integer(lineNumber));
+		marker.setAttribute(IMarker.LINE_NUMBER, Integer.valueOf(lineNumber));
 
 		IDocument document= new Document(unit.getBuffer().getContents());
 		int offset= document.getLineOffset(lineNumber - 1);
-		marker.setAttribute(IMarker.CHAR_START, new Integer(offset));
+		marker.setAttribute(IMarker.CHAR_START, Integer.valueOf(offset));
 		int lenght= offset + document.getLineLength(lineNumber - 1) - 1;
-		marker.setAttribute(IMarker.CHAR_END, new Integer(lenght));
+		marker.setAttribute(IMarker.CHAR_END, Integer.valueOf(lenght));
 
 		assertMarker(marker.getId(), unit, lineNumber, offset, lenght);
 
@@ -215,7 +218,7 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		options.put(JavaCore.COMPILER_PB_UNUSED_PRIVATE_MEMBER, JavaCore.WARNING);
 		JavaCore.setOptions(options);
 
-		CompilationUnit ast= SharedASTProvider.getAST(cu1, SharedASTProvider.WAIT_YES, null);
+		CompilationUnit ast= SharedASTProviderCore.getAST(cu1, SharedASTProviderCore.WAIT_YES, null);
 		assertTrue(ast.getProblems().length > 0);
 
 		enable(CleanUpConstants.SORT_MEMBERS);

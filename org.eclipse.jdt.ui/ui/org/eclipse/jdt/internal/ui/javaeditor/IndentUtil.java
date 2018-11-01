@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -141,7 +144,7 @@ public final class IndentUtil {
 			return result; // bail out
 
 		int tabSize= CodeFormatterUtil.getTabWidth(project);
-		StringBuffer addition= new StringBuffer();
+		StringBuilder addition= new StringBuilder();
 		int difference= subtractIndent(correct, current, addition, tabSize);
 
 		if (difference == 0)
@@ -239,7 +242,7 @@ public final class IndentUtil {
 	 * @param difference a string buffer - if the return value is positive, it will be cleared and set to the substring of <code>current</code> of that length
 	 * @return the difference in lenght of <code>correct</code> and <code>current</code>
 	 */
-	private static int subtractIndent(CharSequence correct, CharSequence current, StringBuffer difference, int tabSize) {
+	private static int subtractIndent(CharSequence correct, CharSequence current, StringBuilder difference, int tabSize) {
 		int c1= computeVisualLength(correct, tabSize);
 		int c2= computeVisualLength(current, tabSize);
 		int diff= c1 - c2;
@@ -456,7 +459,7 @@ public final class IndentUtil {
 		int previousLineLength= previousLine.getLength();
 		int previousLineEnd= previousLineStart + previousLineLength;
 
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		int previousLineNonWS= scanner.findNonWhitespaceForwardInAnyPartition(previousLineStart, previousLineEnd);
 		if (previousLineNonWS == JavaHeuristicScanner.NOT_FOUND || document.getChar(previousLineNonWS) != '*') {
 			// align with the comment start if the previous line is not an asterix line

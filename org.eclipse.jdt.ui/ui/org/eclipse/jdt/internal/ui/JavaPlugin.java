@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -29,6 +32,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -59,6 +63,8 @@ import org.eclipse.jface.text.templates.persistence.TemplateStore;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.IWorkingSetManager;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.FormColors;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -81,9 +87,9 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.WorkingCopyOwner;
 import org.eclipse.jdt.core.manipulation.JavaManipulation;
 
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 import org.eclipse.jdt.internal.corext.fix.CleanUpRegistry;
 import org.eclipse.jdt.internal.corext.template.java.AbstractJavaContextType;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
 import org.eclipse.jdt.internal.corext.template.java.JavaContextType;
 import org.eclipse.jdt.internal.corext.template.java.SWTContextType;
 import org.eclipse.jdt.internal.corext.util.OpenTypeHistory;
@@ -114,6 +120,9 @@ import org.eclipse.jdt.internal.ui.viewsupport.ImageDescriptorRegistry;
 import org.eclipse.jdt.internal.ui.viewsupport.ImagesOnFileSystemRegistry;
 import org.eclipse.jdt.internal.ui.viewsupport.ProblemMarkerManager;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ClasspathAttributeConfigurationDescriptors;
+import org.eclipse.jdt.internal.ui.workingsets.DynamicSourcesWorkingSetUpdater;
+import org.eclipse.jdt.internal.ui.workingsets.IWorkingSetIDs;
+import org.eclipse.jdt.internal.ui.workingsets.WorkingSetMessages;
 
 
 /**
@@ -346,7 +355,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 			long last= fgRepeatedMessages.get(message).longValue();
 			writeToLog= now - last > 5000;
 		}
-		fgRepeatedMessages.put(message, new Long(now));
+		fgRepeatedMessages.put(message, Long.valueOf(now));
 		if (writeToLog)
 			log(new Exception(message + detail).fillInStackTrace());
 	}
@@ -388,6 +397,10 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 			}
 		});
 
+		// set the Preferences node id to get preferences from which is needed
+		// by the MembersOrderPreferenceCache common logic
+		JavaManipulation.setPreferenceNodeId(getPluginId());
+
 		IPreferenceStore store= getPreferenceStore();
 
 		// must add here to guarantee that it is the first in the listener list
@@ -395,7 +408,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 		fMembersOrderPreferenceCache.install(store);
 
 		FormatterProfileStore.checkCurrentOptionsVersion();
-		
+
 		// make sure org.eclipse.jdt.core.manipulation is loaded too
 		// can be removed if JavaElementPropertyTester is moved down to jdt.core (bug 127085)
 		JavaManipulation.class.toString();
@@ -412,7 +425,36 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 				}
 			};
 			PlatformUI.getWorkbench().getThemeManager().addPropertyChangeListener(fThemeListener);
+
+			createOrUpdateWorkingSet(DynamicSourcesWorkingSetUpdater.MAIN_NAME, DynamicSourcesWorkingSetUpdater.MAIN_OLD_NAME, WorkingSetMessages.JavaMainSourcesWorkingSet_name, IWorkingSetIDs.DYNAMIC_SOURCES);
+			createOrUpdateWorkingSet(DynamicSourcesWorkingSetUpdater.TEST_NAME, DynamicSourcesWorkingSetUpdater.TEST_OLD_NAME, WorkingSetMessages.JavaTestSourcesWorkingSet_name, IWorkingSetIDs.DYNAMIC_SOURCES);
+
 			new InitializeAfterLoadJob().schedule(); // last call in start, see bug 191193
+		}
+
+		JavaManipulation.setCodeTemplateStore(getCodeTemplateStore());
+		JavaManipulation.setCodeTemplateContextRegistry(getCodeTemplateContextRegistry());
+	}
+
+	private void createOrUpdateWorkingSet(String name, String oldname, String label, final String id) {
+		IWorkingSetManager workingSetManager= PlatformUI.getWorkbench().getWorkingSetManager();
+		IWorkingSet workingSet= workingSetManager.getWorkingSet(name);
+		if (workingSet == null) {
+			workingSet= workingSetManager.createWorkingSet(name, new IAdaptable[0]);
+			workingSet.setLabel(label);
+			workingSet.setId(id);
+			workingSetManager.addWorkingSet(workingSet);
+		} else {
+			if(id.equals(workingSet.getId())) {
+				if (!label.equals(workingSet.getLabel()))
+					workingSet.setLabel(label);
+			} else {
+				logErrorMessage("found existing workingset with name=\"" + name + "\" but id=\"" + workingSet.getId() + "\""); //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
+			}			
+		}
+		IWorkingSet oldWorkingSet= workingSetManager.getWorkingSet(oldname);
+		if (oldWorkingSet != null && id.equals(oldWorkingSet.getId())) {
+			workingSetManager.removeWorkingSet(oldWorkingSet);
 		}
 	}
 
@@ -513,6 +555,8 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 			// must add here to guarantee that it is the first in the listener list
 
 			OpenTypeHistory.shutdown();
+
+			JavaManipulation.setPreferenceNodeId(null);
 		} finally {
 			super.stop(context);
 		}
@@ -988,7 +1032,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 		return JavaUIMessages.JavaPlugin_additionalInfo_affordance;
 	}
-	
+
 	/**
 	 * Returns the bundles for a given bundle name and version range,
 	 * regardless whether the bundle is resolved or not.

@@ -1,13 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Matt Chapman, mpchapman@gmail.com - 89977 Make JDT .java agnostic
+ *     Jesper S Møller - Bug 529432 - Allow JDT UI to target Java 10
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.util;
 
@@ -19,10 +23,17 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.SubMonitor;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IStorage;
+
+import org.eclipse.text.edits.TextEdit;
+
+import org.eclipse.ltk.core.refactoring.resource.Resources;
 
 import org.eclipse.jdt.core.ClasspathContainerInitializer;
 import org.eclipse.jdt.core.Flags;
@@ -47,6 +58,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.compiler.CharOperation;
 
+import org.eclipse.jdt.internal.core.manipulation.JavaManipulationMessages;
+
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstall2;
 import org.eclipse.jdt.launching.JavaRuntime;
@@ -64,9 +77,11 @@ public final class JavaModelUtil {
 	 */
 	public static final String VERSION_LATEST;
 	static {
-		VERSION_LATEST= JavaCore.VERSION_9; // make sure it is not inlined
+		VERSION_LATEST= JavaCore.VERSION_11; // make sure it is not inlined
 	}
-	
+
+	public static final int VALIDATE_EDIT_CHANGED_CONTENT= 10003;
+
 	/**
 	 * Only use this suffix for creating new .java files.
 	 * In general, use one of the three *JavaLike*(..) methods in JavaCore or create
@@ -773,18 +788,16 @@ public final class JavaModelUtil {
 	 * @return <code>true</code> iff version1 is less than version2
 	 */
 	public static boolean isVersionLessThan(String version1, String version2) {
-		if (JavaCore.VERSION_CLDC_1_1.equals(version1)) {
-			version1= JavaCore.VERSION_1_1 + 'a';
-		}
-		if (JavaCore.VERSION_CLDC_1_1.equals(version2)) {
-			version2= JavaCore.VERSION_1_1 + 'a';
-		}
-		return version1.compareTo(version2) < 0;
+		return JavaCore.compareJavaVersions(version1, version2) < 0;
 	}
 
 
 	public static boolean is50OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_1_5);
+	}
+	
+	public static boolean is16OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_1_6);
 	}
 	
 	public static boolean is17OrHigher(String compliance) {
@@ -799,6 +812,14 @@ public final class JavaModelUtil {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_9);
 	}
 	
+	public static boolean is10OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_10);
+	}
+
+	public static boolean is11OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_11);
+	}
+
 	/**
 	 * Checks if the given project or workspace has source compliance 1.5 or greater.
 	 *
@@ -841,6 +862,26 @@ public final class JavaModelUtil {
 		return is9OrHigher(getSourceCompliance(project));
 	}
 
+	/**
+	 * Checks if the given project or workspace has source compliance 10 or greater.
+	 * 
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 * @return <code>true</code> if the given project or workspace has source compliance 10 or greater.
+	 */
+	public static boolean is10OrHigher(IJavaProject project) {
+		return is10OrHigher(getSourceCompliance(project));
+	}
+
+	/**
+	 * Checks if the given project or workspace has source compliance 11 or greater.
+	 * 
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 * @return <code>true</code> if the given project or workspace has source compliance 11 or greater.
+	 */
+	public static boolean is11OrHigher(IJavaProject project) {
+		return is11OrHigher(getSourceCompliance(project));
+	}
+
 	private static String getSourceCompliance(IJavaProject project) {
 		return project != null ? project.getOption(JavaCore.COMPILER_SOURCE, true) : JavaCore.getOption(JavaCore.COMPILER_SOURCE);
 	}
@@ -874,6 +915,10 @@ public final class JavaModelUtil {
 		String version= vMInstall.getJavaVersion();
 		if (version == null) {
 			return defaultCompliance;
+		} else if (version.startsWith(JavaCore.VERSION_11)) {
+			return JavaCore.VERSION_11;
+		} else if (version.startsWith(JavaCore.VERSION_10)) {
+			return JavaCore.VERSION_10;
 		} else if (version.startsWith(JavaCore.VERSION_9)) {
 			return JavaCore.VERSION_9;
 		} else if (version.startsWith(JavaCore.VERSION_1_8)) {
@@ -906,7 +951,11 @@ public final class JavaModelUtil {
 		
 		// fallback:
 		String desc= executionEnvironment.getId();
-		if (desc.indexOf(JavaCore.VERSION_9) != -1) {
+		if (desc.indexOf(JavaCore.VERSION_11) != -1) {
+			return JavaCore.VERSION_11;
+		} else if (desc.indexOf(JavaCore.VERSION_10) != -1) {
+			return JavaCore.VERSION_10;
+		} else if (desc.indexOf(JavaCore.VERSION_9) != -1) {
 			return JavaCore.VERSION_9;
 		} else if (desc.indexOf(JavaCore.VERSION_1_8) != -1) {
 			return JavaCore.VERSION_1_8;
@@ -1026,5 +1075,30 @@ public final class JavaModelUtil {
 
 	public static boolean isPolymorphicSignature(IMethod method) {
 		return method.getAnnotation("java.lang.invoke.MethodHandle$PolymorphicSignature").exists(); //$NON-NLS-1$
+	}
+
+	/**
+	 * Applies a text edit to a compilation unit.
+	 * 
+	 * @param cu the compilation unit to apply the edit to
+	 * @param edit the edit to apply
+	 * @param save is set, save the CU after the edit has been applied
+	 * @param monitor the progress monitor to use
+	 * @throws CoreException Thrown when the access to the CU failed
+	 * @throws ValidateEditException if validate edit fails
+	 */
+	public static void applyEdit(ICompilationUnit cu, TextEdit edit, boolean save, IProgressMonitor monitor) throws CoreException, ValidateEditException {
+		SubMonitor subMonitor= SubMonitor.convert(monitor, JavaManipulationMessages.JavaModelUtil_applyedit_operation, 2);
+		IFile file= (IFile) cu.getResource();
+		if (!save || !file.exists()) {
+			cu.applyTextEdit(edit, subMonitor.split(2));
+		} else {
+			IStatus status= Resources.makeCommittable(new IResource [] {file}, null);
+			if (!status.isOK()) {
+				throw new ValidateEditException(status);
+			}
+			cu.applyTextEdit(edit, subMonitor.split(1));
+			cu.save(subMonitor.split(1), true);
+		}
 	}
 }

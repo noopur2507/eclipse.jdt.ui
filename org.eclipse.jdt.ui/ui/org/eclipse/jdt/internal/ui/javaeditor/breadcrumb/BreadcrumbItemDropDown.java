@@ -1,12 +1,16 @@
 /*******************************************************************************
  * Copyright (c) 2008, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Fabio Zadrozny - Bug 465666
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.javaeditor.breadcrumb;
 
@@ -40,7 +44,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.Tree;
@@ -55,8 +58,8 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.resource.CompositeImageDescriptor;
-import org.eclipse.jface.util.Geometry;
 import org.eclipse.jface.util.OpenStrategy;
+import org.eclipse.jface.util.Util;
 import org.eclipse.jface.viewers.IOpenListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -104,19 +107,19 @@ class BreadcrumbItemDropDown {
 		@Override
 		protected void drawCompositeImage(int width, int height) {
 			Display display= fParentComposite.getDisplay();
-			
+
 			ImageDataProvider imageProvider= zoom -> {
 				Image image= new Image(display, ARROW_SIZE, ARROW_SIZE * 2);
-				
+
 				GC gc= new GC(image, fLTR ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT);
 				gc.setAntialias(SWT.ON);
-				
+
 				Color triangleColor= createColor(SWT.COLOR_LIST_FOREGROUND, SWT.COLOR_LIST_BACKGROUND, 20, display);
 				gc.setBackground(triangleColor);
 				gc.fillPolygon(new int[] { 0, 0, ARROW_SIZE, ARROW_SIZE, 0, ARROW_SIZE * 2 });
 				gc.dispose();
 				triangleColor.dispose();
-				
+
 				ImageData imageData= image.getImageData(zoom);
 				image.dispose();
 				int zoomedArrowSize= ARROW_SIZE * zoom / 100;
@@ -152,7 +155,7 @@ class BreadcrumbItemDropDown {
 
 	private static final int DROP_DOWN_MIN_WIDTH= 250;
 	private static final int DROP_DOWN_MAX_WIDTH= 500;
-	
+
 	private static final int DROP_DOWN_DEFAULT_MIN_HEIGHT= 200;
 	private static final int DROP_DOWN_DEFAULT_MAX_HEIGHT= 300;
 
@@ -211,6 +214,7 @@ class BreadcrumbItemDropDown {
 				}
 			});
 		}
+		fToolBar.setData("org.eclipse.e4.ui.css.id", "BreadcrumbItemDropDownToolBar"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/**
@@ -306,7 +310,7 @@ class BreadcrumbItemDropDown {
 		fDropDownViewer.setInput(input);
 
 		setShellBounds(fShell);
-		
+
 		fShell.addControlListener(new ControlAdapter() {
 			/*
 			 * @see org.eclipse.swt.events.ControlAdapter#controlResized(org.eclipse.swt.events.ControlEvent)
@@ -315,7 +319,7 @@ class BreadcrumbItemDropDown {
 			public void controlResized(ControlEvent e) {
 				if (isResizingProgrammatically)
 					return;
-				
+
 				Point size= fShell.getSize();
 				getDialogSettings().put(DIALOG_HEIGHT, size.y);
 			}
@@ -653,7 +657,7 @@ class BreadcrumbItemDropDown {
 			settings= javaSettings.addNewSection(DIALOG_SETTINGS);
 		return settings;
 	}
-	
+
 	private int getMaxHeight() {
 		try {
 			return getDialogSettings().getInt(DIALOG_HEIGHT);
@@ -661,7 +665,7 @@ class BreadcrumbItemDropDown {
 			return DROP_DOWN_DEFAULT_MAX_HEIGHT;
 		}
 	}
-	
+
 	/**
 	 * Calculates a useful size for the given shell.
 	 *
@@ -690,7 +694,7 @@ class BreadcrumbItemDropDown {
 		Point pt= new Point(x, rect.y + rect.height);
 		pt= fParentComposite.toDisplay(pt);
 
-		Rectangle monitor= getClosestMonitor(shell.getDisplay(), pt).getClientArea();
+		Rectangle monitor= Util.getClosestMonitor(shell.getDisplay(), pt).getClientArea();
 		int overlap= (pt.x + width) - (monitor.x + monitor.width);
 		if (overlap > 0)
 			pt.x-= overlap;
@@ -699,41 +703,6 @@ class BreadcrumbItemDropDown {
 
 		shell.setLocation(pt);
 		shell.setSize(width, height);
-	}
-
-	/**
-	 * Returns the monitor whose client area contains the given point. If no monitor contains the
-	 * point, returns the monitor that is closest to the point.
-	 * <p>
-	 * Copied from <code>org.eclipse.jface.window.Window.getClosestMonitor(Display, Point)</code>
-	 * </p>
-	 *
-	 * @param display the display showing the monitors
-	 * @param point point to find (display coordinates)
-	 * @return the monitor closest to the given point
-	 */
-	private static Monitor getClosestMonitor(Display display, Point point) {
-		int closest= Integer.MAX_VALUE;
-
-		Monitor[] monitors= display.getMonitors();
-		Monitor result= monitors[0];
-
-		for (int i= 0; i < monitors.length; i++) {
-			Monitor current= monitors[i];
-
-			Rectangle clientArea= current.getClientArea();
-
-			if (clientArea.contains(point))
-				return current;
-
-			int distance= Geometry.distanceSquared(Geometry.centerPoint(clientArea), point);
-			if (distance < closest) {
-				closest= distance;
-				result= current;
-			}
-		}
-
-		return result;
 	}
 
 	/**
@@ -748,7 +717,7 @@ class BreadcrumbItemDropDown {
 		int currentHeight= size.y;
 
 		int maxHeight= getMaxHeight();
-		
+
 		if (currentHeight >= maxHeight && currentWidth >= DROP_DOWN_MAX_WIDTH)
 			return;
 

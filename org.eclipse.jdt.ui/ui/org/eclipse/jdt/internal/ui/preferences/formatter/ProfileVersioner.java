@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -16,8 +19,6 @@ import java.util.Map;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
-
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
 
@@ -41,8 +42,9 @@ public class ProfileVersioner implements IProfileVersioner {
 	private static final int VERSION_11= 11; // https://bugs.eclipse.org/bugs/show_bug.cgi?id=49412
 	private static final int VERSION_12= 12; // https://bugs.eclipse.org/318010
 	private static final int VERSION_13= 13; // https://bugs.eclipse.org/514019
+	private static final int VERSION_14= 14; // https://bugs.eclipse.org/128653, https://bugs.eclipse.org/531826
 
-	private static final int CURRENT_VERSION= VERSION_13;
+	private static final int CURRENT_VERSION= VERSION_14;
 
 	@Override
 	public int getFirstVersion() {
@@ -104,6 +106,9 @@ public class ProfileVersioner implements IProfileVersioner {
 		case VERSION_12 :
 			version12to13(oldSettings);
 			//$FALL-THROUGH$
+		case VERSION_13 :
+			version13to14(oldSettings);
+			//$FALL-THROUGH$
 		default:
 		    for (final Iterator<String> iter= oldSettings.keySet().iterator(); iter.hasNext(); ) {
 		        final String key= iter.next();
@@ -115,18 +120,12 @@ public class ProfileVersioner implements IProfileVersioner {
 		            newSettings.put(key, value);
 		        }
 		    }
-
+		    // copy over profile options (not formatter settings)
+		    if (oldSettings.containsKey(JavaCore.JAVA_FORMATTER)) {
+		        newSettings.put(JavaCore.JAVA_FORMATTER, oldSettings.get(JavaCore.JAVA_FORMATTER));
+		    }
 		}
-		setLatestCompliance(newSettings);
 		return newSettings;
-	}
-
-	/**
-	 * Updates the map to use the latest the source compliance
-	 * @param map The map to update
-	 */
-	public static void setLatestCompliance(Map<String, String> map) {
-		JavaModelUtil.setComplianceOptions(map, JavaModelUtil.VERSION_LATEST);
 	}
 
 	private static void version1to2(final Map<String, String> oldSettings) {
@@ -626,6 +625,12 @@ public class ProfileVersioner implements IProfileVersioner {
 				DefaultCodeFormatterConstants.FALSE);
 	}
 
+	private static void version13to14(Map<String, String> oldSettings) {
+		if (DefaultCodeFormatterConstants.FALSE.equals(oldSettings.get(DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_ROOT_TAGS)))
+			oldSettings.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_PARAMETER_DESCRIPTION, DefaultCodeFormatterConstants.FALSE);
+
+		oldSettings.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_ALIGN_TAGS_DESCREIPTIONS_GROUPED, DefaultCodeFormatterConstants.FALSE);
+	}
 
 	/* old format constant values */
 

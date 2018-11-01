@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -436,6 +439,15 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 			String newValue= "true".equals(elem.getValue()) ? null : "true"; //$NON-NLS-1$ //$NON-NLS-2$
 			elem.setValue(newValue);
 			fFoldersList.refresh(elem);
+		} else if (key.equals(CPListElement.TEST)) {
+			String newValue= "true".equals(elem.getValue()) ? null : "true"; //$NON-NLS-1$ //$NON-NLS-2$
+			elem.setValue(newValue);
+			fFoldersList.refresh(elem.getParent());
+			fClassPathList.dialogFieldChanged(); // validate
+		} else if (key.equals(CPListElement.WITHOUT_TEST_CODE)) {
+			String newValue= "true".equals(elem.getValue()) ? null : "true"; //$NON-NLS-1$ //$NON-NLS-2$
+			elem.setValue(newValue);
+			fFoldersList.refresh(elem.getParent());
 		} else {
 			if (editCustomAttribute(getShell(), elem)) {
 				fFoldersList.refresh();
@@ -452,7 +464,13 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 		boolean isIgnoreOptionalProblems= selected.size() == 1
 				&& selected.get(0) instanceof CPListElementAttribute
 				&& CPListElement.IGNORE_OPTIONAL_PROBLEMS.equals(((CPListElementAttribute) selected.get(0)).getKey());
-		fFoldersList.getButton(IDX_EDIT).setText(isIgnoreOptionalProblems
+		boolean isTest= selected.size() == 1
+				&& selected.get(0) instanceof CPListElementAttribute
+				&& CPListElement.TEST.equals(((CPListElementAttribute) selected.get(0)).getKey());
+		boolean isWithoutTestCode= selected.size() == 1
+				&& selected.get(0) instanceof CPListElementAttribute
+				&& CPListElement.WITHOUT_TEST_CODE.equals(((CPListElementAttribute) selected.get(0)).getKey());
+		fFoldersList.getButton(IDX_EDIT).setText((isIgnoreOptionalProblems||isTest||isWithoutTestCode)
 				? NewWizardMessages.SourceContainerWorkbookPage_folders_toggle_button
 				: NewWizardMessages.SourceContainerWorkbookPage_folders_edit_button);
 		fFoldersList.enableButton(IDX_EDIT, canEdit(selected));

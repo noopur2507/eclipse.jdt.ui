@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2006, 2013 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   David Saff (saff@mit.edu) - initial API and implementation
@@ -61,9 +64,7 @@ public class JUnit4TestListener extends RunListener {
 
 	@Override
 	public void testStarted(Description plan) throws Exception {
-		if (plan.isTest()) {
-			fNotified.notifyTestStarted(getIdentifier(plan, false, false));
-		}
+		fNotified.notifyTestStarted(getIdentifier(plan, false, false));
 	}
 
 	@Override
@@ -73,9 +74,7 @@ public class JUnit4TestListener extends RunListener {
 
 	@Override
 	public void testAssumptionFailure(Failure failure) {
-		if (failure.getDescription().isTest()) {
-			testFailure(failure, true);
-		}
+		testFailure(failure, true);
 	}
 
 	private void testFailure(Failure failure, boolean assumptionFailed) {
@@ -103,19 +102,15 @@ public class JUnit4TestListener extends RunListener {
 
 	@Override
 	public void testIgnored(Description plan) throws Exception {
-		if (plan.isTest()) {
-			// Send message to listeners which would be stale otherwise
-			ITestIdentifier identifier= getIdentifier(plan, true, false);
-			fNotified.notifyTestStarted(identifier);
-			fNotified.notifyTestEnded(identifier);
-		}
+		// Send message to listeners which would be stale otherwise
+		ITestIdentifier identifier= getIdentifier(plan, true, false);
+		fNotified.notifyTestStarted(identifier);
+		fNotified.notifyTestEnded(identifier);
 	}
 
 	@Override
 	public void testFinished(Description plan) throws Exception {
-		if (plan.isTest()) {
-			fNotified.notifyTestEnded(getIdentifier(plan, false, false));
-		}
+		fNotified.notifyTestEnded(getIdentifier(plan, false, false));
 	}
 
 	private ITestIdentifier getIdentifier(Description plan, boolean ignored, boolean assumptionFailed) {

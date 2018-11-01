@@ -1,35 +1,51 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.refactoring;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 
 import org.eclipse.core.runtime.IAdaptable;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
 
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.jface.text.source.SourceViewerConfiguration;
 
 import org.eclipse.ui.model.IWorkbenchAdapter;
+
+import org.eclipse.ui.texteditor.AbstractTextEditor;
+
+import org.eclipse.ui.editors.text.EditorsUI;
 
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.ui.refactoring.ChangePreviewViewerInput;
@@ -97,6 +113,95 @@ public final class CreateTextFileChangePreviewViewer implements IChangePreviewVi
 
 	}
 
+	private static class FileChangeSourceViewer extends SourceViewer {
+
+		private final Map<String, Color> customColors= new HashMap<>();
+
+		public FileChangeSourceViewer(Composite parent, IVerticalRuler ruler, int styles) {
+			super(parent, ruler, styles);
+			setColors();
+			StyledText textWidget= getTextWidget();
+			textWidget.setEditable(false);
+			textWidget.setFont(JFaceResources.getFont(PreferenceConstants.EDITOR_TEXT_FONT));
+		}
+
+		@Override
+		protected void handleDispose() {
+			for (Color color : customColors.values()) {
+				if (color != null) {
+					color.dispose();
+				}
+			}
+			customColors.clear();
+			super.handleDispose();
+		}
+
+		private void setColors() {
+			IPreferenceStore store= EditorsUI.getPreferenceStore();
+			StyledText styledText= getTextWidget();
+			setColor(styledText, store,
+					AbstractTextEditor.PREFERENCE_COLOR_FOREGROUND,
+					store.getBoolean(
+							AbstractTextEditor.PREFERENCE_COLOR_FOREGROUND_SYSTEM_DEFAULT));
+			setColor(styledText, store,
+					AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND,
+					store.getBoolean(
+							AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT));
+			setColor(styledText, store,
+					AbstractTextEditor.PREFERENCE_COLOR_SELECTION_FOREGROUND,
+					store.getBoolean(
+							AbstractTextEditor.PREFERENCE_COLOR_SELECTION_FOREGROUND_SYSTEM_DEFAULT));
+			setColor(styledText, store,
+					AbstractTextEditor.PREFERENCE_COLOR_SELECTION_BACKGROUND,
+					store.getBoolean(
+							AbstractTextEditor.PREFERENCE_COLOR_SELECTION_BACKGROUND_SYSTEM_DEFAULT));
+		}
+
+		private void setColor(StyledText styledText, IPreferenceStore store,
+				String key, boolean useDefault) {
+			Color newColor= useDefault
+					? null
+					: createColor(styledText.getDisplay(), store, key);
+			switch (key) {
+				case AbstractTextEditor.PREFERENCE_COLOR_FOREGROUND:
+					styledText.setForeground(newColor);
+					break;
+				case AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND:
+					styledText.setBackground(newColor);
+					break;
+				case AbstractTextEditor.PREFERENCE_COLOR_SELECTION_FOREGROUND:
+					styledText.setSelectionForeground(newColor);
+					break;
+				case AbstractTextEditor.PREFERENCE_COLOR_SELECTION_BACKGROUND:
+					styledText.setSelectionBackground(newColor);
+					break;
+				default:
+					return;
+			}
+			Color oldColor= customColors.remove(key);
+			if (oldColor != null) {
+				oldColor.dispose();
+			}
+			customColors.put(key, newColor);
+		}
+
+		private static Color createColor(Display display, IPreferenceStore store,
+				String key) {
+			RGB rgb= null;
+			if (store.contains(key)) {
+				if (store.isDefault(key)) {
+					rgb= PreferenceConverter.getDefaultColor(store, key);
+				} else {
+					rgb= PreferenceConverter.getColor(store, key);
+				}
+				if (rgb != null) {
+					return new Color(display, rgb);
+				}
+			}
+			return null;
+		}
+	}
+
 	private CreateTextFilePreviewer fPane;
 
 	private SourceViewer fSourceViewer;
@@ -106,9 +211,7 @@ public final class CreateTextFileChangePreviewViewer implements IChangePreviewVi
 		fPane= new CreateTextFilePreviewer(parent, SWT.BORDER | SWT.FLAT);
 		Dialog.applyDialogFont(fPane);
 
-		fSourceViewer= new SourceViewer(fPane, null, SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
-		fSourceViewer.setEditable(false);
-		fSourceViewer.getControl().setFont(JFaceResources.getFont(PreferenceConstants.EDITOR_TEXT_FONT));
+		fSourceViewer= new FileChangeSourceViewer(fPane, null, SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		fPane.setContent(fSourceViewer.getControl());
 	}
 

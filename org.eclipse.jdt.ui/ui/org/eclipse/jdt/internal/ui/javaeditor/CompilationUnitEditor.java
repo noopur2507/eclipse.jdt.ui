@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -112,6 +115,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.manipulation.CoreASTProvider;
 
 import org.eclipse.jdt.internal.corext.fix.CleanUpPreferenceUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -134,6 +138,7 @@ import org.eclipse.jdt.internal.ui.actions.RemoveBlockCommentAction;
 import org.eclipse.jdt.internal.ui.actions.SurroundWithActionGroup;
 import org.eclipse.jdt.internal.ui.compare.LocalHistoryActionGroup;
 import org.eclipse.jdt.internal.ui.preferences.SaveParticipantPreferencePage;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 import org.eclipse.jdt.internal.ui.text.ContentAssistPreference;
 import org.eclipse.jdt.internal.ui.text.JavaHeuristicScanner;
 import org.eclipse.jdt.internal.ui.text.SmartBackspaceManager;
@@ -236,7 +241,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 			if (javaProject == null)
 				preferences= new HashMap<>(JavaCore.getOptions());
 			else
-				preferences= new HashMap<>(javaProject.getOptions(true));
+				preferences= FormatterProfileManager.getProjectSettings(javaProject);
 
 			context.setProperty(FormattingContextProperties.CONTEXT_PREFERENCES, preferences);
 			context.setProperty(JavaFormattingContext.KEY_SOURCE_PATH, inputJavaElement != null ? inputJavaElement.getPath().toString() : null);
@@ -533,7 +538,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 
 				final char character= event.character;
 				final char closingCharacter= getPeerCharacter(character);
-				final StringBuffer buffer= new StringBuffer();
+				final StringBuilder buffer= new StringBuilder();
 				buffer.append(character);
 				buffer.append(closingCharacter);
 
@@ -1530,7 +1535,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 		IPreferenceStore preferenceStore= getPreferenceStore();
 		boolean closeBrackets= preferenceStore.getBoolean(CLOSE_BRACKETS);
 		boolean closeStrings= preferenceStore.getBoolean(CLOSE_STRINGS);
-		boolean closeAngularBrackets= JavaCore.VERSION_1_5.compareTo(preferenceStore.getString(JavaCore.COMPILER_SOURCE)) <= 0;
+		boolean closeAngularBrackets= JavaCore.compareJavaVersions(JavaCore.VERSION_1_5, preferenceStore.getString(JavaCore.COMPILER_SOURCE)) <= 0;
 
 		fBracketInserter.setCloseBracketsEnabled(closeBrackets);
 		fBracketInserter.setCloseStringsEnabled(closeStrings);
@@ -1609,7 +1614,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 				}
 
 				if (JavaCore.COMPILER_SOURCE.equals(p)) {
-					boolean closeAngularBrackets= JavaCore.VERSION_1_5.compareTo(getPreferenceStore().getString(p)) <= 0;
+					boolean closeAngularBrackets= JavaCore.compareJavaVersions(JavaCore.VERSION_1_5, getPreferenceStore().getString(p)) <= 0;
 					fBracketInserter.setCloseAngularBracketsEnabled(closeAngularBrackets);
 				}
 
@@ -1660,7 +1665,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 	public void aboutToBeReconciled() {
 
 		// Notify AST provider
-		JavaPlugin.getDefault().getASTProvider().aboutToBeReconciled(getInputJavaElement());
+		CoreASTProvider.getInstance().aboutToBeReconciled(getInputJavaElement());
 
 		// Notify listeners
 		for (IJavaReconcilingListener listener : fReconcilingListeners) {
@@ -1681,7 +1686,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 			return;
 
 		// Always notify AST provider
-		javaPlugin.getASTProvider().reconciled(ast, getInputJavaElement(), progressMonitor);
+		CoreASTProvider.getInstance().reconciled(ast, getInputJavaElement(), progressMonitor);
 
 		// Notify listeners
 		for (IJavaReconcilingListener listener : fReconcilingListeners) {

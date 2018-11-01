@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -162,7 +165,7 @@ public final class PushDownWizard extends RefactoringWizard {
 					return null;
 
 				final MemberActionInfo info= (MemberActionInfo) element;
-				return new Integer(info.getAction());
+				return Integer.valueOf(info.getAction());
 			}
 
 			@Override
@@ -428,9 +431,9 @@ public final class PushDownWizard extends RefactoringWizard {
 		private Map<String, Integer> createStringMappingForSelectedElements() {
 			final Map<String, Integer> result= new HashMap<>();
 			int action= MemberActionInfo.PUSH_DOWN_ACTION;
-			result.put(MemberActionInfoLabelProvider.getActionLabel(action), new Integer(action));
+			result.put(MemberActionInfoLabelProvider.getActionLabel(action), Integer.valueOf(action));
 			int action1= MemberActionInfo.PUSH_ABSTRACT_ACTION;
-			result.put(MemberActionInfoLabelProvider.getActionLabel(action1), new Integer(action1));
+			result.put(MemberActionInfoLabelProvider.getActionLabel(action1), Integer.valueOf(action1));
 			return result;
 		}
 
@@ -571,7 +574,7 @@ public final class PushDownWizard extends RefactoringWizard {
 						return;
 					final MemberActionInfo mac= (MemberActionInfo) ss.getFirstElement();
 					comboBoxCellEditor.setItems(MemberActionInfoLabelProvider.getAvailableActionLabels(mac));
-					comboBoxCellEditor.setValue(new Integer(mac.getAction()));
+					comboBoxCellEditor.setValue(Integer.valueOf(mac.getAction()));
 				}
 			});
 

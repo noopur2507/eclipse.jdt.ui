@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Martin Moebius (m.moebius@gmx.de) - initial API and implementation
@@ -32,6 +35,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -60,7 +64,9 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddDelegateMethodsOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddDelegateMethodsOperation.DelegateEntry;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -68,13 +74,11 @@ import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -147,7 +151,7 @@ public class AddDelegateMethodsAction extends SelectionDispatchAction {
 		}
 
 		private String getSignature(IMethodBinding binding) {
-			StringBuffer buf= new StringBuffer(binding.getName()).append('(');
+			StringBuilder buf= new StringBuilder(binding.getName()).append('(');
 			ITypeBinding[] parameterTypes= binding.getParameterTypes();
 			for (int i= 0; i < parameterTypes.length; i++) {
 				buf.append(parameterTypes[i].getTypeDeclaration().getName());
@@ -251,9 +255,13 @@ public class AddDelegateMethodsAction extends SelectionDispatchAction {
 			PlatformUI.getWorkbench().getHelpSystem().setHelp(shell, IJavaHelpContextIds.ADD_DELEGATE_METHODS_SELECTION_DIALOG);
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.dialogs.SourceActionDialog#createLinkControl(org.eclipse.swt.widgets.Composite)
-		 */
+		@Override
+		protected void createButtonsForButtonBar(Composite parent) {
+			createButton(parent, IDialogConstants.OK_ID,ActionMessages.AddDelegateMethodsAction_generate_button , true);
+			createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
+
+		}
+
 		@Override
 		protected Control createLinkControl(Composite composite) {
 			Link link= new Link(composite, SWT.WRAP);
@@ -530,7 +538,7 @@ public class AddDelegateMethodsAction extends SelectionDispatchAction {
 
 	private void showUI(IType type, IField[] fields) {
 		try {
-			CompilationUnit astRoot= SharedASTProvider.getAST(type.getCompilationUnit(), SharedASTProvider.WAIT_YES, new NullProgressMonitor());
+			CompilationUnit astRoot= SharedASTProviderCore.getAST(type.getCompilationUnit(), SharedASTProviderCore.WAIT_YES, new NullProgressMonitor());
 
 			AddDelegateMethodsContentProvider provider= new AddDelegateMethodsContentProvider(astRoot, type, fields);
 			SourceActionDialog dialog= new AddDelegateMethodsDialog(getShell(), new AddDelegateMethodsLabelProvider(), provider, fEditor, type, false);
@@ -552,7 +560,7 @@ public class AddDelegateMethodsAction extends SelectionDispatchAction {
 					dialog.setExpandedElements(expand);
 				}
 			}
-			dialog.setInitialSelections(provider.getInitiallySelectedElements());
+			dialog.setInitialSelections((Object[]) provider.getInitiallySelectedElements());
 			dialog.setSize(60, 18);
 			int result= dialog.open();
 			if (result == Window.OK) {

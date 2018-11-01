@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -291,6 +294,16 @@ public final class JavaUI {
 	public static final String ID_CLASSPATH_VARIABLES_PREFERENCE_PAGE= "org.eclipse.jdt.ui.preferences.ClasspathVariablesPreferencePage"; //$NON-NLS-1$
 
 
+	/**
+	 * @since 3.15
+	 */
+	public static final String ID_COMPILER_COMPLIANCE_PROPERTY_PAGE= "org.eclipse.jdt.ui.propertyPages.CompliancePreferencePage"; //$NON-NLS-1$
+	
+	/**
+	 * @since 3.15
+	 */
+	public static final String ID_JAVA_BUILD_PREFERENCE_PROPERTY_PAGE= "org.eclipse.jdt.ui.propertyPages.JavaBuildPreferencePage"; //$NON-NLS-1$
+	
 	/**
 	 * The class org.eclipse.debug.core.model.IProcess allows attaching String properties to
 	 * processes. The Java UI contributes a property page for IProcess that will show the contents

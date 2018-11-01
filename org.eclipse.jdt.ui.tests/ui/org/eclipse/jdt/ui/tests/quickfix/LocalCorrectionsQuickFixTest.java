@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -39,8 +42,8 @@ import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
@@ -3249,7 +3252,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 		buf= new StringBuffer();
-		buf.append("@annots.NonNullByDefault\n");
+		buf.append("@annots.NonNullByDefault(true)\n");
 		buf.append("package test;\n");
 		pack1.createCompilationUnit("package-info.java", buf.toString(), false, null);
 
@@ -3259,7 +3262,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("import annots.*;\n");
 		buf.append("\n");
 		buf.append("abstract class A {\n");
-		buf.append("    @SuppressWarnings(\"unused\")\n");
+		buf.append("    @SuppressWarnings({\"unused\", \"null\"})\n");
 		buf.append("    public abstract @NonNull Object foo(@Nullable Object i1, @NonNull Object i2);\n");
 		buf.append("}\n");
 		buf.append("@NonNullByDefault(false)\n");
@@ -3280,7 +3283,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("import annots.*;\n");
 		buf.append("\n");
 		buf.append("abstract class A {\n");
-		buf.append("    @SuppressWarnings(\"unused\")\n");
+		buf.append("    @SuppressWarnings({\"unused\", \"null\"})\n");
 		buf.append("    public abstract @NonNull Object foo(@Nullable Object i1, @NonNull Object i2);\n");
 		buf.append("}\n");
 		buf.append("@NonNullByDefault(false)\n");
@@ -8334,7 +8337,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void foo() {\n");
-		buf.append("        Object o = true ? new Integer(1) + 2 : new Double(0.0) + 3;\n");
+		buf.append("        Object o = true ? Integer.valueOf(1) + 2 : Double.valueOf(0.0) + 3;\n");
 		buf.append("        System.out.println(o);\n");
 		buf.append("    }\n");
 		buf.append("}\n");
@@ -8349,7 +8352,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void foo() {\n");
-		buf.append("        Object o = (double) (new Integer(1) + 2);\n");
+		buf.append("        Object o = (double) (Integer.valueOf(1) + 2);\n");
 		buf.append("        System.out.println(o);\n");
 		buf.append("    }\n");
 		buf.append("}\n");
@@ -8368,7 +8371,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void foo() {\n");
-		buf.append("        Object o = true ? new Integer(1) : new Double(0.0);\n");
+		buf.append("        Object o = true ? Integer.valueOf(1) : Double.valueOf(0.0);\n");
 		buf.append("    }\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
@@ -8382,7 +8385,7 @@ public class LocalCorrectionsQuickFixTest extends QuickFixTest {
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void foo() {\n");
-		buf.append("        Object o = (double) new Integer(1);\n");
+		buf.append("        Object o = (double) Integer.valueOf(1);\n");
 		buf.append("    }\n");
 		buf.append("}\n");
 		String[] expected= new String[] { buf.toString() };

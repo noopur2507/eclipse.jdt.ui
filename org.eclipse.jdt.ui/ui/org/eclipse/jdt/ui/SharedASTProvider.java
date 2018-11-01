@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2007, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -17,8 +20,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-
-import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.core.manipulation.CoreASTProvider;
 
 
 /**
@@ -31,7 +33,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  * <p>Clients can make the following assumptions about the AST:
  * <dl>
  *    <li>the AST has a {@link ITypeRoot} as source: {@link CompilationUnit#getTypeRoot()} is not null.</li>
- *    <li>the {@link AST#apiLevel() AST API level} is {@link AST#JLS9 API level 9} or higher</li>
+ *    <li>the {@link AST#apiLevel() AST API level} is {@link AST#JLS11 API level 11} or higher</li>
  *    <li>the AST has bindings resolved ({@link AST#hasResolvedBindings()})</li>
  *    <li>{@link AST#hasStatementsRecovery() statement} and {@link AST#hasBindingsRecovery() bindings}
  *           recovery are enabled
@@ -51,7 +53,9 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  * @since 3.4
  *
  * @noinstantiate This class is not intended to be instantiated by clients.
+ * @deprecated Use {@link org.eclipse.jdt.core.manipulation.SharedASTProviderCore} instead.
  */
+@Deprecated
 public final class SharedASTProvider {
 
 	/**
@@ -125,7 +129,15 @@ public final class SharedASTProvider {
 	 *         </dl>
 	 */
 	public static CompilationUnit getAST(ITypeRoot element, WAIT_FLAG waitFlag, IProgressMonitor progressMonitor) {
-		return JavaPlugin.getDefault().getASTProvider().getAST(element, waitFlag, progressMonitor);
+		CoreASTProvider.WAIT_FLAG finalWaitFlag = null;
+		if (waitFlag == WAIT_ACTIVE_ONLY) {
+			finalWaitFlag = CoreASTProvider.WAIT_ACTIVE_ONLY;
+		} else if (waitFlag == WAIT_NO) {
+			finalWaitFlag= CoreASTProvider.WAIT_NO;
+		} else if (waitFlag == WAIT_YES) {
+			finalWaitFlag= CoreASTProvider.WAIT_YES;
+		}
+		return CoreASTProvider.getInstance().getAST(element, finalWaitFlag, progressMonitor);
 	}
 
 	private SharedASTProvider() {

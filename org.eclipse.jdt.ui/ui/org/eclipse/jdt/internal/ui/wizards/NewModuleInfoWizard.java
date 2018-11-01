@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -203,6 +206,7 @@ public class NewModuleInfoWizard extends Wizard implements INewWizard {
 		for (int i= 0; i < rawClasspath.length; i++) {
 			IClasspathEntry entry= rawClasspath[i];
 			switch (entry.getEntryKind()) {
+				case IClasspathEntry.CPE_CONTAINER:
 				case IClasspathEntry.CPE_LIBRARY:
 				case IClasspathEntry.CPE_PROJECT:
 					IClasspathAttribute[] newAttributes= addModuleAttributeIfNeeded(entry.getExtraAttributes());
@@ -238,6 +242,8 @@ public class NewModuleInfoWizard extends Wizard implements INewWizard {
 
 	private IClasspathEntry addAttributes(IClasspathEntry entry, IClasspathAttribute[] extraAttributes) {
 		switch (entry.getEntryKind()) {
+			case IClasspathEntry.CPE_CONTAINER:
+				return JavaCore.newContainerEntry(entry.getPath(), entry.getAccessRules(), extraAttributes, entry.isExported());
 			case IClasspathEntry.CPE_LIBRARY:
 				return JavaCore.newLibraryEntry(entry.getPath(), entry.getSourceAttachmentPath(),
 						entry.getSourceAttachmentRootPath(), entry.getAccessRules(), extraAttributes, entry.isExported());

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -19,6 +22,7 @@ import org.eclipse.swt.graphics.Image;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
@@ -30,6 +34,7 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jdt.core.CompletionContext;
 import org.eclipse.jdt.core.CompletionProposal;
 import org.eclipse.jdt.core.CompletionRequestor;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -44,6 +49,7 @@ import org.eclipse.jdt.internal.corext.util.CollectionsUtil;
 import org.eclipse.jdt.internal.corext.util.TypeFilter;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 import org.eclipse.jdt.internal.ui.text.java.AnnotationAtttributeProposalInfo;
 import org.eclipse.jdt.internal.ui.text.java.AnonymousTypeCompletionProposal;
 import org.eclipse.jdt.internal.ui.text.java.AnonymousTypeProposalInfo;
@@ -127,6 +133,8 @@ public class CompletionProposalCollector extends CompletionRequestor {
 	 */
 	private JavaContentAssistInvocationContext fInvocationContext;
 
+	private boolean fIsTestCodeExcluded;
+
 	/**
 	 * Creates a new instance ready to collect proposals. If the passed
 	 * <code>ICompilationUnit</code> is not contained in an
@@ -164,11 +172,40 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		super(ignoreAll);
 		fJavaProject= project;
 		fCompilationUnit= cu;
+		
+		fIsTestCodeExcluded = cu != null && !isTestSource(project, cu);
 
 		fUserReplacementLength= -1;
 		if (!ignoreAll) {
 			setRequireExtendedContext(true);
 		}
+	}
+	
+	private boolean isTestSource(IJavaProject project, ICompilationUnit cu) {
+		try {
+			IClasspathEntry[] resolvedClasspath= project.getResolvedClasspath(true);
+			final IPath resourcePath= cu.getResource().getFullPath();
+			for (IClasspathEntry e : resolvedClasspath) {
+				if (e.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+					if (e.isTest()) {
+						if (e.getPath().isPrefixOf(resourcePath)) {
+							return true;
+						}
+					}
+				}
+			}
+		} catch (JavaModelException e) {
+			return false;
+		}
+		return false;
+	}
+
+	/**
+	 * @since 3.14
+	 */
+	@Override
+	public boolean isTestCodeExcluded() {
+		return fIsTestCodeExcluded;
 	}
 
 	/**
@@ -406,6 +443,8 @@ public class CompletionProposalCollector extends CompletionRequestor {
 				return createPackageProposal(proposal);
 			case CompletionProposal.MODULE_REF:
 				return createModuleProposal(proposal);
+			case CompletionProposal.MODULE_DECLARATION:
+				return createModuleProposal(proposal);
 			case CompletionProposal.TYPE_REF:
 				return createTypeProposal(proposal);
 			case CompletionProposal.JAVADOC_TYPE_REF:
@@ -561,7 +600,9 @@ public class CompletionProposalCollector extends CompletionRequestor {
 	 * <li>POTENTIAL_METHOD_DECLARATION</li>
 	 * <li>ANONYMOUS_CLASS_DECLARATION</li>
 	 * <li>FIELD_REF</li>
-	 * <li>PACKAGE_REF (returns the package, but no type)</li>
+	 * <li>PACKAGE_REF (returns the package name, but no type)</li>
+	 * <li>MODULE_REF (returns the module name, but no type)</li>
+	 * <li>MODULE_DECLARATION (returns the possible name of the module that is being declared, but no type)</li>
 	 * <li>TYPE_REF</li>
 	 * </ul>
 	 *
@@ -593,6 +634,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 				return Signature.toCharArray(declaration);
 			case CompletionProposal.PACKAGE_REF:
 			case CompletionProposal.MODULE_REF:
+			case CompletionProposal.MODULE_DECLARATION:
 				return proposal.getDeclarationSignature();
 			case CompletionProposal.JAVADOC_TYPE_REF:
 			case CompletionProposal.TYPE_REF:
@@ -705,7 +747,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 	 */
 	private IJavaCompletionProposal createFieldWithCastedReceiverProposal(CompletionProposal proposal) {
 		String completion= String.valueOf(proposal.getCompletion());
-		completion= CodeFormatterUtil.format(CodeFormatter.K_EXPRESSION, completion, 0, "\n", fJavaProject); //$NON-NLS-1$
+		completion= CodeFormatterUtil.format(CodeFormatter.K_EXPRESSION, completion, 0, "\n", FormatterProfileManager.getProjectSettings(fJavaProject)); //$NON-NLS-1$
 		int start= proposal.getReplaceStart();
 		int length= getLength(proposal);
 		StyledString label= fLabelProvider.createStyledLabel(proposal);
@@ -797,7 +839,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		javaProposal.setProposalInfo(new MethodProposalInfo(fJavaProject, proposal));
 		javaProposal.setRelevance(computeRelevance(proposal));
 
-		fSuggestedMethodNames.add(new String(name));
+		fSuggestedMethodNames.add(name);
 		return javaProposal;
 	}
 

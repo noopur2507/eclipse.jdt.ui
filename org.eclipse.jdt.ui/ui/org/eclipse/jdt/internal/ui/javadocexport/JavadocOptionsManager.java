@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -411,8 +414,8 @@ public class JavadocOptionsManager {
 		fTitle= element.getAttribute(TITLE);
 
 
-		StringBuffer additionals= new StringBuffer();
-		StringBuffer vmargs= new StringBuffer();
+		StringBuilder additionals= new StringBuilder();
+		StringBuilder vmargs= new StringBuilder();
 		String extraOptions= element.getAttribute(EXTRAOPTIONS);
 		if (extraOptions.length() > 0) {
 			ExecutionArguments tokens= new ExecutionArguments("", extraOptions); //$NON-NLS-1$
@@ -665,7 +668,7 @@ public class JavadocOptionsManager {
 	}
 
 	private String flatPathList(IPath[] paths) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		for (int i= 0; i < paths.length; i++) {
 			if (i > 0) {
 				buf.append(File.pathSeparatorChar);
@@ -676,7 +679,7 @@ public class JavadocOptionsManager {
 	}
 
 	private String flatStringList(String[] paths) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		for (int i= 0; i < paths.length; i++) {
 			if (i > 0) {
 				buf.append(File.pathSeparatorChar);

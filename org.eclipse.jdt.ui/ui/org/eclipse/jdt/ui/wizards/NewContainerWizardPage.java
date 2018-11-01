@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -41,6 +44,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 import org.eclipse.ui.views.contentoutline.ContentOutline;
 
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModel;
@@ -134,10 +138,45 @@ public abstract class NewContainerWizardPage extends NewElementWizardPage {
 	 *    fragment root used as the source folder
 	 */
 	protected void initContainerPage(IJavaElement elem) {
+		initContainerPage(elem, false);
+	}
+
+	/**
+	 * Initializes the source folder field with a valid package fragment root. The package fragment root
+	 * is computed from the given Java element.
+	 *
+	 * @param elem the Java element used to compute the initial package fragment root used as the source
+	 *            folder
+	 * @param preferTestSourceFolder where a source folder which has the
+	 *            {@link IClasspathAttribute#TEST} with a value of <code>true</code> should be
+	 *            preferred.
+	 * @since 3.14
+	 */
+	protected void initContainerPage(IJavaElement elem, boolean preferTestSourceFolder) {
 		IPackageFragmentRoot initRoot= null;
 		if (elem != null) {
 			initRoot= JavaModelUtil.getPackageFragmentRoot(elem);
 			try {
+				if (preferTestSourceFolder) {
+					if (initRoot == null || !initRoot.getResolvedClasspathEntry().isTest()) {
+						IPackageFragmentRoot testInitRoot= null;
+						IJavaProject jproject= elem.getJavaProject();
+						if (jproject != null) {
+							if (jproject.exists()) {
+								IPackageFragmentRoot[] roots= jproject.getPackageFragmentRoots();
+								for (int i= 0; i < roots.length; i++) {
+									if (roots[i].getKind() == IPackageFragmentRoot.K_SOURCE && roots[i].getResolvedClasspathEntry().isTest()) {
+										testInitRoot= roots[i];
+										break;
+									}
+								}
+							}
+						}
+						if (testInitRoot != null) {
+							initRoot= testInitRoot;
+						}
+					}
+				}
 				if (initRoot == null || initRoot.getKind() != IPackageFragmentRoot.K_SOURCE) {
 					IJavaProject jproject= elem.getJavaProject();
 					if (jproject != null) {

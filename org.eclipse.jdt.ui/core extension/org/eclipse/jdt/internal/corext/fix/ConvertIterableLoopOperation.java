@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2005, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -48,7 +51,6 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
@@ -59,6 +61,7 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
@@ -257,7 +260,7 @@ public final class ConvertIterableLoopOperation extends ConvertLoopOperation {
 			if (body instanceof Block) {
 				list= astRewrite.getListRewrite(body, Block.STATEMENTS_PROPERTY);
 				for (final Iterator<Expression> iterator= fOccurrences.iterator(); iterator.hasNext();) {
-					final Statement parent= (Statement)ASTNodes.getParent(iterator.next(), Statement.class);
+					final Statement parent= ASTNodes.getParent(iterator.next(), Statement.class);
 					if (parent != null && list.getRewrittenList().contains(parent)) {
 						list.remove(parent, null);
 						remover.registerRemovedNode(parent);
@@ -300,7 +303,7 @@ public final class ConvertIterableLoopOperation extends ConvertLoopOperation {
 					if (fElementVariable != null) {
 						final IBinding binding= node.resolveBinding();
 						if (binding != null && binding.equals(fElementVariable)) {
-							final Statement parent= (Statement)ASTNodes.getParent(node, Statement.class);
+							final Statement parent= ASTNodes.getParent(node, Statement.class);
 							if (parent != null && (list == null || list.getRewrittenList().contains(parent)))
 								pg.addPosition(astRewrite.track(node), false);
 						}
@@ -522,7 +525,10 @@ public final class ConvertIterableLoopOperation extends ConvertLoopOperation {
 
 					@Override
 					public final boolean visit(final ForStatement node) {
-						return false;
+						if (node.equals(getForStatement()))
+							return false;
+						else
+							return true;
 					}
 
 					@Override

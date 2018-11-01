@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2007, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -23,8 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.StringTokenizer;
-
-import junit.framework.TestCase;
 
 import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.jdt.junit.TestRunListener;
@@ -53,6 +54,8 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.internal.junit.model.JUnitModel;
 import org.eclipse.jdt.internal.junit.model.TestRunSession;
 import org.eclipse.jdt.internal.junit.model.TestSuiteElement;
+
+import junit.framework.TestCase;
 
 public class AbstractTestRunSessionSerializationTests extends TestCase {
 
@@ -125,7 +128,7 @@ public class AbstractTestRunSessionSerializationTests extends TestCase {
 		/*
 		 * Avoid comparing stack traces (which are VM-dependent)
 		 */
-		String regex= "(?m)^\\s*at\\s+[\\w\\.\\:\\;\\$\\(\\)\\[ \\t]+$\r?\n?";
+		String regex= "(?m)^\\s*at\\s+[/\\w\\.\\:\\;\\$\\(\\)\\[ \\t]+$\r?\n?";
 		/*
 		 * Strips lines like " ... 18 more"
 		 */
@@ -140,6 +143,13 @@ public class AbstractTestRunSessionSerializationTests extends TestCase {
 		int ibmJava6BugOffset= actual.indexOf("><");
 		if (ibmJava6BugOffset > 0) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=197842
 			actual= new StringBuffer(actual).insert(ibmJava6BugOffset + 1, " ").toString();
+
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=526754
+		String regex4= "</actual>\\s*";
+		String replacement4= "</actual>";
+		String regex5= "\\s*</failure>";
+		String replacement5= " </failure>";
+		actual= actual.replaceAll(regex4, replacement4).replaceAll(regex5, replacement5);
 
 		/*
 		 * Strip all whitespace

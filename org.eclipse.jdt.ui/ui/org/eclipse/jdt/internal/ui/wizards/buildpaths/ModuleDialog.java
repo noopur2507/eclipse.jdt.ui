@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2017 GK Software AG, and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2017, 2018 GK Software SE, and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stephan Herrmann - initial API and implementation
@@ -66,7 +69,6 @@ import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.provisional.JavaModelAccess;
 
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -681,8 +683,8 @@ public class ModuleDialog extends StatusDialog {
 				includedNames.addAll(limitModules.fExplicitlyIncludedModules);
 				availableNames.removeAll(limitModules.fExplicitlyIncludedModules);
 			}
-		} else if (isJava9JRE) {
-			includedNames= defaultIncludedModuleNames();
+		} else if (isJava9JRE && isUnnamedModule()) {
+			includedNames= defaultIncludedModuleNamesForUnnamedModule();
 			availableNames.removeAll(includedNames);
 		} else {
 			includedNames= availableNames;
@@ -752,7 +754,7 @@ public class ModuleDialog extends StatusDialog {
 						recordModule(module, moduleNames);
 					} else {
 						try {
-							recordModule(JavaModelAccess.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
+							recordModule(JavaCore.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
 						} catch (JavaModelException e) {
 							JavaPlugin.log(e);
 						}
@@ -763,7 +765,7 @@ public class ModuleDialog extends StatusDialog {
 						if (module != null) {
 							recordModule(module, moduleNames);
 						} else {
-							recordModule(JavaModelAccess.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
+							recordModule(JavaCore.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
 						}
 					} catch (JavaModelException e) {
 						JavaPlugin.log(e);
@@ -774,7 +776,7 @@ public class ModuleDialog extends StatusDialog {
 		return fModuleNames= moduleNames;
 	}
 
-	private List<String> defaultIncludedModuleNames() {
+	private List<String> defaultIncludedModuleNamesForUnnamedModule() {
 		if (fJavaElements != null) {
 			List<IPackageFragmentRoot> roots= new ArrayList<>();
 			for (int i= 0; i < fJavaElements.length; i++) {
@@ -782,7 +784,7 @@ public class ModuleDialog extends StatusDialog {
 					roots.add((IPackageFragmentRoot) fJavaElements[i]);
 				}
 			}
-			return JavaModelAccess.defaultRootModules(roots);
+			return JavaCore.defaultRootModules(roots);
 		}
 		return Collections.emptyList();
 	}
@@ -791,7 +793,7 @@ public class ModuleDialog extends StatusDialog {
 		String moduleName= module.getElementName();
 		if (moduleNames.add(moduleName)) {
 			try {
-				for (String required : JavaModelAccess.getRequiredModules(module)) {
+				for (String required : module.getRequiredModuleNames()) {
 					List<String> requiredModules= fModule2RequiredModules.get(moduleName);
 					if (requiredModules == null) {
 						requiredModules= new ArrayList<>();
@@ -864,6 +866,16 @@ public class ModuleDialog extends StatusDialog {
 			JavaPlugin.log(e);
 		}
 		return module != null ? module.getElementName() : JavaModelUtil.ALL_UNNAMED;
+	}
+	
+	private boolean isUnnamedModule() {
+		IModuleDescription module= null;
+		try {
+			module= fCurrCPElement.getJavaProject().getModuleDescription();
+		} catch (JavaModelException e) {
+			JavaPlugin.log(e);
+		}
+		return module == null;		
 	}
 
 	// -------- TypeRestrictionAdapter --------
@@ -985,12 +997,17 @@ public class ModuleDialog extends StatusDialog {
 		if (fModuleLists[IDX_AVAILABLE].fNames.isEmpty() && fModuleLists[IDX_IMPLICITLY_INCLUDED].fNames.isEmpty()) {
 			return false; // all modules are "included" - this includes the single-module case.
 		}
-		Set<String> initialNames = new HashSet<>(defaultIncludedModuleNames());
-		for (String name : fModuleLists[IDX_INCLUDED].fNames) {
-			if (!initialNames.remove(name))
-				return true;
+		if (isUnnamedModule()) {
+			// for an unnamed module we need to compare current selection state against defaults per JEP 261:
+			Set<String> initialNames = new HashSet<>(defaultIncludedModuleNamesForUnnamedModule());
+			for (String name : fModuleLists[IDX_INCLUDED].fNames) {
+				if (!initialNames.remove(name))
+					return true;
+			}
+			return !initialNames.isEmpty();
+		} else {
+			return true;
 		}
-		return !initialNames.isEmpty();
 	}
 
 	/*
@@ -999,12 +1016,7 @@ public class ModuleDialog extends StatusDialog {
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		String helpContextId;
-		if (fCurrCPElement.getEntryKind() == IClasspathEntry.CPE_PROJECT)
-			helpContextId= IJavaHelpContextIds.ACCESS_RULES_DIALOG_COMBINE_RULES; // FIXME
-		else
-			helpContextId= IJavaHelpContextIds.ACCESS_RULES_DIALOG; // FIXME
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(newShell, helpContextId);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(newShell, IJavaHelpContextIds.MODULE_DIALOG);
 	}
 
 	public static StatusInfo newSilentError() {

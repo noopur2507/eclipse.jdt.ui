@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -223,7 +226,7 @@ public class PropertyFileDocumentModel {
     }
 
 	public static String escape(String s, boolean escapeCommentCharsAndLeadingWhitespaces) {
-		StringBuffer sb= new StringBuffer(s.length());
+		StringBuilder sb= new StringBuilder(s.length());
 		int length= s.length();
 		for (int i= 0; i < length; i++){
 			char c= s.charAt(i);
@@ -235,7 +238,7 @@ public class PropertyFileDocumentModel {
 	}
 
 	private static String escapeCommentChars(String string) {
-	    StringBuffer sb = new StringBuffer(string.length() + 5);
+		StringBuilder sb = new StringBuilder(string.length() + 5);
 	    for (int i = 0; i < string.length(); i++) {
 	      char c = string.charAt(i);
 	      switch (c) {
@@ -254,7 +257,7 @@ public class PropertyFileDocumentModel {
 
 	private static String escapeLeadingWhiteSpaces(String str) {
 		int firstNonWhiteSpace= findFirstNonWhiteSpace(str);
-		StringBuffer buf= new StringBuffer(firstNonWhiteSpace);
+		StringBuilder buf= new StringBuilder(firstNonWhiteSpace);
 		for (int i = 0; i < firstNonWhiteSpace; i++) {
 			buf.append('\\');
 		    buf.append(str.charAt(i));

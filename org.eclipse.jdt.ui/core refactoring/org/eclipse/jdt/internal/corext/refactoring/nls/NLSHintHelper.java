@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -61,11 +64,10 @@ import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
@@ -200,13 +202,13 @@ public class NLSHintHelper {
 		if (!(je instanceof IType))
 			return null;
 		ITypeRoot typeRoot= ((IType) je).getTypeRoot();
-		CompilationUnit astRoot= SharedASTProvider.getAST(typeRoot, SharedASTProvider.WAIT_YES, null);
+		CompilationUnit astRoot= SharedASTProviderCore.getAST(typeRoot, SharedASTProviderCore.WAIT_YES, null);
 
 		return getResourceBundleName(astRoot);
 	}
 
 	public static String getResourceBundleName(ITypeRoot input) {
-		return getResourceBundleName(SharedASTProvider.getAST(input, SharedASTProvider.WAIT_YES, null));
+		return getResourceBundleName(SharedASTProviderCore.getAST(input, SharedASTProviderCore.WAIT_YES, null));
 	}
 
 	public static String getResourceBundleName(CompilationUnit astRoot) {

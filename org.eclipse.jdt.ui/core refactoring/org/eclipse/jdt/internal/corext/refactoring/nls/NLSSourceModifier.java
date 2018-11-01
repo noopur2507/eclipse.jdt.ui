@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -35,11 +38,10 @@ import org.eclipse.jdt.core.compiler.InvalidInputException;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.refactoring.changes.TextChangeCompatibility;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
-
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public class NLSSourceModifier {
@@ -165,7 +167,7 @@ public class NLSSourceModifier {
 				int lineStart= getLineStart(cu.getBuffer(), position.getOffset());
 				int lineEnd= getLineEnd(cu.getBuffer(), position.getOffset());
 				String cuLine= cu.getBuffer().getText(lineStart, lineEnd - lineStart);
-				StringBuffer buf= new StringBuffer(cuLine);
+				StringBuilder buf= new StringBuilder(cuLine);
 				buf.replace(region.getOffset() - lineStart, region.getOffset() + region.getLength() - lineStart, replaceString);
 				try {
 					NLSLine[] allLines= NLSScanner.scan(buf.toString());
@@ -230,7 +232,7 @@ public class NLSSourceModifier {
 
 	// TODO: not dry
 	private String unwindEscapeChars(String s) {
-		StringBuffer sb= new StringBuffer(s.length());
+		StringBuilder sb= new StringBuilder(s.length());
 		int length= s.length();
 		for (int i= 0; i < length; i++) {
 			char c= s.charAt(i);
@@ -320,7 +322,7 @@ public class NLSSourceModifier {
 	}
 
 	private String createResourceGetter(String key, String accessorName) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append(accessorName);
 		buf.append('.');
 

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -12,10 +15,14 @@ package org.eclipse.jdt.internal.ui.text.correction;
 
 import java.util.HashSet;
 
+import org.eclipse.core.runtime.IPath;
+
 import org.eclipse.jdt.core.CompletionProposal;
 import org.eclipse.jdt.core.CompletionRequestor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
@@ -24,6 +31,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.manipulation.TypeKinds;
 
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -31,23 +39,36 @@ import org.eclipse.jdt.internal.corext.util.TypeFilter;
 
 public class SimilarElementsRequestor extends CompletionRequestor {
 
-	public static final int CLASSES= 1 << 1;
-	public static final int INTERFACES= 1 << 2;
-	public static final int ANNOTATIONS= 1 << 3;
-	public static final int ENUMS= 1 << 4;
-	public static final int VARIABLES= 1 << 5;
-	public static final int PRIMITIVETYPES= 1 << 6;
-	public static final int VOIDTYPE= 1 << 7;
-	public static final int REF_TYPES= CLASSES | INTERFACES | ENUMS | ANNOTATIONS;
-	public static final int REF_TYPES_AND_VAR= REF_TYPES | VARIABLES;
-	public static final int ALL_TYPES= PRIMITIVETYPES | REF_TYPES_AND_VAR;
-
 	private static final String[] PRIM_TYPES= { "boolean", "byte", "char", "short", "int", "long", "float", "double" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$
 
 	private int fKind;
 	private String fName;
 
 	private HashSet<SimilarElement> fResult;
+	private boolean fExcludeTestCode;
+
+	private static boolean isTestSource(ICompilationUnit cu) {
+		try {
+			IJavaProject javaProject= cu.getJavaProject();
+			if(javaProject==null) {
+				return false;
+			}
+			IClasspathEntry[] resolvedClasspath= javaProject.getResolvedClasspath(true);
+			final IPath resourcePath= cu.getResource().getFullPath();
+			for (IClasspathEntry e : resolvedClasspath) {
+				if (e.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+					if (e.isTest()) {
+						if (e.getPath().isPrefixOf(resourcePath)) {
+							return true;
+						}
+					}
+				}
+			}
+		} catch (JavaModelException e) {
+			return false;
+		}
+		return false;
+	}
 
 	public static SimilarElement[] findSimilarElement(ICompilationUnit cu, Name name, int kind) throws JavaModelException {
 		int pos= name.getStartPosition();
@@ -69,7 +90,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 				cu= preparedCU;
 			}
 
-			SimilarElementsRequestor requestor= new SimilarElementsRequestor(identifier, kind, nArguments, returnType);
+			SimilarElementsRequestor requestor= new SimilarElementsRequestor(identifier, kind, nArguments, returnType, !isTestSource(cu));
 			requestor.setIgnored(CompletionProposal.ANONYMOUS_CLASS_DECLARATION, true);
 			requestor.setIgnored(CompletionProposal.ANONYMOUS_CLASS_CONSTRUCTOR_INVOCATION, true);
 			requestor.setIgnored(CompletionProposal.KEYWORD, true);
@@ -77,6 +98,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 			requestor.setIgnored(CompletionProposal.METHOD_DECLARATION, true);
 			requestor.setIgnored(CompletionProposal.PACKAGE_REF, true);
 			requestor.setIgnored(CompletionProposal.MODULE_REF, true);
+			requestor.setIgnored(CompletionProposal.MODULE_DECLARATION, true);
 			requestor.setIgnored(CompletionProposal.VARIABLE_DECLARATION, true);
 			requestor.setIgnored(CompletionProposal.METHOD_REF, true);
 			requestor.setIgnored(CompletionProposal.CONSTRUCTOR_INVOCATION, true);
@@ -125,11 +147,13 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 	 * @param kind the type kind
 	 * @param nArguments the number of arguments
 	 * @param preferredType the preferred type
+	 * @param excludeTestCode if true, exclude results in test code
 	 */
-	private SimilarElementsRequestor(String name, int kind, int nArguments, String preferredType) {
+	private SimilarElementsRequestor(String name, int kind, int nArguments, String preferredType, boolean excludeTestCode) {
 		super();
 		fName= name;
 		fKind= kind;
+		fExcludeTestCode= excludeTestCode;
 
 		fResult= new HashSet<>();
 		// nArguments and preferredType not yet used
@@ -157,35 +181,35 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 	 * Method addPrimitiveTypes.
 	 */
 	private void processKeywords() {
-		if (isKind(PRIMITIVETYPES)) {
+		if (isKind(TypeKinds.PRIMITIVETYPES)) {
 			for (int i= 0; i < PRIM_TYPES.length; i++) {
 				if (NameMatcher.isSimilarName(fName, PRIM_TYPES[i])) {
-					addResult(new SimilarElement(PRIMITIVETYPES, PRIM_TYPES[i], 50));
+					addResult(new SimilarElement(TypeKinds.PRIMITIVETYPES, PRIM_TYPES[i], 50));
 				}
 			}
 		}
-		if (isKind(VOIDTYPE)) {
+		if (isKind(TypeKinds.VOIDTYPE)) {
 			String voidType= "void"; //$NON-NLS-1$
 			if (NameMatcher.isSimilarName(fName, voidType)) {
-				addResult(new SimilarElement(PRIMITIVETYPES, voidType, 50));
+				addResult(new SimilarElement(TypeKinds.PRIMITIVETYPES, voidType, 50));
 			}
 		}
 	}
 
 	private static final int getKind(int flags, char[] typeNameSig) {
 		if (Signature.getTypeSignatureKind(typeNameSig) == Signature.TYPE_VARIABLE_SIGNATURE) {
-			return VARIABLES;
+			return TypeKinds.VARIABLES;
 		}
 		if (Flags.isAnnotation(flags)) {
-			return ANNOTATIONS;
+			return TypeKinds.ANNOTATIONS;
 		}
 		if (Flags.isInterface(flags)) {
-			return INTERFACES;
+			return TypeKinds.INTERFACES;
 		}
 		if (Flags.isEnum(flags)) {
-			return ENUMS;
+			return TypeKinds.ENUMS;
 		}
-		return CLASSES;
+		return TypeKinds.CLASSES;
 	}
 
 
@@ -213,7 +237,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 	
 	
 	public static String[] getStaticImportFavorites(ICompilationUnit cu, final String elementName, boolean isMethod, String[] favorites) throws JavaModelException {
-		StringBuffer dummyCU= new StringBuffer();
+		StringBuilder dummyCU= new StringBuilder();
 		String packName= cu.getParent().getElementName();
 		IType type= cu.findPrimaryType();
 		if (type == null)
@@ -267,5 +291,8 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 		}
 	}
 
-	
+	@Override
+	public boolean isTestCodeExcluded() {
+		return fExcludeTestCode;
+	}
 }

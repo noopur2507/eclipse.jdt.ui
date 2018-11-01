@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -246,8 +249,8 @@ public class JavadocConfigurationBlock {
 			LayoutUtil.setHorizontalIndent(fArchiveField.getLabelControl(null));
 			LayoutUtil.setHorizontalIndent(fArchivePathField.getLabelControl(null));
 			LayoutUtil.setHorizontalIndent(fURLField.getLabelControl(null));
-
 			fURLRadioButton.attachDialogFields(new DialogField[] {fURLField,  fBrowseFolder, fValidateURLButton });
+			fValidateURLButton.setEnabled(!(fURLField.getText() == null || fURLField.getText().isEmpty()));
 			fArchiveRadioButton.attachDialogFields(new DialogField[] {fArchiveField,  fBrowseArchive, fExternalRadio, fWorkspaceRadio, fArchivePathField, fBrowseArchivePath, fValidateArchiveButton });
 		}
 
@@ -454,6 +457,9 @@ public class JavadocConfigurationBlock {
 		if (field == fURLField) {
 			fURLStatus= updateURLStatus();
 			statusChanged();
+			if (fValidateURLButton != null) {
+				fValidateURLButton.setEnabled(!(fURLField.getText() == null || fURLField.getText().isEmpty()));
+			}
 		} else if (field == fArchiveField) {
 			fArchiveStatus= updateArchiveStatus();
 			statusChanged();
@@ -518,7 +524,7 @@ public class JavadocConfigurationBlock {
 	}
 
 	private String encodeExclamationMarks(String str) {
-		StringBuffer buf= new StringBuffer(str.length());
+		StringBuilder buf= new StringBuilder(str.length());
 		for (int i= 0; i < str.length(); i++) {
 			char ch= str.charAt(i);
 			if (ch == '!') {
@@ -595,7 +601,7 @@ public class JavadocConfigurationBlock {
 			currPath= currPath.removeLastSegments(1);
 		}
 
-		FileDialog dialog= new FileDialog(fShell, SWT.OPEN);
+		FileDialog dialog= new FileDialog(fShell, SWT.OPEN | SWT.SHEET);
 		dialog.setFilterExtensions(ArchiveFileFilter.JAR_ZIP_FILTER_EXTENSIONS);
 		dialog.setText(PreferencesMessages.JavadocConfigurationBlock_zipImportSource_title);
 		dialog.setFilterPath(currPath.toOSString());
@@ -648,7 +654,7 @@ public class JavadocConfigurationBlock {
 		if (fURLResult != null && "file".equals(fURLResult.getProtocol())) { //$NON-NLS-1$
 			initPath= JavaDocLocations.toFile(fURLResult).getPath();
 		}
-		DirectoryDialog dialog= new DirectoryDialog(fShell);
+		DirectoryDialog dialog= new DirectoryDialog(fShell, SWT.SHEET);
 		dialog.setText(PreferencesMessages.JavadocConfigurationBlock_javadocFolderDialog_label);
 		dialog.setMessage(PreferencesMessages.JavadocConfigurationBlock_javadocFolderDialog_message);
 		dialog.setFilterPath(initPath);

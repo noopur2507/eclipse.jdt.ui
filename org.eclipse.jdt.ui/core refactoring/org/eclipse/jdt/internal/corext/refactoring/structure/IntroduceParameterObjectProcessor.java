@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -78,7 +81,6 @@ import org.eclipse.jdt.core.refactoring.participants.IRefactoringProcessorIds;
 
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.TypeBindingVisitor;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
@@ -90,6 +92,7 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
@@ -358,13 +361,13 @@ public class IntroduceParameterObjectProcessor extends ChangeSignatureProcessor 
 		Map<Integer, ParameterInfo> paramIndex= new HashMap<>();
 		for (Iterator<ParameterInfo> iter= pis.iterator(); iter.hasNext();) {
 			ParameterInfo pi= iter.next();
-			paramIndex.put(new Integer(pi.getOldIndex()), pi);
+			paramIndex.put(Integer.valueOf(pi.getOldIndex()), pi);
 		}
-		paramIndex.put(new Integer(ParameterInfo.INDEX_FOR_ADDED), fParameterObjectReference);
+		paramIndex.put(Integer.valueOf(ParameterInfo.INDEX_FOR_ADDED), fParameterObjectReference);
 		pis.clear();
 		for (int i= 0; i < parameters.length; i++) {
 			Parameter param= parameters[i];
-			ParameterInfo pi= paramIndex.get(new Integer(param.getIndex()));
+			ParameterInfo pi= paramIndex.get(Integer.valueOf(param.getIndex()));
 			pis.add(pi);
 			if (param != IntroduceParameterObjectDescriptor.PARAMETER_OBJECT) {
 				pi.setCreateField(param.isCreateField());
@@ -420,7 +423,7 @@ public class IntroduceParameterObjectProcessor extends ChangeSignatureProcessor 
 		if (selectedNode == null) {
 			return mappingErrorFound(status, selectedNode);
 		}
-		fMethodDeclaration= (MethodDeclaration) ASTNodes.getParent(selectedNode, MethodDeclaration.class);
+		fMethodDeclaration= ASTNodes.getParent(selectedNode, MethodDeclaration.class);
 		if (fMethodDeclaration == null) {
 			return mappingErrorFound(status, selectedNode);
 		}

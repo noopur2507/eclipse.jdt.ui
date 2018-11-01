@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -440,14 +443,7 @@ public class TestViewer {
 		int index= testName.indexOf('(');
 		// test factory method
 		if (index > 0) {
-			if (children.length > 0 && children[0] instanceof TestCaseElement) {
-				// has dynamic test case as child
-				TestCaseElement testCase= (TestCaseElement) children[0];
-				return new OpenTestAction(fTestRunnerPart, testCase, testCase.getParameterTypes());
-			} else {
-				// has no child
-				return new OpenTestAction(fTestRunnerPart, testSuite.getSuiteTypeName(), testName.substring(0, index), testSuite.getParameterTypes(), true);
-			}
+			return new OpenTestAction(fTestRunnerPart, testSuite.getSuiteTypeName(), testName.substring(0, index), testSuite.getParameterTypes(), true);
 		}
 
 		// regular test class

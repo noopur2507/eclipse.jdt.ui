@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -424,8 +427,8 @@ class JavaEditorHoverConfigurationBlock implements IPreferenceConfigurationBlock
 
 	@Override
 	public void performOk() {
-		StringBuffer buf= new StringBuffer();
-		StringBuffer maskBuf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
+		StringBuilder maskBuf= new StringBuilder();
 		for (int i= 0; i < fHoverConfigs.length; i++) {
 			buf.append(getContributedHovers()[i].getId());
 			buf.append(JavaEditorTextHoverDescriptor.VALUE_SEPARATOR);
@@ -556,7 +559,7 @@ class JavaEditorHoverConfigurationBlock implements IPreferenceConfigurationBlock
 		while (fStatus.isOK() && i < fHoverConfigs.length) {
 			if (fHoverConfigs[i].fIsEnabled) {
 				String label= getContributedHovers()[i].getLabel();
-				Integer stateMask= new Integer(fHoverConfigs[i].fStateMask);
+				Integer stateMask= Integer.valueOf(fHoverConfigs[i].fStateMask);
 				if (fHoverConfigs[i].fStateMask == -1)
 					fStatus= new StatusInfo(IStatus.ERROR, Messages.format(PreferencesMessages.JavaEditorHoverConfigurationBlock_modifierIsNotValidForHover, new String[] {fHoverConfigs[i].fModifierString, label}));
 				else if (stateMasks.containsKey(stateMask))

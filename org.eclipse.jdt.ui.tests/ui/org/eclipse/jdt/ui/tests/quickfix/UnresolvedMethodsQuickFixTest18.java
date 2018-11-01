@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2014, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -15,6 +18,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
+import org.eclipse.jdt.testplugin.NullTestUtils;
 import org.eclipse.jdt.testplugin.TestOptions;
 
 import org.eclipse.core.runtime.Path;
@@ -30,8 +34,8 @@ import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
@@ -602,6 +606,54 @@ public class UnresolvedMethodsQuickFixTest18 extends QuickFixTest {
 		buf.append("	}\n");
 		buf.append("}");
 		assertProposalPreviewEquals(buf.toString(), "Create method 'g(Number, Number)' in type 'I2'", proposals2);		
+	}
+	public void testBug528876() throws Exception {
+		NullTestUtils.prepareNullTypeAnnotations(fSourceFolder);
+		try {
+			IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
+			StringBuffer buf= new StringBuffer();
+			buf.append("package pack;\n");
+			buf.append("import annots.*;\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("@interface Annot {\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("@Annot(x = Bla.VALUE)\n");
+			buf.append("public class Bla {\n");
+			buf.append("    public static final String VALUE = \"\";\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("");
+			ICompilationUnit cu= pack1.createCompilationUnit("Bla.java", buf.toString(), false, null);
+		
+			CompilationUnit astRoot= getASTRoot(cu);
+			ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot);
+		
+			assertCorrectLabels(proposals);
+			assertNumberOfProposals(proposals, 1);
+		
+			buf= new StringBuffer();
+			buf.append("package pack;\n");
+			buf.append("import annots.*;\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("@interface Annot {\n");
+			buf.append("\n");
+			buf.append("    String x();\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("@Annot(x = Bla.VALUE)\n");
+			buf.append("public class Bla {\n");
+			buf.append("    public static final String VALUE = \"\";\n");
+			buf.append("}\n");
+			buf.append("\n");
+			buf.append("");
+		
+			assertProposalPreviewEquals(buf.toString(), "Create attribute 'x()'", proposals);
+		} finally {
+			NullTestUtils.disableAnnotationBasedNullAnalysis(fSourceFolder);
+		}
 	}
 
 }

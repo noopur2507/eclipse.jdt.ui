@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Karsten Thoms (itemis) - Bug#223318
  *******************************************************************************/
 package org.eclipse.jdt.ui;
 
@@ -41,6 +45,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 
+import org.eclipse.jdt.internal.core.manipulation.MembersOrderPreferenceCacheCommon;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 
@@ -51,7 +56,7 @@ import org.eclipse.jdt.internal.ui.preferences.MembersOrderPreferenceCache;
 
 /**
  * Viewer comparator for Java elements. Ordered by element category, then by element name.
- * Package fragment roots are sorted as ordered on the classpath.
+ * Package fragment roots are either sorted as ordered on the classpath, or by their name.
  *
  * <p>
  * This class may be instantiated; it is not intended to be subclassed.
@@ -84,16 +89,30 @@ public class JavaElementComparator extends ViewerComparator {
 	private static final int JAVAELEMENTS= 50;
 	private static final int OTHERS= 51;
 
-	private MembersOrderPreferenceCache fMemberOrderCache;
+	private final MembersOrderPreferenceCache fMemberOrderCache;
+	private final boolean fSortPFRByName;
 
 	/**
 	 * Constructor.
 	 */
 	public JavaElementComparator() {
+		this(false);
+	}
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param sortPFRByName When <code>true</code> {@link IPackageFragmentRoot}s are sorted by name and not by their classpath order
+	 * 
+	 * @since 3.14
+	 */
+	public JavaElementComparator(boolean sortPFRByName) {
 		super(null); // delay initialization of collator
 		fMemberOrderCache= JavaPlugin.getDefault().getMemberOrderPreferenceCache();
+		fSortPFRByName = sortPFRByName;
 	}
 
+		
 	@Override
 	public int category(Object element) {
 		if (element instanceof IJavaElement) {
@@ -105,35 +124,35 @@ public class JavaElementComparator extends ViewerComparator {
 						{
 							IMethod method= (IMethod) je;
 							if (method.isConstructor()) {
-								return getMemberCategory(MembersOrderPreferenceCache.CONSTRUCTORS_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.CONSTRUCTORS_INDEX);
 							}
 							int flags= method.getFlags();
 							if (Flags.isStatic(flags))
-								return getMemberCategory(MembersOrderPreferenceCache.STATIC_METHODS_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.STATIC_METHODS_INDEX);
 							else
-								return getMemberCategory(MembersOrderPreferenceCache.METHOD_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.METHOD_INDEX);
 						}
 					case IJavaElement.FIELD :
 						{
 							int flags= ((IField) je).getFlags();
 							if (Flags.isEnum(flags)) {
-								return getMemberCategory(MembersOrderPreferenceCache.ENUM_CONSTANTS_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.ENUM_CONSTANTS_INDEX);
 							}
 							if (Flags.isStatic(flags))
-								return getMemberCategory(MembersOrderPreferenceCache.STATIC_FIELDS_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.STATIC_FIELDS_INDEX);
 							else
-								return getMemberCategory(MembersOrderPreferenceCache.FIELDS_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.FIELDS_INDEX);
 						}
 					case IJavaElement.INITIALIZER :
 						{
 							int flags= ((IInitializer) je).getFlags();
 							if (Flags.isStatic(flags))
-								return getMemberCategory(MembersOrderPreferenceCache.STATIC_INIT_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.STATIC_INIT_INDEX);
 							else
-								return getMemberCategory(MembersOrderPreferenceCache.INIT_INDEX);
+								return getMemberCategory(MembersOrderPreferenceCacheCommon.INIT_INDEX);
 						}
 					case IJavaElement.TYPE :
-						return getMemberCategory(MembersOrderPreferenceCache.TYPE_INDEX);
+						return getMemberCategory(MembersOrderPreferenceCacheCommon.TYPE_INDEX);
 					case IJavaElement.PACKAGE_DECLARATION :
 						return PACKAGE_DECL;
 					case IJavaElement.IMPORT_CONTAINER :
@@ -184,7 +203,7 @@ public class JavaElementComparator extends ViewerComparator {
 		int cat1= category(e1);
 		int cat2= category(e2);
 
-		if (needsClasspathComparision(e1, cat1, e2, cat2)) {
+		if (needsClasspathComparison(e1, cat1, e2, cat2)) {
 			IPackageFragmentRoot root1= getPackageFragmentRoot(e1);
 			IPackageFragmentRoot root2= getPackageFragmentRoot(e2);
 			if (root1 == null) {
@@ -323,7 +342,7 @@ public class JavaElementComparator extends ViewerComparator {
 		return Integer.MAX_VALUE;
 	}
 
-	private boolean needsClasspathComparision(Object e1, int cat1, Object e2, int cat2) {
+	private boolean needsClasspathComparison(Object e1, int cat1, Object e2, int cat2) {
 		if ((cat1 == PACKAGEFRAGMENTROOTS && cat2 == PACKAGEFRAGMENTROOTS) ||
 			(cat1 == PACKAGEFRAGMENT &&
 				((IPackageFragment)e1).getParent().getResource() instanceof IProject &&
@@ -331,6 +350,21 @@ public class JavaElementComparator extends ViewerComparator {
 			(cat1 == PACKAGEFRAGMENTROOTS &&
 				cat2 == PACKAGEFRAGMENT &&
 				((IPackageFragment)e2).getParent().getResource() instanceof IProject)) {
+			// when PFRs should be sorted by name, they do not need classpath comparison
+			if (fSortPFRByName && cat1 == PACKAGEFRAGMENTROOTS && cat2 == PACKAGEFRAGMENTROOTS) {
+				boolean areBinPFRs = false;
+				try {
+					// categories might be PACKAGEFRAGMENTROOTS, but not necessarily compared objects are PFR instances
+					if ((e1 instanceof IPackageFragmentRoot) && (e2 instanceof IPackageFragmentRoot)) {
+						// continue sorting source roots by classpath order
+						areBinPFRs = ((IPackageFragmentRoot)e1).getKind() == IPackageFragmentRoot.K_BINARY
+								&& ((IPackageFragmentRoot)e2).getKind() == IPackageFragmentRoot.K_BINARY;
+					}
+				} catch (JavaModelException e) {
+					// areJarPFRs remains false
+				}
+				return !areBinPFRs;
+			}
 			IJavaProject p1= getJavaProject(e1);
 			return p1 != null && p1.equals(getJavaProject(e2));
 		}

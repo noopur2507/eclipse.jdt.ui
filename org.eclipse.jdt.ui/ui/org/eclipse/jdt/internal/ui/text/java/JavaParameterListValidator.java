@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -305,13 +308,13 @@ public class JavaParameterListValidator implements IContextInformationValidator,
 	    int pos= 0;
 	    int angleLevel= 0;
 		List<Integer> positions= new ArrayList<>();
-		positions.add(new Integer(-1));
+		positions.add(Integer.valueOf(-1));
 		while (pos < length && pos != -1) {
 			char ch= code.charAt(pos);
 			switch (ch) {
 	            case ',':
 	            	if (angleLevel == 0)
-	            		positions.add(new Integer(pos));
+	            		positions.add(Integer.valueOf(pos));
 		            break;
 	            case '<':
 	            	angleLevel++;
@@ -328,7 +331,7 @@ public class JavaParameterListValidator implements IContextInformationValidator,
 			if (pos != -1)
 				pos++;
 		}
-		positions.add(new Integer(length));
+		positions.add(Integer.valueOf(length));
 
 		int[] fields= new int[positions.size()];
 		for (int i= 0; i < fields.length; i++)

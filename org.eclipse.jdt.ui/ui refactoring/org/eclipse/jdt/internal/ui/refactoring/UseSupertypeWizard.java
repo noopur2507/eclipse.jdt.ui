@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -240,7 +243,7 @@ public class UseSupertypeWizard extends RefactoringWizard{
 				@Override
 				public void selectionChanged(SelectionChangedEvent event) {
 					IStructuredSelection ss= (IStructuredSelection)event.getSelection();
-					if (new Integer(0).equals(fFileCount.get(ss.getFirstElement()))){
+					if (Integer.valueOf(0).equals(fFileCount.get(ss.getFirstElement()))){
 						setMessage(RefactoringMessages.UseSupertypeInputPage_No_updates, IMessageProvider.INFORMATION);
 						setPageComplete(false);
 					} else {
@@ -272,7 +275,7 @@ public class UseSupertypeWizard extends RefactoringWizard{
 		private void updateUpdateLabels() {
 			IType selectedType= getSelectedSupertype();
 			final int count= getUseSupertypeProcessor().getChanges();
-			fFileCount.put(selectedType, new Integer(count));
+			fFileCount.put(selectedType, Integer.valueOf(count));
 			if (count == 0) {
 				setMessage(RefactoringMessages.UseSupertypeInputPage_No_updates, IMessageProvider.INFORMATION);
 				setPageComplete(false);

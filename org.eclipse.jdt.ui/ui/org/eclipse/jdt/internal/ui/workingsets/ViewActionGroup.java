@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -38,8 +41,8 @@ public class ViewActionGroup extends ActionGroup {
 
 	public static final String MODE_CHANGED= ViewActionGroup.class.getName() + ".mode_changed"; //$NON-NLS-1$
 
-	private static final Integer INT_SHOW_PROJECTS= new Integer(SHOW_PROJECTS);
-	private static final Integer INT_SHOW_WORKING_SETS= new Integer(SHOW_WORKING_SETS);
+	private static final Integer INT_SHOW_PROJECTS= Integer.valueOf(SHOW_PROJECTS);
+	private static final Integer INT_SHOW_WORKING_SETS= Integer.valueOf(SHOW_WORKING_SETS);
 
 	private IPropertyChangeListener fChangeListener;
 

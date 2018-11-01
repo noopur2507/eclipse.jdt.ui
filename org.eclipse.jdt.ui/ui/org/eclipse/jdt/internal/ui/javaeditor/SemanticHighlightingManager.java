@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Red Hat Inc. - use HighlightedPositionCore
  *******************************************************************************/
 
 package org.eclipse.jdt.internal.ui.javaeditor;
@@ -25,7 +29,6 @@ import org.eclipse.jface.resource.StringConverter;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 
-import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextAttribute;
 
@@ -94,13 +97,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 	/**
 	 * Highlighted Positions.
 	 */
-	static class HighlightedPosition extends Position {
-
-		/** Highlighting of the position */
-		private Highlighting fStyle;
-
-		/** Lock object */
-		private Object fLock;
+	static class HighlightedPosition extends HighlightedPositionCore {
 
 		/**
 		 * Initialize the styled positions with the given offset, length and foreground color.
@@ -111,9 +108,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 * @param lock The lock object
 		 */
 		public HighlightedPosition(int offset, int length, Highlighting highlighting, Object lock) {
-			super(offset, length);
-			fStyle= highlighting;
-			fLock= lock;
+			super(offset, length, highlighting, lock);
 		}
 
 		/**
@@ -121,10 +116,10 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 */
 		public StyleRange createStyleRange() {
 			int len= 0;
-			if (fStyle.isEnabled())
+			if (getHighlighting().isEnabled())
 				len= getLength();
 
-			TextAttribute textAttribute= fStyle.getTextAttribute();
+			TextAttribute textAttribute= getHighlighting().getTextAttribute();
 			int style= textAttribute.getStyle();
 			int fontStyle= style & (SWT.ITALIC | SWT.BOLD | SWT.NORMAL);
 			StyleRange styleRange= new StyleRange(getOffset(), len, textAttribute.getForeground(), textAttribute.getBackground(), fontStyle);
@@ -143,9 +138,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 * @return <code>true</code> iff the given offset, length and highlighting are equal to the internal ones.
 		 */
 		public boolean isEqual(int off, int len, Highlighting highlighting) {
-			synchronized (fLock) {
-				return !isDeleted() && getOffset() == off && getLength() == len && fStyle == highlighting;
-			}
+			return super.isEqual(off, len, highlighting);
 		}
 
 		/**
@@ -155,17 +148,14 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 * @param len The range length
 		 * @return <code>true</code> iff this position is not delete and contained in the given range.
 		 */
+		@Override
 		public boolean isContained(int off, int len) {
-			synchronized (fLock) {
-				return !isDeleted() && off <= getOffset() && off + len >= getOffset() + getLength();
-			}
+			return super.isContained(off, len);
 		}
 
+		@Override
 		public void update(int off, int len) {
-			synchronized (fLock) {
-				super.setOffset(off);
-				super.setLength(len);
-			}
+			super.update(off, len);
 		}
 
 		/*
@@ -173,9 +163,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 */
 		@Override
 		public void setLength(int length) {
-			synchronized (fLock) {
-				super.setLength(length);
-			}
+			super.setLength(length);
 		}
 
 		/*
@@ -183,9 +171,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 */
 		@Override
 		public void setOffset(int offset) {
-			synchronized (fLock) {
-				super.setOffset(offset);
-			}
+			super.setOffset(offset);
 		}
 
 		/*
@@ -193,9 +179,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 */
 		@Override
 		public void delete() {
-			synchronized (fLock) {
-				super.delete();
-			}
+			super.delete();
 		}
 
 		/*
@@ -203,16 +187,15 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 		 */
 		@Override
 		public void undelete() {
-			synchronized (fLock) {
-				super.undelete();
-			}
+			super.undelete();
 		}
 
 		/**
 		 * @return Returns the highlighting.
 		 */
+		@Override
 		public Highlighting getHighlighting() {
-			return fStyle;
+			return (Highlighting)super.getHighlighting();
 		}
 	}
 

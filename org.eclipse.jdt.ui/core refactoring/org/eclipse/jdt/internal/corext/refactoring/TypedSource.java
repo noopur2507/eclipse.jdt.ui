@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -101,7 +104,8 @@ public class TypedSource {
 				|| 	type == IJavaElement.IMPORT_DECLARATION
 				|| 	type == IJavaElement.INITIALIZER
 				|| 	type == IJavaElement.METHOD
-				|| 	type == IJavaElement.PACKAGE_DECLARATION;
+				|| 	type == IJavaElement.PACKAGE_DECLARATION
+				|| 	type == IJavaElement.JAVA_MODULE;
 	}
 
 
@@ -168,7 +172,7 @@ public class TypedSource {
 				return getSourceOfDeclararationNode(field, tuple.unit);
 			VariableDeclarationFragment declarationFragment= ASTNodeSearchUtil.getFieldDeclarationFragmentNode(field, tuple.node);
 			IBuffer buffer= tuple.unit.getBuffer();
-			StringBuffer buff= new StringBuffer();
+			StringBuilder buff= new StringBuilder();
 			buff.append(buffer.getText(declaration.getStartPosition(), ((ASTNode) declaration.fragments().get(0)).getStartPosition() - declaration.getStartPosition()));
 			buff.append(buffer.getText(declarationFragment.getStartPosition(), declarationFragment.getLength()));
 			buff.append(";"); //$NON-NLS-1$

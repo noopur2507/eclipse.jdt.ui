@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -458,7 +461,7 @@ public final class BuildPathDialogAccess {
 
 		String lastUsedPath= initialEntry.removeLastSegments(1).toOSString();
 
-		FileDialog dialog= new FileDialog(shell, SWT.SINGLE);
+		FileDialog dialog= new FileDialog(shell, SWT.SINGLE | SWT.SHEET);
 		dialog.setText(NewWizardMessages.BuildPathDialogAccess_ExtJARArchiveDialog_edit_title);
 		dialog.setFilterExtensions(ArchiveFileFilter.JAR_ZIP_FILTER_EXTENSIONS);
 		dialog.setFilterPath(lastUsedPath);
@@ -487,7 +490,7 @@ public final class BuildPathDialogAccess {
 		if (lastUsedPath == null) {
 			lastUsedPath= ""; //$NON-NLS-1$
 		}
-		FileDialog dialog= new FileDialog(shell, SWT.MULTI);
+		FileDialog dialog= new FileDialog(shell, SWT.MULTI | SWT.SHEET);
 		dialog.setText(NewWizardMessages.BuildPathDialogAccess_ExtJARArchiveDialog_new_title);
 		dialog.setFilterExtensions(ArchiveFileFilter.ALL_ARCHIVES_FILTER_EXTENSIONS);
 		dialog.setFilterPath(lastUsedPath);
@@ -525,7 +528,7 @@ public final class BuildPathDialogAccess {
 		if (lastUsedPath == null) {
 			lastUsedPath= ""; //$NON-NLS-1$
 		}
-		DirectoryDialog dialog= new DirectoryDialog(shell, SWT.MULTI);
+		DirectoryDialog dialog= new DirectoryDialog(shell, SWT.MULTI | SWT.SHEET);
 		dialog.setText(NewWizardMessages.BuildPathDialogAccess_ExtClassFolderDialog_new_title);
 		dialog.setMessage(NewWizardMessages.BuildPathDialogAccess_ExtClassFolderDialog_new_description);
 		dialog.setFilterPath(lastUsedPath);
@@ -555,7 +558,7 @@ public final class BuildPathDialogAccess {
 	 * @since 3.4
 	 */
 	public static IPath configureExternalClassFolderEntries(Shell shell, IPath initialEntry) {
-		DirectoryDialog dialog= new DirectoryDialog(shell, SWT.SINGLE);
+		DirectoryDialog dialog= new DirectoryDialog(shell, SWT.SINGLE | SWT.SHEET);
 		dialog.setText(NewWizardMessages.BuildPathDialogAccess_ExtClassFolderDialog_edit_title);
 		dialog.setMessage(NewWizardMessages.BuildPathDialogAccess_ExtClassFolderDialog_edit_description);
 		dialog.setFilterPath(initialEntry.toString());

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -168,12 +171,12 @@ public class DialogsTest extends TestCase {
 
 	public void testElementListSelectionDialog2() throws Exception {
 		Object[] elements= new Integer[] {
-			new Integer(0),
-			new Integer(1),
-			new Integer(2),
-			new Integer(7),
-			new Integer(12),
-			new Integer(42)
+			Integer.valueOf(0),
+			Integer.valueOf(1),
+			Integer.valueOf(2),
+			Integer.valueOf(7),
+			Integer.valueOf(12),
+			Integer.valueOf(42)
 		};
 
 		ElementListSelectionDialog dialog= new ElementListSelectionDialog(getShell(), new TestLabelProvider());
@@ -182,13 +185,13 @@ public class DialogsTest extends TestCase {
 		dialog.setMessage("Message");
 		dialog.setEmptyListMessage("empty messgae");
 		dialog.setElements(elements);
-		dialog.setInitialSelections(new Object[] {new Integer(7)});
+		dialog.setInitialSelections(new Object[] {Integer.valueOf(7)});
 
 		DialogCheck.assertDialog(dialog);
 
 		Object[] results= dialog.getResult();
 		assertTrue(results.length == 1);
-		assertEquals(new Integer(7), results[0]);
+		assertEquals(Integer.valueOf(7), results[0]);
 	}
 
 }

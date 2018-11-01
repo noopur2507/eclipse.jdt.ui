@@ -1,18 +1,17 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -27,13 +26,17 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeHierarchyChangedListener;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 
 public class TypeHierarchyTest extends TestCase {
@@ -137,7 +140,7 @@ public class TypeHierarchyTest extends TestCase {
 			assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
 
 			part.doSave(null);
-			SharedASTProvider.getAST(cu2, SharedASTProvider.WAIT_YES, null);
+			SharedASTProviderCore.getAST(cu2, SharedASTProviderCore.WAIT_YES, null);
 			hierarchy.refresh(null);
 
 			allTypes= hierarchy.getAllTypes();
@@ -207,7 +210,7 @@ public class TypeHierarchyTest extends TestCase {
 			assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
 
 			part.doSave(null);
-			SharedASTProvider.getAST(cu2, SharedASTProvider.WAIT_YES, null);
+			SharedASTProviderCore.getAST(cu2, SharedASTProviderCore.WAIT_YES, null);
 			hierarchy.refresh(null);
 
 			allTypes= hierarchy.getAllTypes();

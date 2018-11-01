@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -76,6 +79,11 @@ public class ScopeAnalyzer {
 	public static final int TYPES= 4;
 
 	/**
+	 * Flag to specify that fields should not be reported.
+	 */
+	public static final int NO_FIELDS= 8;
+
+	/**
 	 * Flag to specify that only visible elements should be added.
 	 */
 	public static final int CHECK_VISIBILITY= 16;
@@ -107,7 +115,7 @@ public class ScopeAnalyzer {
 			if (binding == null)
 				return false;
 
-			String signature= getSignature(binding);
+			String signature= getSignature(binding, fFlags);
 			if (signature != null && fNamesAdded.add(signature)) { // avoid duplicated results from inheritance
 				fResult.add(binding);
 			}
@@ -119,6 +127,14 @@ public class ScopeAnalyzer {
 				for (int i= fResult.size() - 1; i >= 0; i--) {
 					IBinding binding= fResult.get(i);
 					if (!isVisible(binding, fParentTypeBinding)) {
+						fResult.remove(i);
+					}
+				}
+			}
+			if (hasFlag(NO_FIELDS, fFlags)) {
+				for (int i= fResult.size() - 1; i >= 0; i--) {
+					IBinding binding= fResult.get(i);
+					if (binding instanceof IVariableBinding && ((IVariableBinding) binding).isField()) {
 						fResult.remove(i);
 					}
 				}
@@ -141,7 +157,7 @@ public class ScopeAnalyzer {
 		fTypesVisited.clear();
 	}
 
-	private static String getSignature(IBinding binding) {
+	private static String getSignature(IBinding binding, int flags) {
 		if (binding != null) {
 			switch (binding.getKind()) {
 				case IBinding.METHOD:
@@ -159,6 +175,9 @@ public class ScopeAnalyzer {
 					buf.append(')');
 					return buf.toString();
 				case IBinding.VARIABLE:
+					if (hasFlag(NO_FIELDS, flags) && ((IVariableBinding) binding).isField()) {
+						return 'F' + binding.getName();
+					}
 					return 'V' + binding.getName();
 				case IBinding.TYPE:
 					return 'T' + binding.getName();
@@ -419,8 +438,8 @@ public class ScopeAnalyzer {
 				if (bindingDeclaration == fToSearch) {
 					fFound= true;
 				} else if (bindingDeclaration.getName().equals(fToSearch.getName())) {
-					String signature= getSignature(bindingDeclaration);
-					if (signature != null && signature.equals(getSignature(fToSearch))) {
+					String signature= getSignature(bindingDeclaration, fFlags);
+					if (signature != null && signature.equals(getSignature(fToSearch, fFlags))) {
 						if (checkVisibility) {
 							fIsVisible= false;
 						}

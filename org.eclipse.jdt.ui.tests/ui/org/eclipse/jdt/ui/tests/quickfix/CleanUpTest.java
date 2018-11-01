@@ -1,14 +1,18 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Alex Blewitt - https://bugs.eclipse.org/bugs/show_bug.cgi?id=168954
  *     Chris West (Faux) <eclipse@goeswhere.com> - [clean up] "Use modifier 'final' where possible" can introduce compile errors - https://bugs.eclipse.org/bugs/show_bug.cgi?id=272532
+ *     Red Hat Inc. - redundant semicolons test
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
@@ -9108,6 +9112,137 @@ public class CleanUpTest extends CleanUpTestCase {
 		String expected2= buf.toString();
 
 		assertRefactoringResultAsExpected(new ICompilationUnit[] { cu1, cu2 }, new String[] { expected1, expected2 });
+	}
+
+	public void testRemoveRedundantModifiers () throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
+		StringBuffer buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public interface IFoo {\n");
+		buf.append("  public static final int MAGIC_NUMBER = 646;\n");
+		buf.append("  public abstract int foo ();\n");
+		buf.append("  abstract void func ();\n");
+		buf.append("  public int bar (int bazz);\n");
+		buf.append("}\n");
+		ICompilationUnit cu1= pack1.createCompilationUnit("IFoo.java", buf.toString(), false, null);
+
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public interface IFoo {\n");
+		buf.append("  int MAGIC_NUMBER = 646;\n");
+		buf.append("  int foo ();\n");
+		buf.append("  void func ();\n");
+		buf.append("  int bar (int bazz);\n");
+		buf.append("}\n");
+		String expected1 = buf.toString();
+
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public final class Sealed {\n");
+		buf.append("  public final void foo () {};\n");
+		buf.append("  \n");
+		buf.append("  static interface INested {\n");
+		buf.append("  }\n");
+		buf.append("}\n");
+		ICompilationUnit cu2= pack1.createCompilationUnit("Sealed.java", buf.toString(), false, null);
+		
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public final class Sealed {\n");
+		buf.append("  public void foo () {};\n");
+		buf.append("  \n");
+		buf.append("  interface INested {\n");
+		buf.append("  }\n");
+		buf.append("}\n");
+		String expected2 = buf.toString();
+		
+		// Anonymous class within an interface:
+		// public keyword must not be removed (see bug#536612)
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public interface X {\n");
+		buf.append("  void B();\n");
+		buf.append("  void A();\n");
+		buf.append("  default X y() {\n");
+		buf.append("    return new X() {\n");
+		buf.append("      @Override public void A() {}\n");
+		buf.append("      @Override public void B() {}\n");
+		buf.append("    };\n");
+		buf.append("  }\n");
+		buf.append("}\n");
+		String expected3 = buf.toString();
+		ICompilationUnit cu3= pack1.createCompilationUnit("AnonymousNestedInInterface.java", buf.toString(), false, null);
+
+		// public modifier must not be removed from enum methods 
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("public interface A {\n");
+		buf.append("  public static enum B {\n");
+		buf.append("    public static void method () { }\n");
+		buf.append("  }\n");
+		buf.append("}\n");
+		ICompilationUnit cu4= pack1.createCompilationUnit("NestedEnum.java", buf.toString(), false, null);
+		// https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.9
+		// nested enum type is implicitly static
+		// Bug#538459 'public' modified must not be removed from static method in nested enum
+		String expected4 = buf.toString().replace("static enum", "enum");
+		
+		enable(CleanUpConstants.REMOVE_REDUNDANT_MODIFIERS);
+		assertRefactoringResultAsExpected(new ICompilationUnit[] { cu1, cu2, cu3, cu4 }, new String[] { expected1, expected2, expected3, expected4 });
+
+	}
+	
+	public void testRemoveRedundantSemicolons () throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
+		StringBuffer buf= new StringBuffer();
+		
+		// Ensure various extra semi-colons are removed and required ones are left intact.
+		// This includes a lambda expression.
+		buf.append("package test; ;\n");
+		buf.append("enum cars { sedan, coupe };\n");
+		buf.append("public class Foo {\n");
+		buf.append("  int add(int a, int b) {return a+b;};\n");
+		buf.append("  int a= 3;; ;\n");
+		buf.append("  int b= 7; // leave this ; alone\n");
+		buf.append("  int c= 10; /* and this ; too */\n");
+		buf.append("  public int foo () {\n");
+		buf.append("    ;\n");
+		buf.append("    Runnable r = () -> {\n");
+		buf.append("      System.out.println(\"running\");\n");
+		buf.append("    };;\n");
+		buf.append("    for (;;)\n");
+		buf.append("      ;;\n");
+		buf.append("      ;\n");
+		buf.append("    while (a++ < 1000) ;\n");
+		buf.append("  };\n");
+		buf.append("};\n");
+		ICompilationUnit cu1= pack1.createCompilationUnit("Foo.java", buf.toString(), false, null);
+
+		// Ensure semi-colon after lambda expression remains intact.
+		buf= new StringBuffer();
+		buf.append("package test;\n");
+		buf.append("enum cars { sedan, coupe }\n");
+		buf.append("public class Foo {\n");
+		buf.append("  int add(int a, int b) {return a+b;}\n");
+		buf.append("  int a= 3;\n");
+		buf.append("  int b= 7; // leave this ; alone\n");
+		buf.append("  int c= 10; /* and this ; too */\n");
+		buf.append("  public int foo () {\n");
+		buf.append("    \n");
+		buf.append("    Runnable r = () -> {\n");
+		buf.append("      System.out.println(\"running\");\n");
+		buf.append("    };\n");
+		buf.append("    for (;;)\n");
+		buf.append("      ;\n");
+		buf.append("      \n");
+		buf.append("    while (a++ < 1000) ;\n");
+		buf.append("  }\n");
+		buf.append("}\n");
+		String expected1 = buf.toString();
+
+		enable(CleanUpConstants.REMOVE_REDUNDANT_SEMICOLONS);
+		assertRefactoringResultAsExpected(new ICompilationUnit[] { cu1 }, new String[] { expected1 });
+
 	}
 
 }

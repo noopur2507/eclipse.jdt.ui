@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2008, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation 
@@ -57,7 +60,7 @@ import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.fix.CleanUpConstants;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -398,7 +401,7 @@ abstract class GenerateMethodAbstractAction extends SelectionDispatchAction {
 		fUnit= parser.parse(type.getCompilationUnit(), true);
 		fTypeBinding= null;
 		// type cannot be anonymous
-		final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) ASTNodes.getParent(NodeFinder.perform(fUnit, type.getNameRange()),
+		final AbstractTypeDeclaration declaration= ASTNodes.getParent(NodeFinder.perform(fUnit, type.getNameRange()),
 				AbstractTypeDeclaration.class);
 		if (declaration != null)
 			fTypeBinding= declaration.resolveBinding();

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2005 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -57,6 +60,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 	/*
 	 * @see org.eclipse.jface.text.reconciler.IReconcilingStrategy#setDocument(org.eclipse.jface.text.IDocument)
 	 */
+	@Override
 	public void setDocument(IDocument document) {
 		fFirstStep.setInputModel(new DocumentAdapter(document));
 	}
@@ -64,6 +68,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 	/*
 	 * @see org.eclipse.jface.text.reconciler.IReconcilingStrategy#reconcile(org.eclipse.jface.text.reconciler.DirtyRegion, org.eclipse.jface.text.IRegion)
 	 */
+	@Override
 	public void reconcile(DirtyRegion dirtyRegion, IRegion subRegion) {
 		removeTemporaryAnnotations();
 		process(fFirstStep.reconcile(dirtyRegion, subRegion));
@@ -72,6 +77,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 	/*
 	 * @see org.eclipse.jface.text.reconciler.IReconcilingStrategy#reconcile(org.eclipse.jface.text.IRegion)
 	 */
+	@Override
 	public void reconcile(IRegion partition) {
 		removeTemporaryAnnotations();
 		process(fFirstStep.reconcile(partition));
@@ -80,6 +86,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 	/*
 	 * @see org.eclipse.jface.text.reconciler.IReconcilingStrategyExtension#setProgressMonitor(org.eclipse.core.runtime.IProgressMonitor)
 	 */
+	@Override
 	public void setProgressMonitor(IProgressMonitor monitor) {
 		fFirstStep.setProgressMonitor(monitor);
 		fProgressMonitor= monitor;
@@ -89,6 +96,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 	/*
 	 * @see org.eclipse.jface.text.reconciler.IReconcilingStrategyExtension#initialReconcile()
 	 */
+	@Override
 	public void initialReconcile() {
 		fFirstStep.reconcile(null);
 		
@@ -103,6 +111,7 @@ public class JspReconcilingStrategy implements IReconcilingStrategy, IReconcilin
 			/*
 			 * @see org.eclipse.ui.actions.WorkspaceModifyOperation#execute(org.eclipse.core.runtime.IProgressMonitor)
 			 */
+			@Override
 			protected void execute(IProgressMonitor monitor) throws CoreException, InvocationTargetException, InterruptedException {
 				for (int i= 0; i < results.length; i++) {				
 

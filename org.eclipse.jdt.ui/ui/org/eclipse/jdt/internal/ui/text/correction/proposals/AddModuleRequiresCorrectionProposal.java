@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -32,6 +35,7 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.RequiresDirective;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
@@ -43,7 +47,6 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import org.eclipse.jdt.internal.corext.refactoring.changes.TextChangeCompatibility;
 
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.text.java.correction.ChangeCorrectionProposal;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -78,7 +81,7 @@ public class AddModuleRequiresCorrectionProposal extends ChangeCorrectionProposa
 		if (fModuleName == null || fModuleCu == null) {
 			return null;
 		}
-		CompilationUnit astRoot= SharedASTProvider.getAST(fModuleCu, SharedASTProvider.WAIT_YES, null);
+		CompilationUnit astRoot= SharedASTProviderCore.getAST(fModuleCu, SharedASTProviderCore.WAIT_YES, null);
 		ModuleDeclaration moduleDecl= astRoot.getModule();
 		if (moduleDecl == null) {
 			return null;

@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2008 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -17,9 +20,6 @@ import org.eclipse.jdt.internal.ui.text.JavaBreakIterator;
  */
 public class JavaBreakIteratorTest extends BreakIteratorTest {
 
-	/*
-	 * @see junit.framework.TestCase#setUp()
-	 */
 	@Override
 	protected void setUp() throws Exception {
 		fBreakIterator= new JavaBreakIterator();
@@ -42,76 +42,76 @@ public class JavaBreakIteratorTest extends BreakIteratorTest {
 	}
 
 	public void testNextLn() {
-		String s= new String("word \n" +
-				"  word2");
+		String s= "word \n" +
+				"  word2";
 		assertNextPositions(s, new int[] { 4, 5, 6, 8, 13 });
 	}
 
 	public void testMultiNextLn() {
-		String s= new String("word \n" +
+		String s= "word \n" +
 				"\n" +
 				"\n" +
-				"  word2");
+				"  word2";
 		assertNextPositions(s, new int[] { 4, 5, 6, 7, 8, 10, 15 });
 	}
 
 	public void testMultiNextLn2() {
-		String s= new String("word \r\n" +
+		String s= "word \r\n" +
 				"\r\n" +
 				"\r\n" +
-				"  word2");
+				"  word2";
 		assertNextPositions(s, new int[] { 4, 5, 7, 9, 11, 13, 18 });
 	}
 
 	public void testNextCamelCaseWord() {
-		String s= new String("   _isURLConnection_   ");
+		String s= "   _isURLConnection_   ";
 		assertNextPositions(s, new int[] { 3, 6, 9, 20, 23 });
 	}
 
 	public void testPrevious1() {
-		String s= new String("word word");
+		String s= "word word";
 		assertPreviousPositions(s, new int[] { 0, 4, 5 });
 	}
 
 	public void testPrevious2() {
-		String s= new String("wordWord word");
+		String s= "wordWord word";
 		assertPreviousPositions(s, new int[] { 0, 4, 8, 9 });
 	}
 
 	public void testPreviousSpace() {
-		String s= new String(" word ");
+		String s= " word ";
 		assertPreviousPositions(s, new int[] { 1, 5 });
 	}
 
 	public void testPreviousParen() {
-		String s= new String("word(params)");
+		String s= "word(params)";
 		assertPreviousPositions(s, new int[] { 0, 4, 5, 11 });
 	}
 
 	public void testPreviousLn() {
-		String s= new String("word \n" +
-				"  word2");
+		String s= "word \n" +
+				"  word2";
 		assertPreviousPositions(s, new int[] { 0, 4, 5, 6, 8 });
 	}
 
 	public void testMultiPreviousLn() {
-		String s= new String("word \n" +
+		String s= "word \n" +
 				"\n" +
 				"\n" +
-				"  word2");
+				"  word2";
 		assertPreviousPositions(s, new int[] { 0, 4, 5, 6, 7, 8, 10 });
 	}
 
 	public void testMultiPreviousLn2() {
-		String s= new String("word \r\n" +
+		String s= "word \r\n" +
 				"\r\n" +
 				"\r\n" +
-				"  word2");
+				"  word2";
 		assertPreviousPositions(s, new int[] { 0, 4, 5, 7, 9, 11, 13 });
 	}
 
 	public void testPreviousCamelCaseWord() {
-		String s= new String("   _isURLConnection_   ");
+		String s= "   _isURLConnection_   ";
 		assertPreviousPositions(s, new int[] { 0, 3, 6, 9, 20 });
 	}
 }

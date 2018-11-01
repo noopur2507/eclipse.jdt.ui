@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
-<!-- ====================================================================== -->
-<!-- Copyright (c) 2000, 2017 IBM Corporation and others.                   -->
-<!-- All rights reserved. This program and the accompanying materials       -->
-<!-- are made available under the terms of the Eclipse Public License v1.0  -->
-<!-- which accompanies this distribution, and is available at               -->
-<!-- http://www.eclipse.org/legal/epl-v10.html                              -->
-<!--                                                                        -->
-<!-- Contributors:                                                          -->
-<!--     IBM Corporation - initial API and implementation                   -->
-<!--     Francis Upton IV, Oakland Software <francisu@ieee.org> - Add support for Go Into with the ProjectExplorer - https://bugs.eclipse.org/bugs/show_bug.cgi?id=262091 -->
-<!--     Troy Bishop <tjbishop@ca.ibm.com> - Add support for importing/exporting Java Code Style preferences - https://bugs.eclipse.org/bugs/show_bug.cgi?id=304395 -->
-<!--     Eugene Lucash <e.lucash@gmail.com> - [quick assist] Add key binding for Extract method Quick Assist - https://bugs.eclipse.org/424166 -->
-<!--     Frits Jalvingh <jal@etc.to> - Contribution for Bug 459831 - [launching] Support attaching external annotations to a JRE container -->
-<!-- ====================================================================== -->
+<!--
+     Copyright (c) 2000, 2006 IBM Corporation and others.
+
+     This program and the accompanying materials
+     are made available under the terms of the Eclipse Public License 2.0
+     which accompanies this distribution, and is available at
+     https://www.eclipse.org/legal/epl-2.0/
+
+     SPDX-License-Identifier: EPL-2.0
+
+     Contributors:
+         IBM Corporation - initial API and implementation
+         Francis Upton IV, Oakland Software <francisu@ieee.org> - Add support for Go Into with the ProjectExplorer - https://bugs.eclipse.org/bugs/show_bug.cgi?id=262091
+         Troy Bishop <tjbishop@ca.ibm.com> - Add support for importing/exporting Java Code Style preferences - https://bugs.eclipse.org/bugs/show_bug.cgi?id=304395
+         Eugene Lucash <e.lucash@gmail.com> - [quick assist] Add key binding for Extract method Quick Assist - https://bugs.eclipse.org/424166
+         Frits Jalvingh <jal@etc.to> - Contribution for Bug 459831 - [launching] Support attaching external annotations to a JRE container 
+ -->
 <plugin>
 
    <extension-point id="javaElementFilters" name="%elementFiltersName" schema="schema/javaElementFilters.exsd"/>
@@ -81,6 +84,24 @@
 			</objectClass>
 		</enablement>
 	</decorator>
+	<decorator
+		label="%WithoutTestCodeDecorator.label"
+		lightweight="true"
+		location="BOTTOM_RIGHT"		
+		state="true"
+		class="org.eclipse.jdt.internal.ui.WithoutTestCodeDecorator"
+		id="org.eclipse.jdt.internal.ui.without.test.code.decorator">
+		<description>
+			%WithoutTestCodeDecorator.description
+		</description>
+         <enablement>
+            <or>
+               <objectClass name="org.eclipse.jdt.core.IPackageFragmentRoot"/>
+               <objectClass name="org.eclipse.jdt.internal.ui.packageview.ClassPathContainer"/>
+               <objectClass name="org.eclipse.jdt.internal.ui.packageview.ClassPathContainer$RequiredProjectWrapper"/>
+            </or>
+         </enablement>
+	</decorator>	
 </extension>
 
    <extension point="org.eclipse.core.runtime.adapters">
@@ -173,6 +194,14 @@
             class="org.eclipse.jdt.internal.ui.wizards.buildpaths.NativeLibAttributeConfiguration">
       </classpathAttributeConfiguration>
       <classpathAttributeConfiguration
+            attributeName="test"
+            class="org.eclipse.jdt.internal.ui.wizards.buildpaths.TestAttributeConfiguration">
+      </classpathAttributeConfiguration>
+      <classpathAttributeConfiguration
+            attributeName="without_test_code"
+            class="org.eclipse.jdt.internal.ui.wizards.buildpaths.WithoutTestCodeAttributeConfiguration">
+      </classpathAttributeConfiguration>
+      <classpathAttributeConfiguration
             attributeName="annotationpath"
             class="org.eclipse.jdt.internal.ui.wizards.buildpaths.ExternalAnnotationsAttributeConfiguration">
       </classpathAttributeConfiguration>
@@ -217,13 +246,18 @@
             id="org.eclipse.jdt.ui.text.correction.AdvancedQuickAssistProcessor">
       </quickAssistProcessor>
    </extension>
-   
+   <!-- While adding a new classpathFixProcessor, also update plugin.xml in its clients. See Bug 537470  -->  
    <extension
          point="org.eclipse.jdt.ui.classpathFixProcessors">
       <classpathFixProcessor
             name="%defaultQuickAssistProcessor"
             class="org.eclipse.jdt.internal.ui.text.correction.DefaultClasspathFixProcessor"
             id="org.eclipse.jdt.ui.text.correction.DefaultClasspathFixProcessor">
+      </classpathFixProcessor>
+      <classpathFixProcessor
+            class="org.eclipse.jdt.internal.ui.text.correction.DefaultModulepathFixProcessor"
+            id="org.eclipse.jdt.ui.text.correction.DefaultModulepathFixProcessor"
+            name="%defaultQuickAssistProcessor">
       </classpathFixProcessor>
    </extension>
 
@@ -1094,7 +1128,7 @@
       <colorDefinition
             label="%JavadocBackgroundColor.label"
             categoryId="org.eclipse.jdt.ui.presentation"
-            defaultsTo="org.eclipse.ui.workbench.HOVER_BACKGROUND"
+            defaultsTo="org.eclipse.ui.workbench.INFORMATION_BACKGROUND"
             id="org.eclipse.jdt.ui.Javadoc.backgroundColor">
          <description>
             %JavadocBackgroundColor.description
@@ -1103,7 +1137,7 @@
       <colorDefinition
             label="%JavadocForegroundColor.label"
             categoryId="org.eclipse.jdt.ui.presentation"
-            defaultsTo="org.eclipse.ui.workbench.HOVER_FOREGROUND"
+            defaultsTo="org.eclipse.ui.workbench.INFORMATION_FOREGROUND"
             id="org.eclipse.jdt.ui.Javadoc.foregroundColor">
          <description>
             %JavadocForegroundColor.description
@@ -2446,6 +2480,12 @@
          <part
                id="org.eclipse.jdt.ui.SourceView">
          </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoClassFileEditor">
+         </part>
       </actionSetPartAssociation>
    </extension>
 <!-- End Java Open action contributions  -->
@@ -2975,6 +3015,12 @@
          <part
                id="org.eclipse.jdt.ui.MembersView">
          </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoClassFileEditor">
+         </part>
       </actionSetPartAssociation>
    </extension>
 <!-- Begin Java Search action set -->
@@ -3275,6 +3321,12 @@
          <part
                id="org.eclipse.search.SearchResultView">
          </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoClassFileEditor">
+         </part>
       </actionSetPartAssociation>
    </extension>
 <!-- End Java contributions for Search view -->
@@ -3288,6 +3340,12 @@
          <part
                id="org.eclipse.jdt.ui.ClassFileEditor">
          </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoClassFileEditor">
+         </part>
       </actionSetPartAssociation>
       <actionSetPartAssociation
             targetID="org.eclipse.ui.edit.text.actionSet.presentation">
@@ -3299,6 +3357,12 @@
          </part>
          <part
                id="org.eclipse.jdt.ui.PropertiesFileEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoEditor">
+         </part>
+         <part
+               id="org.eclipse.jdt.ui.ModuleInfoClassFileEditor">
          </part>
       </actionSetPartAssociation>
    </extension>
@@ -3412,6 +3476,18 @@
             icon="$nl$/icons/full/obj16/jworkingSet_obj.png"
             updaterClass="org.eclipse.jdt.internal.ui.workingsets.OthersWorkingSetUpdater"
             id="org.eclipse.jdt.internal.ui.OthersWorkingSet">
+      </workingSet>
+   </extension>
+<!-- =========================================================================== -->
+<!-- Main and Test Sources Working Sets                                    -->
+<!-- =========================================================================== -->
+   <extension point="org.eclipse.ui.workingSets">
+      <workingSet
+            name="%DynamicSourcesWorkingSetWizardPage.name"
+            description="%DynamicSourcesWorkingSetWizardPage.description"
+            icon="$nl$/icons/full/obj16/jworkingSet_obj.png"
+            updaterClass="org.eclipse.jdt.internal.ui.workingsets.DynamicSourcesWorkingSetUpdater"
+            id="org.eclipse.jdt.internal.ui.DynamicSourcesWorkingSet">
       </workingSet>
    </extension>
 <!-- =========================================================================== -->
@@ -4906,7 +4982,7 @@
          point="org.eclipse.ui.ide.markerResolution">
       <markerResolutionGenerator
             markerType="org.eclipse.jdt.core.buildpath_problem"
-            class="org.eclipse.jdt.internal.ui.wizards.buildpaths.UserLibraryMarkerResolutionGenerator">
+            class="org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildpathProblemMarkerResolutionGenerator">
       </markerResolutionGenerator>
    </extension>
    
@@ -5375,6 +5451,14 @@
 <!-- Quick Hierarchy -->
       <filter
             targetId="org.eclipse.jdt.internal.ui.typehierarchy.QuickHierarchy"
+            name="%HideTestCode.label"
+            enabled="false"
+            description="%HideTestCode.description"
+            class="org.eclipse.jdt.internal.ui.filters.TestCodeFilter"
+            id="org.eclipse.jdt.internal.ui.typehierarchy.QuickHierarchy.TestCodeFilter">
+      </filter>
+      <filter
+            targetId="org.eclipse.jdt.internal.ui.typehierarchy.QuickHierarchy"
             name="%HideStatics.label"
             enabled="false"
             description="%HideStatics.description"
@@ -5564,7 +5648,7 @@
             id="org.eclipse.jdt.ui.javaStatusContextViewer">
          <enablement>
             <or>
-               <instanceof value="org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext"/>
+               <instanceof value="org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext"/>
                <instanceof value="org.eclipse.jdt.internal.corext.refactoring.base.JavaStringStatusContext"/>
             </or>
          </enablement>
@@ -6731,6 +6815,12 @@
                refid="org.eclipse.e4.ui.css.theme.e4_dark">
          </themeid>
       </stylesheet>
+      <stylesheet
+            uri="css/e4-light_jdt_syntaxhighlighting.css">
+         <themeid
+               refid="org.eclipse.e4.ui.css.theme.e4_default">
+         </themeid>
+      </stylesheet>
    </extension>
 
    <extension
@@ -6847,9 +6937,19 @@
             runAfter="org.eclipse.jdt.ui.cleanup.potential_programming_problems">
       </cleanUp>
       <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.RedundantModifiersCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.unnecessary_modifiers"
+            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_code">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.RedundantSemicolonsCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.unnecessary_semicolons"
+            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_modifiers">
+      </cleanUp>
+      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.StringCleanUp"
             id="org.eclipse.jdt.ui.cleanup.strings"
-            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_code">
+            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_semicolons">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.UnimplementedCodeCleanUp"

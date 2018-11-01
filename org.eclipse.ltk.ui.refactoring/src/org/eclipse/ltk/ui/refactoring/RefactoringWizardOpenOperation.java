@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -13,6 +16,7 @@ package org.eclipse.ltk.ui.refactoring;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.swt.custom.BusyIndicator;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.Assert;
@@ -200,7 +204,12 @@ public class RefactoringWizardOpenOperation {
 				}
 			}
 		};
-		BusyIndicator.showWhile(parent != null ? parent.getDisplay() : null, r);
+
+		Display display = null;
+		if (parent != null && !parent.isDisposed()) {
+			display= parent.getDisplay();
+		}
+		BusyIndicator.showWhile(display, r);
 		if (canceled[0] != null)
 			throw canceled[0];
 		return result[0];

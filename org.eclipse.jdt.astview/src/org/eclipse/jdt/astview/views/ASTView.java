@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -119,15 +122,26 @@ import org.eclipse.jdt.core.dom.ASTRequestor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.NodeFinder;
-
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 
 public class ASTView extends ViewPart implements IShowInSource, IShowInTargetList {
 	
-	static final int JLS_LATEST= AST.JLS9;
+	static final int JLS_LATEST= AST.JLS11;
+
+	private static final int JLS11= AST.JLS11;
 	
+	/**
+	 * @deprecated to get rid of deprecation warnings in code
+	 */
+	@Deprecated
+	private static final int JLS10= AST.JLS10;
+	
+	/**
+	 * @deprecated to get rid of deprecation warnings in code
+	 */
+	@Deprecated
 	private static final int JLS9= AST.JLS9;
 	
 	/**
@@ -453,6 +467,8 @@ public class ASTView extends ViewPart implements IShowInSource, IShowInTargetLis
 				case JLS4:
 				case JLS8:
 				case JLS9:
+				case JLS10:
+				case JLS11:
 					fCurrentASTLevel= level;
 			}
 		} catch (NumberFormatException e) {
@@ -616,7 +632,7 @@ public class ASTView extends ViewPart implements IShowInSource, IShowInTargetLis
 		} else if (input instanceof ICompilationUnit && (getCurrentInputKind() == ASTInputKindAction.USE_CACHE)) {
 			ICompilationUnit cu= (ICompilationUnit) input;
 			startTime= System.currentTimeMillis();
-			root= SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_NO, null);
+			root= SharedASTProviderCore.getAST(cu, SharedASTProviderCore.WAIT_NO, null);
 			endTime= System.currentTimeMillis();
 			
 		} else {
@@ -670,7 +686,7 @@ public class ASTView extends ViewPart implements IShowInSource, IShowInTargetLis
 		TreeInfoCollector collector= new TreeInfoCollector(root);
 
 		String msg= "{0} ({1}).  Creation time: {2,number} ms.  Size: {3,number} nodes, {4,number} bytes (AST nodes only)."; //$NON-NLS-1$
-		Object[] args= { element.getElementName(), version, new Long(time),  new Integer(collector.getNumberOfNodes()), new Integer(collector.getSize())};
+		Object[] args= { element.getElementName(), version, Long.valueOf(time),  Integer.valueOf(collector.getNumberOfNodes()), Integer.valueOf(collector.getSize())};
 		setContentDescription(MessageFormat.format(msg, args));
 
 	}
@@ -1080,6 +1096,8 @@ public class ASTView extends ViewPart implements IShowInSource, IShowInTargetLis
 				new ASTLevelToggle("AST Level &4 (1.7)", JLS4), //$NON-NLS-1$
 				new ASTLevelToggle("AST Level &8 (1.8)", JLS8), //$NON-NLS-1$
 				new ASTLevelToggle("AST Level &9 (9)", JLS9), //$NON-NLS-1$
+				new ASTLevelToggle("AST Level 1&0 (10)", JLS10), //$NON-NLS-1$
+				new ASTLevelToggle("AST Level 1&1 (11)", JLS11), //$NON-NLS-1$
 		};
 		
 		fAddToTrayAction= new Action() {

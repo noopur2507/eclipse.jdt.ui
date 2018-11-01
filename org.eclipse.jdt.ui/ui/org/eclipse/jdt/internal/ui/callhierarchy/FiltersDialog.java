@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Jesper Kamstrup Linnet (eclipse@kamstrup-linnet.dk) - initial API and implementation
@@ -39,6 +42,7 @@ class FiltersDialog extends StatusDialog {
     private Button fFilterOnNames;
     private Text fNames;
     private Text fMaxCallDepth;
+    private Button fFilterTestCode;
 
 
     protected FiltersDialog(Shell parentShell) {
@@ -61,6 +65,7 @@ class FiltersDialog extends StatusDialog {
 	protected Control createDialogArea(Composite parent) {
     	Composite composite= (Composite) super.createDialogArea(parent);
 
+        createTestCodeArea(composite);
         createNamesArea(composite);
         new Label(composite, SWT.NONE);         // Filler
         createMaxCallDepthArea(composite);
@@ -118,6 +123,12 @@ class FiltersDialog extends StatusDialog {
         fNamesHelpText.setText(CallHierarchyMessages.FiltersDialog_filterOnNamesSubCaption);
     }
 
+    private void createTestCodeArea(Composite parent) {
+        fFilterTestCode = createCheckbox(parent,
+                CallHierarchyMessages.FiltersDialog_filterTestCode, true);
+    }
+
+    
     /**
      * Creates a check box button with the given parent and text.
      *
@@ -166,6 +177,7 @@ class FiltersDialog extends StatusDialog {
         CallHierarchyUI.getDefault().setMaxCallDepth(maxCallDepth);
         CallHierarchy.getDefault().setFilters(fNames.getText());
         CallHierarchy.getDefault().setFilterEnabled(fFilterOnNames.getSelection());
+        CallHierarchy.getDefault().setFilterTestCode(fFilterTestCode.getSelection());
     }
 
     /**
@@ -175,6 +187,7 @@ class FiltersDialog extends StatusDialog {
       fMaxCallDepth.setText(String.valueOf(CallHierarchyUI.getDefault().getMaxCallDepth()));
       fNames.setText(CallHierarchy.getDefault().getFilters());
       fFilterOnNames.setSelection(CallHierarchy.getDefault().isFilterEnabled());
+      fFilterTestCode.setSelection(CallHierarchy.getDefault().isFilterTestCode());
       updateEnabledState();
     }
 

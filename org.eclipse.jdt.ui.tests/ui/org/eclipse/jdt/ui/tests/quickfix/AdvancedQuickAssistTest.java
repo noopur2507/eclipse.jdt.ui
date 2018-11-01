@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Konstantin Scheglov (scheglov_ke@nlmk.ru) - initial API and implementation
@@ -35,8 +38,8 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.template.java.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
@@ -3043,7 +3046,7 @@ public class AdvancedQuickAssistTest extends QuickFixTest {
 			buf.append("        if (integer != null) {\n");
 			buf.append("            return integer;\n");
 			buf.append("        } else {\n");
-			buf.append("            return new Double(Double.MAX_VALUE);\n");
+			buf.append("            return Double.valueOf(Double.MAX_VALUE);\n");
 			buf.append("        }\n");
 			buf.append("    }\n");
 			buf.append("}\n");
@@ -3061,7 +3064,7 @@ public class AdvancedQuickAssistTest extends QuickFixTest {
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
 			buf.append("    public Number foo(Integer integer) {\n");
-			buf.append("        return integer != null ? integer : (Number) new Double(Double.MAX_VALUE);\n");
+			buf.append("        return integer != null ? integer : (Number) Double.valueOf(Double.MAX_VALUE);\n");
 			buf.append("    }\n");
 			buf.append("}\n");
 			String expected1= buf.toString();

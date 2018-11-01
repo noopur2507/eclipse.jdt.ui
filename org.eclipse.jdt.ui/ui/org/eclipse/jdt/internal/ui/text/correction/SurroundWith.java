@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -43,9 +46,10 @@ import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.GenericVisitor;
 import org.eclipse.jdt.internal.corext.dom.LocalVariableIndex;
@@ -55,9 +59,8 @@ import org.eclipse.jdt.internal.corext.dom.VariableDeclarationRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.code.flow.FlowContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.flow.FlowInfo;
 import org.eclipse.jdt.internal.corext.refactoring.code.flow.InOutFlowAnalyzer;
-import org.eclipse.jdt.internal.corext.refactoring.surround.SurroundWithAnalyzer;
+import org.eclipse.jdt.internal.corext.refactoring.util.SurroundWithAnalyzer;
 
-import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 
 public abstract class SurroundWith {
@@ -170,7 +173,7 @@ public abstract class SurroundWith {
 
 	public static boolean isApplicable(IInvocationContext context) throws CoreException {
 		ICompilationUnit unit= context.getCompilationUnit();
-		CompilationUnit ast= SharedASTProvider.getAST(unit, SharedASTProvider.WAIT_NO, null);
+		CompilationUnit ast= SharedASTProviderCore.getAST(unit, SharedASTProviderCore.WAIT_NO, null);
 		if (ast == null)
 			return true;
 
@@ -220,7 +223,7 @@ public abstract class SurroundWith {
 
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
-		BodyDeclaration enclosingBodyDeclaration= (BodyDeclaration)ASTNodes.getParent(selectedNodes[0], BodyDeclaration.class);
+		BodyDeclaration enclosingBodyDeclaration= ASTNodes.getParent(selectedNodes[0], BodyDeclaration.class);
 		int maxVariableId= LocalVariableIndex.perform(enclosingBodyDeclaration) + 1;
 
 		fIsNewContext= isNewContext();
@@ -309,10 +312,10 @@ public abstract class SurroundWith {
 
 		List<Statement> statements;
 		if (startNode.getLocationInParent() == SwitchStatement.STATEMENTS_PROPERTY) {
-			SwitchStatement block= (SwitchStatement)ASTNodes.getParent(startNode, SwitchStatement.class);
+			SwitchStatement block= ASTNodes.getParent(startNode, SwitchStatement.class);
 			statements= block.statements();
 		} else {
-			Block block= (Block)ASTNodes.getParent(startNode, Block.class);
+			Block block= ASTNodes.getParent(startNode, Block.class);
 			statements= block.statements();
 		}
 		List<Statement> bodyAfterSelection= statements.subList(statements.indexOf(startNode) + 1, statements.size());

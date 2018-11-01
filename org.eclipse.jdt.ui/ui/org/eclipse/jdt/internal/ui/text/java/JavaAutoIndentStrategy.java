@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -223,7 +226,7 @@ public class JavaAutoIndentStrategy extends DefaultIndentLineAutoEditStrategy {
 				int indLine= d.getLineOfOffset(reference);
 				if (indLine != -1 && indLine != line) {
 					// take the indent of the found line
-					StringBuffer replaceText= new StringBuffer(getIndentOfLine(d, indLine));
+					StringBuilder replaceText= new StringBuilder(getIndentOfLine(d, indLine));
 					// add the rest of the current line including the just added close bracket
 					replaceText.append(d.get(whiteend, c.offset - whiteend));
 					replaceText.append(c.text);
@@ -295,7 +298,7 @@ public class JavaAutoIndentStrategy extends DefaultIndentLineAutoEditStrategy {
 			int p= (c.offset == docLength ? c.offset - 1 : c.offset);
 			int line= d.getLineOfOffset(p);
 
-			StringBuffer buf= new StringBuffer(c.text + indent);
+			StringBuilder buf= new StringBuilder(c.text + indent);
 
 
 			IRegion reg= d.getLineInformation(line);

@@ -1,10 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
  *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     John Kaplan, johnkaplantech@gmail.com - 108071 [code templates] template for body of newly created class
@@ -16,6 +19,7 @@
  *     				[compiler][null] inheritance of null annotations as an option - https://bugs.eclipse.org/388281
  *     				Warning option for bug 410218 - https://bugs.eclipse.org/461999
  *     Gábor Kövesdán - Contribution for Bug 350000 - [content assist] Include non-prefix matches in auto-complete suggestions
+ *     Jesper S Møller - Contributions for bug 529432 - Allow JDT UI to target Java 10
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
@@ -140,6 +144,7 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_singleLineComment;
 	public static String JavaEditorPreferencePage_returnKeyword;
 	public static String JavaEditorPreferencePage_keywords;
+	public static String JavaEditorPreferencePage_varKeyword;
 	public static String JavaEditorPreferencePage_strings;
 	public static String JavaEditorPreferencePage_others;
 	public static String JavaEditorPreferencePage_operators;
@@ -304,12 +309,14 @@ public final class PreferencesMessages extends NLS {
 	public static String AppearancePreferencePage_pkgNamePatternAbbreviateEnable_label;
 	public static String AppearancePreferencePage_pkgNamePatternAbbreviate_label;
 	public static String AppearancePreferencePage_showMembersInPackagesView;
+	public static String AppearancePreferencePage_decorateTestCodeContainerIcons;	
 	public static String AppearancePreferencePage_stackViewsVerticallyInTheJavaBrowsingPerspective;
 	public static String AppearancePreferencePage_note;
 	public static String AppearancePreferencePage_preferenceOnlyEffectiveForNewPerspectives;
 	public static String AppearancePreferencePage_packageNameCompressionPattern_error_isEmpty;
 	public static String AppearancePreferencePage_packageNameAbbreviationPattern_error_isInvalid;
 	public static String AppearancePreferencePage_foldEmptyPackages;
+	public static String AppearancePreferencePage_sortLibraryEntries;
 	public static String CodeFormatterPreferencePage_title;
 	public static String SourceAttachmentPropertyPage_not_supported;
 	public static String SourceAttachmentPropertyPage_read_only;
@@ -369,6 +376,8 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaBuildConfigurationBlock_pb_check_prereq_binary_level_label;
 	public static String JavaBuildConfigurationBlock_pb_output_overlapping_with_source_label;
 	public static String JavaBuildConfigurationBlock_pb_strictly_compatible_jre_not_available_label;
+	public static String JavaBuildConfigurationBlock_pb_compiler_compliance_does_not_match_jre_label;
+	public static String JavaBuildConfigurationBlock_pb_main_only_project_has_test_only_dependency_label;
 	public static String JavaBuildConfigurationBlock_empty_input;
 	public static String JavaBuildConfigurationBlock_invalid_input;
 	public static String JavaBuildConfigurationBlock_filter_invalidsegment_error;
@@ -449,6 +458,7 @@ public final class PreferencesMessages extends NLS {
 	public static String ProblemSeveritiesConfigurationBlock_pb_deprecation_in_deprecation_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_deprecation_when_overriding_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_api_leak_label;
+	public static String ProblemSeveritiesConfigurationBlock_pb_unstable_auto_module_name_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_empty_statement_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_unnecessary_type_check_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_incomplete_enum_switch_label;
@@ -672,6 +682,7 @@ public final class PreferencesMessages extends NLS {
 	public static String UserLibraryPreferencePage_libraries_label;
 	public static String UserLibraryPreferencePage_libraries_new_button;
 	public static String UserLibraryPreferencePage_libraries_edit_button;
+	public static String UserLibraryPreferencePage_libraries_toggle_button;
 	public static String UserLibraryPreferencePage_libraries_addjar_button;
 	public static String UserLibraryPreferencePage_libraries_addexternaljar_button;
 	public static String UserLibraryPreferencePage_libraries_remove_button;
@@ -798,6 +809,8 @@ public final class PreferencesMessages extends NLS {
 	public static String EditTemplateDialog_autoinsert;
 	public static String ComplianceConfigurationBlock_jrecompliance_info;
 	public static String ComplianceConfigurationBlock_jrecompliance_info_project;
+	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_info;
+	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_label;
 	public static String ProblemSeveritiesConfigurationBlock_section_generics;
 	public static String JavaBasePreferencePage_dialogs;
 	public static String JavaBasePreferencePage_EnableNewJavaIndex;
@@ -811,6 +824,8 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_version17;
 	public static String ComplianceConfigurationBlock_version18;
 	public static String ComplianceConfigurationBlock_version9;
+	public static String ComplianceConfigurationBlock_version10;
+	public static String ComplianceConfigurationBlock_version_11;
 	public static String ComplianceConfigurationBlock_versionCLDC11;
 	public static String ComplianceConfigurationBlock_src_greater_compliance;
 	public static String ComplianceConfigurationBlock_classfile_greater_compliance;
@@ -860,6 +875,8 @@ public final class PreferencesMessages extends NLS {
 	public static String OptionsConfigurationBlock_TypeFilterText;
 	public static String OptionsConfigurationBlock_IgnoreOptionalProblemsLink;
 
+	public static String FilteredPreferencesTree_collapseAll_tooltip;
+	public static String FilteredPreferencesTree_expandAll_tooltip;
 	public static String FilterTextControl_Clear;
 	public static String FilterTextControl_ClearFilterField;
 }

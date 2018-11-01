@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2017 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2007, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -36,6 +39,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.manipulation.TypeNameMatchCollector;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -45,7 +49,6 @@ import org.eclipse.jdt.core.search.TypeNameMatch;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
-import org.eclipse.jdt.internal.corext.util.TypeNameMatchCollector;
 
 import org.eclipse.jdt.launching.JavaRuntime;
 
@@ -60,7 +63,7 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.AddModuleRequiresCo
  */
 public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 
-	private static class DefaultClasspathFixProposal extends ClasspathFixProposal {
+	protected static class DefaultClasspathFixProposal extends ClasspathFixProposal {
 
 		private String fName;
 		private Change fChange;
@@ -103,7 +106,9 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 	@Override
 	public ClasspathFixProposal[] getFixImportProposals(IJavaProject project, String missingType) throws CoreException {
 		ArrayList<DefaultClasspathFixProposal> res= new ArrayList<>();
-		collectProposals(project, missingType, res);
+		if (!missingType.startsWith(DefaultModulepathFixProcessor.MODULE_SEARCH)) {
+			collectProposals(project, missingType, res);
+		}
 		return res.toArray(new ClasspathFixProposal[res.size()]);
 	}
 
@@ -204,10 +209,12 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 					}
 					Change cuChange= null;
 					String moduleName= null;
+					boolean isModule= false;
 					if (typesWithModule.contains(curr)) {
 						moduleName= typeNameMatchToModuleName.get(curr);
 						if (moduleName != null && currentModuleDescription != null) {
 							ICompilationUnit currentCU= currentModuleDescription.getCompilationUnit();
+							isModule= true;
 							String[] args= { moduleName };
 							final String changeName= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_add_requires_module_info, args);
 							final String changeDescription= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_add_requires_module_description, args);
@@ -222,7 +229,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 					int entryKind= entry.getEntryKind();
 					if ((entry.isExported() || entryKind == IClasspathEntry.CPE_SOURCE) && addedClaspaths.add(other)) {
 						IClasspathEntry newEntry= null;
-						if (cuChange != null) {
+						if (isModule) {
 							IClasspathAttribute[] extraAttributes= new IClasspathAttribute[] {
 									JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, "true") //$NON-NLS-1$
 							};
@@ -274,7 +281,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 		}
 	}
 
-	private void addLibraryProposal(IJavaProject project, IPackageFragmentRoot root, IClasspathEntry entry, Collection<Object> addedClaspaths, Collection<DefaultClasspathFixProposal> proposals,
+	protected void addLibraryProposal(IJavaProject project, IPackageFragmentRoot root, IClasspathEntry entry, Collection<Object> addedClaspaths, Collection<DefaultClasspathFixProposal> proposals,
 			Change additionalChange) throws JavaModelException {
 		if (addedClaspaths.add(entry)) {
 			String label= getAddClasspathLabel(entry, root, project);
@@ -295,7 +302,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 		}
 	}
 
-	private boolean isNonProjectSpecificContainer(IPath containerPath) {
+	protected boolean isNonProjectSpecificContainer(IPath containerPath) {
 		if (containerPath.segmentCount() > 0) {
 			String id= containerPath.segment(0);
 			if (id.equals(JavaCore.USER_LIBRARY_CONTAINER_ID) || id.equals(JavaRuntime.JRE_CONTAINER)) {
@@ -306,7 +313,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 	}
 
 
-	private static String getAddClasspathLabel(IClasspathEntry entry, IPackageFragmentRoot root, IJavaProject project) {
+	protected static String getAddClasspathLabel(IClasspathEntry entry, IPackageFragmentRoot root, IJavaProject project) {
 		switch (entry.getEntryKind()) {
 			case IClasspathEntry.CPE_LIBRARY:
 				if (root.isArchive()) {
@@ -327,6 +334,8 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 				} catch (JavaModelException e) {
 					// ignore
 				}
+				break;
+			default:
 				break;
 		}
 		return null;

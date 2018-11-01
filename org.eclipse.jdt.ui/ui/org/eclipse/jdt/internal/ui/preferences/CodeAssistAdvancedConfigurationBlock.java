@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2005, 2011 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -216,7 +219,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
         }
 
     	private void writeInclusionPreference(ModelElement changed, boolean isInDefaultCategory) {
-    		StringBuffer buf= new StringBuffer();
+    		StringBuilder buf= new StringBuilder();
     		for (Iterator<ModelElement> it= fElements.iterator(); it.hasNext();) {
     			ModelElement item= it.next();
     			boolean included= changed == item ? isInDefaultCategory : item.isInDefaultCategory();
@@ -230,7 +233,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
     	}
 
     	private void writeOrderPreference(ModelElement changed, boolean isSeparate) {
-    		StringBuffer buf= new StringBuffer();
+    		StringBuilder buf= new StringBuilder();
     		int i= 0;
     		for (Iterator<ModelElement> it= fElements.iterator(); it.hasNext(); i++) {
     			ModelElement item= it.next();
@@ -692,7 +695,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 					int max= 5000;
 					if (number < min || number > max) {
 						String msgFormat= PreferencesMessages.CodeAssistAdvancedConfigurationBlock_parameterNameFromAttachedJavadoc_timeout_invalidRange;
-						String msg= Messages.format(msgFormat, new Object[] {new Integer(min), new Integer(max)});
+						String msg= Messages.format(msgFormat, new Object[] {Integer.valueOf(min), Integer.valueOf(max)});
 						status.setError(msg);
 					}
 				} catch (NumberFormatException ex) {

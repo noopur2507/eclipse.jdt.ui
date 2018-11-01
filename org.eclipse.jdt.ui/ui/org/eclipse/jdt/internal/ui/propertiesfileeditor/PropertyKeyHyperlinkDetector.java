@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2015 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -117,14 +120,14 @@ public class PropertyKeyHyperlinkDetector extends AbstractHyperlinkDetector {
 
 	private String getUnicodeString(String key) {
 		StringCharacterIterator iter= new StringCharacterIterator(key);
-		StringBuffer result= new StringBuffer();
+		StringBuilder result= new StringBuilder();
 		while (iter.getIndex() < iter.getEndIndex()) {
 			char c= iter.current();
 			if (c == '\\') {
 				iter.next();
 				c= iter.current();
 				if (c == 'u') {
-					StringBuffer unicode= new StringBuffer();
+					StringBuilder unicode= new StringBuilder();
 					unicode.append(iter.next());
 					unicode.append(iter.next());
 					unicode.append(iter.next());

@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -110,7 +113,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringScopeFactory;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringSearchEngine;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringSearchEngine2;
 import org.eclipse.jdt.internal.corext.refactoring.SearchResultGroup;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.delegates.DelegateFieldCreator;
@@ -119,6 +121,7 @@ import org.eclipse.jdt.internal.corext.refactoring.participants.JavaProcessors;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MemberVisibilityAdjustor.IncomingMemberVisibilityAdjustment;
 import org.eclipse.jdt.internal.corext.refactoring.tagging.IDelegateUpdating;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -875,10 +878,9 @@ public final class MoveStaticMembersProcessor extends MoveProcessor implements I
 	}
 
 	private AbstractTypeDeclaration getDestinationNode() throws JavaModelException {
-		AbstractTypeDeclaration destination= (AbstractTypeDeclaration)
-				ASTNodes.getParent(
-						NodeFinder.perform(fTarget.getRoot(), fDestinationType.getNameRange()),
-						AbstractTypeDeclaration.class);
+		AbstractTypeDeclaration destination= ASTNodes.getParent(
+				NodeFinder.perform(fTarget.getRoot(), fDestinationType.getNameRange()),
+				AbstractTypeDeclaration.class);
 		return destination;
 	}
 
@@ -1078,7 +1080,7 @@ public final class MoveStaticMembersProcessor extends MoveProcessor implements I
 		for (int i= 0; i < fMembersToMove.length; i++) {
 			IMember member= fMembersToMove[i];
 			ASTNode node= NodeFinder.perform(fSource.getRoot(), member.getNameRange());
-			result[i]= (BodyDeclaration)ASTNodes.getParent(node, BodyDeclaration.class);
+			result[i]= ASTNodes.getParent(node, BodyDeclaration.class);
 
 			//Fix for bug 42383: exclude multiple VariableDeclarationFragments ("int a=1, b=2")
 			//ReferenceAnalyzer#visit(FieldDeclaration node) depends on fragments().size() != 1 !

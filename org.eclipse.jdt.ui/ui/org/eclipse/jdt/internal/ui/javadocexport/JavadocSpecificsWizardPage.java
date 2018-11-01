@@ -1,9 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * Copyright (c) 2000, 2017 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -11,6 +14,9 @@
 package org.eclipse.jdt.internal.ui.javadocexport;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -144,9 +150,12 @@ public class JavadocSpecificsWizardPage extends JavadocWizardPage {
 		createLabel(inner, SWT.NONE, JavadocExportMessages.JavadocSpecificsWizardPage_sourcecompatibility_label, createGridData(GridData.HORIZONTAL_ALIGN_BEGINNING, 1, 0));
 
 		fSourceCombo= createCombo(inner, SWT.NONE, fStore.getSource(), createGridData(1));
-		String[] versions= { "-", //$NON-NLS-1$
-				JavaCore.VERSION_1_3, JavaCore.VERSION_1_4, JavaCore.VERSION_1_5, JavaCore.VERSION_1_6, JavaCore.VERSION_1_7, JavaCore.VERSION_1_8 };
-		fSourceCombo.setItems(versions);
+		List<String> versions= new ArrayList<>();
+		versions.add("-"); //$NON-NLS-1$
+		versions.addAll(JavaCore.getAllVersions());
+		versions.removeAll(Arrays.asList(JavaCore.VERSION_CLDC_1_1, JavaCore.VERSION_1_1, JavaCore.VERSION_1_2));
+		fSourceCombo.setItems(versions.toArray(new String[versions.size()]));
+
 		fSourceCombo.setText(fStore.getSource());
 
 

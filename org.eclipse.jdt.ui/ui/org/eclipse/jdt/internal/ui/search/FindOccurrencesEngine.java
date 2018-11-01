@@ -1,9 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2016 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -15,10 +18,9 @@ import org.eclipse.search.ui.NewSearchUI;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.core.manipulation.search.IOccurrencesFinder;
-
-import org.eclipse.jdt.ui.SharedASTProvider;
 
 
 public final class FindOccurrencesEngine {
@@ -49,7 +51,7 @@ public final class FindOccurrencesEngine {
 			return SearchMessages.FindOccurrencesEngine_noSource_text;
 		}
 
-		final CompilationUnit root= SharedASTProvider.getAST(input, SharedASTProvider.WAIT_YES, null);
+		final CompilationUnit root= SharedASTProviderCore.getAST(input, SharedASTProviderCore.WAIT_YES, null);
 		if (root == null) {
 			return SearchMessages.FindOccurrencesEngine_cannotParse_text;
 		}
