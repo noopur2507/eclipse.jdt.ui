@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2018 IBM Corporation and others.
+ * Copyright (c) 2016, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,15 +38,15 @@ public class InfoFilesUtil {
 	 * @param fileName the name of the compilation unit
 	 * @param fileContent the contents of the compilation unit
 	 * @param pack the package fragment to create the compilation unit in
+	 * @param addComments whether to add comments
 	 * @param monitor the progress monitor
 	 * @throws CoreException when there is a problem while creating the compilation unit
 	 */
-	public static void createInfoJavaFile(String fileName, String fileContent, IPackageFragment pack, IProgressMonitor monitor) throws CoreException {
+	public static void createInfoJavaFile(String fileName, String fileContent, IPackageFragment pack, boolean addComments, IProgressMonitor monitor) throws CoreException {
 		String lineDelimiter= StubUtility.getLineDelimiterUsed(pack.getJavaProject());
 		StringBuilder content= new StringBuilder();
-		String fileComment= getFileComment(fileName, pack, lineDelimiter);
-		String typeComment= getTypeComment(fileName, pack, lineDelimiter);
-
+		String fileComment= addComments ? getFileComment(fileName, pack, lineDelimiter) : null;
+		String typeComment= addComments ? getTypeComment(fileName, pack, lineDelimiter) : null;
 		if (fileComment != null) {
 			content.append(fileComment);
 			content.append(lineDelimiter);

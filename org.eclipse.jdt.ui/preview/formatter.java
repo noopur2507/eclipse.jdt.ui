@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Mateusz Matela and others.
+ * Copyright (c) 2018, 2019 Mateusz Matela and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -416,10 +416,15 @@ for (String s : names) {}
 //--PREVIEW--END--section-whitespace-statements-for
 
 //--PREVIEW--START--section-whitespace-statements-switch
-switch (number) { 
+Color newColor = switch(color) {
+case RED -> GREEN;
+case GREEN,BLUD->RED;
+default->BLACK;
+};
+
+switch (color) { 
 case RED:return GREEN;
-case GREEN:return BLUE;
-case BLUE:return RED;
+case GREEN,BLUE:return RED;
 default:return BLACK;
 }
 //--PREVIEW--END--section-whitespace-statements-switch
@@ -474,14 +479,18 @@ class MyClass extends OtherClass {
 //--PREVIEW--END--section-whitespace-expressions-calls
 
 //--PREVIEW--START--section-whitespace-expressions-assignments
-//--PREVIEW--START--section-whitespace-expressions-operators
+//--PREVIEW--START--section-whitespace-expressions-unaryoperators
+//--PREVIEW--START--section-whitespace-expressions-binaryoperators
 List list = new ArrayList();
 int a = -4 + -9;
-b = a++ / --number;
-c += 4;
-boolean value = true && false;
+int b = a++ / --number;
+b = (a++) / (--number) + (-9);
+String d = "a = " + a;
+if (a == b && a > c)
+	c += (a >> 5) & 0xFF;
 //--PREVIEW--END--section-whitespace-expressions-assignments
-//--PREVIEW--END--section-whitespace-expressions-operators
+//--PREVIEW--END--section-whitespace-expressions-unaryoperators
+//--PREVIEW--END--section-whitespace-expressions-binaryoperators
 
 //--PREVIEW--START--section-whitespace-expressions-parenexpr
 result = (a * (b + c + d) * (e + f));
@@ -546,6 +555,8 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import java.net.Socket;
 public class Another {}
 public class Example {
+	public class Nested {
+	}
 	public static class Pair {
 		public String first;
 		public String second;
@@ -594,10 +605,10 @@ bar
  {
 @SuppressWarnings("unused") final @Positive int k;
 }
-  void foo() {    ;;    do {} while (false);    for (;;) {}  }
+  void foo() {    ;;   }
   void empty(@SuppressWarnings("unused") final int i) { }}
-enum MyEnum {    @Deprecated UNDEFINED(0) { }}enum EmptyEnum { }@interface EmptyAnnotation { 
-}//--PREVIEW--END--section-newlines
+enum MyEnum {    @Deprecated UNDEFINED(0) { }}
+//--PREVIEW--END--section-newlines
 
 //--PREVIEW--START--section-newlines-controlstatements
 class Example {
@@ -606,7 +617,6 @@ class Example {
 		try { } catch (Exception e) { } finally { }
 	}
 	void foo2() {
-		if (true) { return; }
 		if (true) { return; } else if (false) { return; } else { return; }
 	}
 	void foo(int state) {
@@ -624,6 +634,112 @@ class WrapExample {
 }
 //--PREVIEW--END--section-newlines-controlstatements-simpleloops
 //--PREVIEW--END--section-newlines-controlstatements
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_loop_body_block_on_one_line
+class Example{
+	public void example() {
+		for (int i = 0; i < 10; i++) {
+		}
+		int a = 10;
+		while (a-- > 0) { System.out.println(a); }
+		do { a += 2;
+		System.out.println(a); } while(a < 50);
+	}
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_loop_body_block_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_if_then_body_block_on_one_line
+class Example {
+	public String example(int a) {
+		if (a < 0) { 
+			throw new IllegalArgumentException(); }
+		if (a == 0) { return null; }
+		if (false) {}
+		if (a % 3 == 0) {
+			System.out.println("fizz"); }
+		if (a % 5 == 0) { System.out.println("buzz"); return ""; }
+		return Integer.toString(a);
+	}
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_if_then_body_block_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_lambda_body_block_on_one_line
+class Example {
+	Runnable emptyLambda = () -> {};
+	Runnable emptyLambda2 = () -> {
+	};
+	Runnable tinyLambda = () -> { doSomething(); };
+	Runnable smallLambda = () -> { doFirstThing(); doSecondThing(); };
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_lambda_body_block_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_code_block_on_one_line
+class Example {
+	static {
+	}
+	
+	void foo() {
+		if (true) {} else {}
+		synchronized(this) {}
+		try {} finally {}
+		
+		labeled:{}
+	}
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_code_block_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_method_body_on_one_line
+public class Example {
+	private int something;
+	public int getSomething() { return something; }
+	public void setSomehing(int something) { this.something = something; }
+	public void doNoting() {}
+	public void doOneThing() { System.out.println();
+	}
+	public void doMoreThings() { something = 4; doOneThing(); doOneThing(); }
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_method_body_on_one_line
+
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_type_declaration_on_one_line
+public class EmptyClass{}
+public class TinyClass{ 
+	int a; }
+public class SmallClass{ int a; String b; }
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_type_declaration_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_anonymous_type_declaration_on_one_line
+public class AnonymousClasses {
+	EmptyClass emptyAnonymous = new EmptyClass() {
+	};
+	TinyClass tinyAnonymous = new TinyClass() { String b; };
+	Object o = new SmallClass() { int a; int getA() { return a; } };
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_anonymous_type_declaration_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_enum_declaration_on_one_line
+public enum EmptyEnum {}
+public enum TinyEnum{ A;
+}
+public enum SmallEnum{ VALUE(0); SmallEnum(int val) {}; }
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_enum_declaration_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_enum_constant_declaration_on_one_line
+public enum EnumConstants {
+	EMPTY {
+	},
+	TINY { int getVal() { return 2; }},
+	SMALL { int val = 3; int getVal() { return 3; }};
+	int getVal() { return 1; }
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_enum_constant_declaration_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_annotation_declaration_on_one_line
+public @interface EmptyInterface {}
+public @interface TinyInterface { 
+	void run(); }
+public @interface SmallInteface { int toA(); String toB(); }
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_annotation_declaration_on_one_line
 
 }
 
@@ -733,29 +849,54 @@ class Example {SomeClass foo() {return SomeOtherClass.new SomeClass(100,
 500 );}}
 //--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression
 
-//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_binary_expression
-class Example extends AnotherClass {int foo() {  int sum= 100
- + 200
- + 300
- + 400
- + 500
- + 600
- + 700
- + 800;  int product= 1
- * 2
- * 3
- * 4
- * 5
- * 6
- * 7
- * 8
- * 9
- * 10;  boolean val= true && false && true && false && true;  return product / sum;}}
-//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_binary_expression
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_multiplicative_operator
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_additive_operator
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_string_concatenation
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_shift_operator
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_relational_operator
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_bitwise_operator
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_logical_operator
+class Example {
+
+boolean firstIsGreater = 11111111 + 22222222 +
+33333333 + 44444444 +
+55555555 + 66666666
+>
+1.11111111 * 2.22222222 * 3.33333333
+* 4.44444444 * 5.55555555 * 6.66666666;
+
+String concatenatedString = "one two three four " + "five six seven eight " + "nine ten eleven twelve";
+
+int shiftedInteger = 0xCAFEFACE >>> 0x00000001
+		>>>
+		0x00000002
+		<<
+		0x00000003 >>> 0x00000004;
+
+int bitAritmetic = 0xCAFEFACE | 0x01010101 & 0x02020202 ^ 0x03030303 ^ 0x04040404 | 0x05050505;
+
+boolean multipleConditions = conditionOne && conditionTwo || conditionThree && conditionFour || conditionFive;
+
+}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_multiplicative_operator
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_additive_operator
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_string_concatenation
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_shift_operator
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_relational_operator
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_bitwise_operator
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_logical_operator
 
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_conditional_expression
-class Example extends AnotherClass {int foo(boolean argument) {return argument ? 100000 : 200000;}}
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_conditional_expression_chain
+class Example extends AnotherClass {int foo(boolean argument) {
+	boolean someValue = condition1() ? value1
+	        : condition2() ? value2
+	        : condition3 ? value3
+	        : value4;
+	return argument ? 100000 : 200000;
+}}
 //--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_conditional_expression
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_conditional_expression_chain
 
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_expressions_in_array_initializer
 class Example {int [] fArray= {1,
@@ -870,7 +1011,7 @@ int foo3();
  * between 0 and 100.
  * @param second The second parameter.
  * @throws Exception when the foo operation cannot be performed for one reason or another.
- * @return The result of the foo operation, usually within 0 and 1000.
+ * @return The result of the foo operation, usually an even number within 0 and 1000.
  */ int foo(int first, int second) throws Exception;
 }
 class Test {

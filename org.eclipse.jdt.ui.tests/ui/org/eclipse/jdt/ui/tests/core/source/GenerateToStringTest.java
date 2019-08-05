@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2016 Mateusz Matela and others.
+ * Copyright (c) 2008, 2019 Mateusz Matela and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -49,7 +49,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.codeassist.impl.AssistOptions;
 import org.eclipse.jdt.internal.corext.codemanipulation.tostringgeneration.GenerateToStringOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.tostringgeneration.ToStringGenerationSettings;
-import org.eclipse.jdt.internal.corext.codemanipulation.tostringgeneration.ToStringGenerationSettings.CustomBuilderSettings;
+import org.eclipse.jdt.internal.corext.codemanipulation.tostringgeneration.ToStringGenerationSettingsCore.CustomBuilderSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.tostringgeneration.ToStringTemplateParser;
 import org.eclipse.jdt.internal.corext.refactoring.rename.RefactoringAnalyzeUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
@@ -160,7 +160,7 @@ public class GenerateToStringTest extends SourceTestCase {
 
 		AbstractTypeDeclaration decl= ASTNodeSearchUtil.getAbstractTypeDeclarationNode(type, unit);
 		ITypeBinding binding= decl.resolveBinding();
-		GenerateToStringOperation op= GenerateToStringOperation.createOperation(binding, fKeys, unit, insertBefore, fSettings2);
+		GenerateToStringOperation op= GenerateToStringOperation.createOperation(binding, fKeys, unit, insertBefore, fSettings2, true, true);
 		op.run(new NullProgressMonitor());
 		JavaModelUtil.reconcile(type.getCompilationUnit());
 	}
@@ -236,9 +236,6 @@ public class GenerateToStringTest extends SourceTestCase {
 				+ "	int aStringMethod() {\r\n"
 				+ "		return \"\";\r\n"
 				+ "	}\r\n"
-				+ "	/* (non-Javadoc)\r\n"
-				+ "	 * @see java.lang.Object#toString()\r\n"
-				+ "	 */\r\n"
 				+ "	@Override\r\n"
 				+ "	public String toString() {\r\n"
 				+ "		return \"A [aBool=\" + aBool + \", aByte=\" + aByte + \", aChar=\" + aChar + \", anInt=\" + anInt + \", aDouble=\" + aDouble + \", aFloat=\" + aFloat + \", aLong=\" + aLong + \", aFloatMethod()=\" + aFloatMethod() + \", aStringMethod()=\" + aStringMethod() + \"]\";\r\n"
@@ -2663,9 +2660,6 @@ public class GenerateToStringTest extends SourceTestCase {
 				+ "	int[] anArrayMethod() {\r\n"
 				+ "		return new int[0];\r\n"
 				+ "	}\r\n"
-				+ "	/* (non-Javadoc)\r\n"
-				+ "	 * @see java.lang.Object#toString()\r\n"
-				+ "	 */\r\n"
 				+ "	@Override\r\n"
 				+ "	public String toString() {\r\n"
 				+ "		ToStringBuilder builder = new ToStringBuilder(this);\r\n"

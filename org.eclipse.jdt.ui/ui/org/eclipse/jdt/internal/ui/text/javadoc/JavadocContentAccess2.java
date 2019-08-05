@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2017 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -128,8 +128,11 @@ public class JavadocContentAccess2 {
 	private static final String BLOCK_TAG_START= "<dl>"; //$NON-NLS-1$
 	private static final String BLOCK_TAG_END= "</dl>"; //$NON-NLS-1$
 
-	private static final String BlOCK_TAG_ENTRY_START= "<dd>"; //$NON-NLS-1$
-	private static final String BlOCK_TAG_ENTRY_END= "</dd>"; //$NON-NLS-1$
+	public static final String BlOCK_TAG_TITLE_START= "<dt>"; //$NON-NLS-1$
+	public static final String BlOCK_TAG_TITLE_END= "</dt>"; //$NON-NLS-1$
+
+	public static final String BlOCK_TAG_ENTRY_START= "<dd>"; //$NON-NLS-1$
+	public static final String BlOCK_TAG_ENTRY_END= "</dd>"; //$NON-NLS-1$
 
 	private static final String PARAM_NAME_START= "<b>"; //$NON-NLS-1$
 	private static final String PARAM_NAME_END= "</b> "; //$NON-NLS-1$
@@ -810,7 +813,7 @@ public class JavadocContentAccess2 {
 	 * @return the reader content as string
 	 */
 	private static String getString(Reader reader) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		char[] buffer= new char[1024];
 		int count;
 		try {
@@ -943,6 +946,12 @@ public class JavadocContentAccess2 {
 		List<TagElement> sees= new ArrayList<>();
 		List<TagElement> since= new ArrayList<>();
 		List<TagElement> rest= new ArrayList<>();
+		List<TagElement> apinote= new ArrayList<>(1);
+		List<TagElement> implspec= new ArrayList<>(1);
+		List<TagElement> implnote= new ArrayList<>(1);
+		List<TagElement> uses= new ArrayList<>(1);
+		List<TagElement> provides= new ArrayList<>(1);
+		List<TagElement> hidden= new ArrayList<>(1);
 
 		List<TagElement> tags= fJavadoc.tags();
 		for (Iterator<TagElement> iter= tags.iterator(); iter.hasNext(); ) {
@@ -1012,6 +1021,18 @@ public class JavadocContentAccess2 {
 			} else if (TagElement.TAG_DEPRECATED.equals(tagName)) {
 				if (deprecatedTag == null)
 					deprecatedTag= tag; // the Javadoc tool only shows the first deprecated tag
+			} else if (TagElement.TAG_API_NOTE.equals(tagName)) {
+				apinote.add(tag);
+			} else if (TagElement.TAG_IMPL_SPEC.equals(tagName)) {
+				implspec.add(tag);
+			} else if (TagElement.TAG_IMPL_NOTE.equals(tagName)) {
+				implnote.add(tag);
+			} else if (TagElement.TAG_USES.equals(tagName)) {
+				uses.add(tag);
+			} else if (TagElement.TAG_PROVIDES.equals(tagName)) {
+				provides.add(tag);
+			} else if (TagElement.TAG_HIDDEN.equals(tagName)) {
+				hidden.add(tag);
 			} else {
 				rest.add(tag);
 			}
@@ -1047,7 +1068,9 @@ public class JavadocContentAccess2 {
 		boolean hasExceptions= exceptions.size() > 0 || hasInheritedExceptions;
 
 		if (hasParameters || hasTypeParameters || hasReturnTag || hasExceptions
-				|| versions.size() > 0 || authors.size() > 0 || since.size() > 0 || sees.size() > 0 || rest.size() > 0
+				|| versions.size() > 0 || authors.size() > 0 || since.size() > 0 || sees.size() > 0 ||
+				apinote.size() > 0 || implnote.size() > 0 || implspec.size() > 0 || uses.size() > 0 ||
+				provides.size() > 0 || hidden.size() > 0 || rest.size() > 0
 				|| (fBuf.length() > 0 && (parameterDescriptions.length > 0 || exceptionDescriptions.length > 0))
 				) {
 			handleSuperMethodReferences();
@@ -1060,12 +1083,30 @@ public class JavadocContentAccess2 {
 			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_version_section, versions);
 			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_author_section, authors);
 			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_see_section, sees);
+			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_api_note, apinote);
+			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_impl_spec, implspec);
+			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_impl_note, implnote);
+			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_uses, uses);
+			handleBlockTags(JavaDocMessages.JavaDoc2HTMLTextReader_provides, provides);
+			if (hidden.size() > 0) {
+				handleBlockTagsHidden();
+			}
 			handleBlockTags(rest);
 			fBuf.append(BLOCK_TAG_END);
 
 		} else if (fBuf.length() > 0) {
 			handleSuperMethodReferences();
 		}
+	}
+
+	private void handleBlockTagsHidden() {
+		String replaceAll= fBuf.toString().replaceAll(BLOCK_TAG_START, "<dl hidden>"); //$NON-NLS-1$
+		replaceAll= replaceAll.replaceAll(BlOCK_TAG_TITLE_START, "<dt hidden>"); //$NON-NLS-1$
+		replaceAll= replaceAll.replaceAll(BlOCK_TAG_ENTRY_START, "<dd hidden>"); //$NON-NLS-1$
+		// For tags like deprecated
+		replaceAll= replaceAll.replaceAll(PARAM_NAME_START, "<b hidden>"); //$NON-NLS-1$
+		fBuf.setLength(0);
+		fBuf.append(replaceAll);
 	}
 
 	private void handleDeprecatedTag(TagElement tag) {
@@ -1451,7 +1492,6 @@ public class JavadocContentAccess2 {
 
 	private void handleInlineTagElement(TagElement node) {
 		String name= node.getTagName();
-		
 		if (TagElement.TAG_VALUE.equals(name) && handleValueTag(node))
 			return;
 
@@ -1459,14 +1499,20 @@ public class JavadocContentAccess2 {
 		boolean isLinkplain= TagElement.TAG_LINKPLAIN.equals(name);
 		boolean isCode= TagElement.TAG_CODE.equals(name);
 		boolean isLiteral= TagElement.TAG_LITERAL.equals(name);
+		boolean isSummary = TagElement.TAG_SUMMARY.equals(name);
+		boolean isIndex = TagElement.TAG_INDEX.equals(name);
 
-		if (isLiteral || isCode)
+		if (isLiteral || isCode || isSummary || isIndex)
 			fLiteralContent++;
 		if (isLink || isCode)
 			fBuf.append("<code>"); //$NON-NLS-1$
 
 		if (isLink || isLinkplain)
 			handleLink(node.fragments());
+		else if (isSummary)
+			handleSummary(node.fragments());
+		else if (isIndex)
+			handleIndex(node.fragments());
 		else if (isCode || isLiteral)
 			handleContentElements(node.fragments(), true);
 		else if (handleInheritDoc(node)) {
@@ -1747,9 +1793,9 @@ public class JavadocContentAccess2 {
 	}
 
 	private void handleBlockTagTitle(String title) {
-		fBuf.append("<dt>"); //$NON-NLS-1$
+		fBuf.append(BlOCK_TAG_TITLE_START);
 		fBuf.append(title);
-		fBuf.append("</dt>"); //$NON-NLS-1$
+		fBuf.append(BlOCK_TAG_TITLE_END);
 	}
 
 	private void handleSeeTag(TagElement tag) {
@@ -1866,6 +1912,30 @@ public class JavadocContentAccess2 {
 			fBuf.append(PARAM_NAME_END);
 
 			handleContentElements(fragments.subList(i, fragments.size()));
+		}
+	}
+
+	private void handleSummary(List<? extends ASTNode> fragments) {
+		int fs= fragments.size();
+		if (fs > 0) {
+			Object first= fragments.get(0);
+			if (first instanceof TextElement) {
+				TextElement memberRef= (TextElement) first;
+				fBuf.append(BlOCK_TAG_TITLE_START + "Summary: " + memberRef.getText() + BlOCK_TAG_TITLE_END); //$NON-NLS-1$
+				return;
+			}
+		}
+	}
+
+	private void handleIndex(List<? extends ASTNode> fragments) {
+		int fs= fragments.size();
+		if (fs > 0) {
+			Object first= fragments.get(0);
+			if (first instanceof TextElement) {
+				TextElement memberRef= (TextElement) first;
+				fBuf.append(  memberRef.getText() );
+				return;
+			}
 		}
 	}
 
@@ -2195,7 +2265,7 @@ public class JavadocContentAccess2 {
 
 	private static String getContentsFromInputStream(InputStream in, String encoding) throws CoreException {
 		final int defaultFileSize= 15 * 1024;
-		StringBuffer buffer= new StringBuffer(defaultFileSize);
+		StringBuilder buffer= new StringBuilder(defaultFileSize);
 		Reader reader= null;
 
 		try {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -143,6 +143,7 @@ public class JavaPluginImages {
 	public static final String IMG_OBJS_CLASSFOLDER_WSRC= NAME_PREFIX + "cf_src_obj.gif"; 		//$NON-NLS-1$
 	public static final String IMG_OBJS_CLASSFOLDER_WSRC_TEST= NAME_PREFIX + "cf_src_test_obj.gif"; 		//$NON-NLS-1$
 	public static final String IMG_OBJS_PROJECT_TEST= NAME_PREFIX + "project_test_obj.png"; //$NON-NLS-1$
+	public static final String IMG_OBJS_TEST_CASE= NAME_PREFIX + "new_testcase.png"; //$NON-NLS-1$
 
 	public static final String IMG_OBJS_ENV_VAR= NAME_PREFIX + "envvar_obj.gif"; 			//$NON-NLS-1$
 	public static final String IMG_OBJS_ENV_VAR_TEST= NAME_PREFIX + "envvar_test_obj.gif"; 			//$NON-NLS-1$
@@ -252,6 +253,7 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OBJS_PACKFRAG_ROOT_TESTSOURCES= createManagedFromKey(T_OBJ, IMG_OBJS_PACKFRAG_ROOT_TESTSOURCES);
 	public static final ImageDescriptor DESC_OBJS_PROJECT_SETTINGS= createManagedFromKey(T_OBJ, IMG_OBJS_PROJECT_SETTINGS);
 	public static final ImageDescriptor DESC_OBJS_PROJECT_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_PROJECT_TEST);
+	public static final ImageDescriptor DESC_OBJS_TEST_CASE= createManagedFromKey(T_ETOOL, IMG_OBJS_TEST_CASE);
 
 
 	public static final ImageDescriptor DESC_OBJS_JAVA_MODEL= createManagedFromKey(T_OBJ, IMG_OBJS_JAVA_MODEL);
@@ -442,6 +444,12 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OVR_CLASS= createUnManagedCached(T_OVR, "class_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_ABSTRACT_CLASS= createUnManagedCached(T_OVR, "class_abs_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_LIBRARY= createUnManagedCached(T_OVR, "library_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_SYSTEM_MOD= createUnManagedCached(T_OVR, "system_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_AUTO_MOD= createUnManagedCached(T_OVR, "auto_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_EXPORTS= createUnManagedCached(T_OVR, "exports_pkg_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_OPENS= createUnManagedCached(T_OVR, "opens_pkg_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_READS= createUnManagedCached(T_OVR, "reads_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_PATCH= createUnManagedCached(T_OVR, "patch_ovr.png"); //$NON-NLS-1$
 	
     // Call Hierarchy
     public static final ImageDescriptor DESC_OVR_RECURSIVE= createUnManaged(T_OVR, "recursive_co.png");              //$NON-NLS-1$
@@ -495,6 +503,9 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_DLCL_COLLAPSEALL= createUnManaged(T_DLCL, "collapseall.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_ELCL_MODIFYALL= createUnManaged(T_ELCL, "modifyall.png"); //$NON-NLS-1$
+
+	public static final ImageDescriptor DESC_ELCL_REMOVE_EXTRA_LINES= createUnManaged(T_ELCL, "remove_extra_lines.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_REMOVE_EXTRA_LINES= createUnManaged(T_DLCL, "remove_extra_lines.png"); //$NON-NLS-1$
 
 	// Image descriptors used for formatter line wrapping preferences
 	public static final ImageDescriptor DESC_ELCL_INDENT_COLUMN= createUnManaged(T_ELCL, "indent_column.png"); //$NON-NLS-1$

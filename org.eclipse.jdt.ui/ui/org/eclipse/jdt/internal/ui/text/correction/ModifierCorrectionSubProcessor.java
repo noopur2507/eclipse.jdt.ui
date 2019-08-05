@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -72,19 +72,22 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.IndentManipulation;
 
+import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2Core;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.fix.CleanUpConstants;
-import org.eclipse.jdt.internal.corext.fix.CompilationUnitRewriteOperationsFix.CompilationUnitRewriteOperation;
+import org.eclipse.jdt.internal.corext.fix.CompilationUnitRewriteOperationsFixCore;
 import org.eclipse.jdt.internal.corext.fix.IProposableFix;
 import org.eclipse.jdt.internal.corext.fix.Java50Fix;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalModel;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup;
 import org.eclipse.jdt.internal.corext.fix.UnimplementedCodeFix;
-import org.eclipse.jdt.internal.corext.fix.UnimplementedCodeFix.MakeTypeAbstractOperation;
+import org.eclipse.jdt.internal.corext.fix.UnimplementedCodeFixCore;
+import org.eclipse.jdt.internal.corext.fix.UnimplementedCodeFixCore.MakeTypeAbstractOperation;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -100,9 +103,6 @@ import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.fix.Java50CleanUp;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.FixCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.ModifierChangeCorrectionProposal;
-
-import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 /**
   */
@@ -242,6 +242,13 @@ public class ModifierCorrectionSubProcessor {
 		}
 		if (kind == TO_VISIBLE && bindingDecl.getKind() == IBinding.VARIABLE) {
 			UnresolvedElementsSubProcessor.getVariableProposals(context, problem, (IVariableBinding) bindingDecl, proposals);
+		} else if (kind == TO_STATIC && bindingDecl.getKind() == IBinding.VARIABLE
+				&& problem.getProblemId() == IProblem.InstanceFieldDuringConstructorInvocation) {
+			if (selectedNode.getNodeType() == ASTNode.SIMPLE_NAME) {
+				if (((SimpleName)selectedNode).getLocationInParent() == SuperConstructorInvocation.ARGUMENTS_PROPERTY) {
+					UnresolvedElementsSubProcessor.getVariableProposals(context, problem, (IVariableBinding) bindingDecl, proposals);
+				}
+			}
 		}
 	}
 
@@ -315,13 +322,13 @@ public class ModifierCorrectionSubProcessor {
 						else {
 							excludedModifiers= Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC;
 							includedModifiers= JdtFlags.getVisibilityCode(method);
-							
+
 							if (JdtFlags.getVisibilityCode(overriddenDecl) == JdtFlags.getVisibilityCode(method)) {
 								// don't propose the same visibility it already has
 								return;
 							}
 						}
-						
+
 						label= Messages.format(CorrectionMessages.ModifierCorrectionSubProcessor_changeoverriddenvisibility_description, new String[] {  getMethodLabel(targetMethod), getVisibilityString(includedModifiers) });
 						break;
 					case TO_NON_FINAL:
@@ -490,7 +497,7 @@ public class ModifierCorrectionSubProcessor {
 			}
 		}
 	}
-	
+
 	private static String getMethodLabel(IMethodBinding targetMethod) {
 		return BasicElementLabels.getJavaElementName(targetMethod.getDeclaringClass().getName() + '.' + targetMethod.getName());
 	}
@@ -643,11 +650,12 @@ public class ModifierCorrectionSubProcessor {
 	}
 
 	private static void addMakeTypeAbstractProposal(IInvocationContext context, TypeDeclaration parentTypeDecl, Collection<ICommandAccess> proposals) {
-		MakeTypeAbstractOperation operation= new UnimplementedCodeFix.MakeTypeAbstractOperation(parentTypeDecl);
-	
+		MakeTypeAbstractOperation operation= new UnimplementedCodeFixCore.MakeTypeAbstractOperation(parentTypeDecl);
+
 		String label= Messages.format(CorrectionMessages.ModifierCorrectionSubProcessor_addabstract_description, BasicElementLabels.getJavaElementName(parentTypeDecl.getName().getIdentifier()));
-		UnimplementedCodeFix fix= new UnimplementedCodeFix(label, context.getASTRoot(), new CompilationUnitRewriteOperation[] { operation });
-	
+		UnimplementedCodeFix fix= new UnimplementedCodeFix(label, context.getASTRoot(),
+				new CompilationUnitRewriteOperationsFixCore.CompilationUnitRewriteOperation[] { operation });
+
 		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
 		FixCorrectionProposal proposal= new FixCorrectionProposal(fix, null, IProposalRelevance.MAKE_TYPE_ABSTRACT_FIX, image, context);
 		proposals.add(proposal);
@@ -660,7 +668,7 @@ public class ModifierCorrectionSubProcessor {
 		if (selectedNode == null) {
 			return;
 		}
-		
+
 		TypeDeclaration parentTypeDecl= null;
 		if (selectedNode instanceof SimpleName) {
 			ASTNode parent= selectedNode.getParent();
@@ -670,11 +678,11 @@ public class ModifierCorrectionSubProcessor {
 		} else if (selectedNode instanceof TypeDeclaration) {
 			parentTypeDecl= (TypeDeclaration) selectedNode;
 		}
-		
+
 		if (parentTypeDecl == null) {
 			return;
 		}
-		
+
 		addMakeTypeAbstractProposal(context, parentTypeDecl, proposals);
 	}
 
@@ -890,7 +898,7 @@ public class ModifierCorrectionSubProcessor {
 	public static void addStaticMethodProposal(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals) {
 		addAddMethodModifierProposal(context, problem, proposals, Modifier.STATIC, CorrectionMessages.ModifierCorrectionSubProcessor_addstatic_description);
 	}
-	
+
 	private static void addAddMethodModifierProposal(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals, int modifier, String label) {
 		ICompilationUnit cu= context.getCompilationUnit();
 

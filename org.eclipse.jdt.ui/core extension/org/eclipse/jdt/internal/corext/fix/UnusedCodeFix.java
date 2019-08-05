@@ -154,7 +154,7 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 
 	/**
 	 * Removes the unused type parameter.
-	 * 
+	 *
 	 */
 	private static class RemoveUnusedTypeParameterOperation extends CompilationUnitRewriteOperation {
 		private final SimpleName fUnusedName;
@@ -373,7 +373,7 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 		private void splitUpDeclarations(ASTRewrite rewrite, TextEditGroup group, VariableDeclarationFragment frag, VariableDeclarationStatement originalStatement, List<Expression> sideEffects) {
 			if (sideEffects.size() > 0) {
 				ListRewrite statementRewrite= rewrite.getListRewrite(originalStatement.getParent(), (ChildListPropertyDescriptor) originalStatement.getLocationInParent());
-				
+
 				Statement previousStatement= originalStatement;
 				for (int i= 0; i < sideEffects.size(); i++) {
 					Expression sideEffect= sideEffects.get(i);
@@ -476,7 +476,7 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 					expression= childExpression;
 				}
 			}
-			
+
 			replaceCast(cast, expression, rewrite, group);
 		}
 	}
@@ -498,11 +498,11 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 			while (fUnnecessaryCasts.size() > 0) {
 				CastExpression castExpression= fUnnecessaryCasts.iterator().next();
 				fUnnecessaryCasts.remove(castExpression);
-				
+
 				/*
 				 * ASTRewrite doesn't allow replacing (deleting) of moved nodes. To solve problems
 				 * with nested casts, we need to replace all casts at once.
-				 * 
+				 *
 				 * The loop proceeds downwards to find the innermost expression that stays in the result (downChild)
 				 * and it also skips necessary parentheses.
 				 */
@@ -527,10 +527,10 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 						break;
 					}
 				}
-				
+
 				// downChild is the innermost CastExpression's expression, stripped of a necessary surrounding ParenthesizedExpression
 				// Move either downChild (if it doesn't need parentheses), or a parenthesized version if necessary
-				
+
 				replaceCast(castExpression, downChild, rewrite, group);
 			}
 		}
@@ -838,7 +838,7 @@ public class UnusedCodeFix extends CompilationUnitRewriteOperationsFix {
 	private static void replaceCast(CastExpression castExpression, Expression replacement, ASTRewrite rewrite, TextEditGroup group) {
 		boolean castEnclosedInNecessaryParentheses= castExpression.getParent() instanceof ParenthesizedExpression
 				&& NecessaryParenthesesChecker.needsParentheses(castExpression, castExpression.getParent().getParent(), castExpression.getParent().getLocationInParent());
-		
+
 		ASTNode toReplace= castEnclosedInNecessaryParentheses ? castExpression.getParent() : castExpression;
 		ASTNode move;
 		if (NecessaryParenthesesChecker.needsParentheses(replacement, toReplace.getParent(), toReplace.getLocationInParent())) {

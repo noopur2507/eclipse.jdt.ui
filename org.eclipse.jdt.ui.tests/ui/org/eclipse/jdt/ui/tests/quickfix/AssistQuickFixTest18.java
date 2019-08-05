@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
+import org.eclipse.jdt.testplugin.NullTestUtils;
 import org.eclipse.jdt.testplugin.TestOptions;
 
 import org.eclipse.core.runtime.Path;
@@ -102,7 +103,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testAssignParamToField1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public interface I {\n");
 		buf.append("    default void foo(int x) {\n");
@@ -121,7 +122,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testAssignParamToField2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public interface I {\n");
 		buf.append("    static void bar(int x) {\n");
@@ -238,7 +239,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("interface I {\n");
 		buf.append("    void method();\n");
@@ -271,7 +272,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("interface I {\n");
 		buf.append("    void method();\n");
@@ -305,7 +306,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 		JavaProjectHelper.set17CompilerOptions(fJProject1);
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		try {
-			StringBuffer buf= new StringBuffer();
+			StringBuilder buf= new StringBuilder();
 			buf.append("package test1;\n");
 			buf.append("interface I {\n");
 			buf.append("    void method();\n");
@@ -337,7 +338,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("interface I {\n");
 		buf.append("    boolean equals(Object obj);\n");
@@ -366,7 +367,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("abstract class C {\n");
 		buf.append("    abstract void method();\n");
@@ -669,7 +670,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda13() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("interface J {\n");
 		buf.append("    <M> J run(M x);\n");
@@ -954,7 +955,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda19() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("public class C1 {\n");
 		buf.append("    Runnable r1 = new/*[1]*/ Runnable() {\n");
@@ -1112,7 +1113,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda22() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("import java.io.IOException;\n");
 		buf.append("import java.lang.annotation.ElementType;\n");
@@ -1268,7 +1269,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda23() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("import java.lang.annotation.ElementType;\n");
 		buf.append("import java.lang.annotation.Target;\n");
@@ -1400,7 +1401,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda25() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("public class C1 {\n");
 		buf.append("    Runnable run = new Runnable() {\n");
@@ -1421,7 +1422,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertToLambda26() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("public class C1 {\n");
 		buf.append("    Runnable run = new Runnable() {\n");
@@ -2425,7 +2426,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testChangeLambdaBodyToExpression6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("class E {\n");
 		buf.append("    FI2 fi2z= x -> { };\n");
@@ -2448,7 +2449,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testChangeLambdaBodyToExpression7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("class E {\n");
 		buf.append("    FI2 fi2c = x ->    {\n");
@@ -2473,7 +2474,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testChangeLambdaBodyToExpression8() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("class E {\n");
 		buf.append("    FI2 fi2c = x ->    {\n");
@@ -2594,7 +2595,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testAddInferredLambdaParamTypes3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.function.IntFunction;\n");
 		buf.append("import java.util.function.Supplier;\n");
@@ -2710,7 +2711,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("interface J<R> {\n");
 		buf.append("    <T> R run(T t);\n");
@@ -2734,7 +2735,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.HashSet;\n");
 		buf1.append("import java.util.function.*;\n");
@@ -2896,7 +2897,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda5() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.*;\n");
 		buf1.append("public class E5<T> {\n");
@@ -3001,7 +3002,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.*;\n");
 		buf1.append("public class E6<T> {\n");
@@ -3192,7 +3193,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.*;\n");
 		buf1.append("public class E7<T> {\n");
@@ -3389,7 +3390,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertMethodReferenceToLambda11() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test01", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test01;\n");
 		buf1.append("import java.util.function.Supplier;\n");
 		buf1.append("public class E10 extends Sup {\n");
@@ -3806,7 +3807,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertLambdaToMethodReference1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.function.BiFunction;\n");
 		buf.append("import java.util.function.Consumer;\n");
@@ -3929,7 +3930,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertLambdaToMethodReference2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.Function;\n");
 		buf1.append("public class E2<T> {\n");
@@ -4009,7 +4010,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertLambdaToMethodReference3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.Function;\n");
 		buf1.append("public class E3<T> extends SuperE3<Number> {\n");
@@ -4369,7 +4370,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testConvertLambdaToMethodReference4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.BiFunction;\n");
 		buf1.append("import java.util.function.Function;\n");
@@ -4501,7 +4502,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testFixParenthesesInLambdaExpressionAdd() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.Consumer;\n");
 		buf1.append("public class MyClass {\n");
@@ -4517,7 +4518,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 		List<IJavaCompletionProposal> proposals= collectAssists(context, false);
 		assertNumberOfProposals(proposals, 7);
 		assertCorrectLabels(proposals);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.function.Consumer;\n");
 		buf.append("public class MyClass {\n");
@@ -4531,7 +4532,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testFixParenthesesInLambdaExpressionRemove() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.Consumer;\n");
 		buf1.append("public class MyClass {\n");
@@ -4547,7 +4548,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 		List<IJavaCompletionProposal> proposals= collectAssists(context, false);
 		assertNumberOfProposals(proposals, 7);
 		assertCorrectLabels(proposals);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.function.Consumer;\n");
 		buf.append("public class MyClass {\n");
@@ -4561,7 +4562,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testFixParenthesesInLambdaExpressionCannotRemove1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public class MyClass {\n");
 		buf.append("    public void foo() {\n");
@@ -4581,7 +4582,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testFixParenthesesInLambdaExpressionCannotRemove2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.Comparator;\n");
 		buf.append("public class MyClass {\n");
@@ -4602,7 +4603,7 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 
 	public void testFixParenthesesInLambdaExpressionCannotRemove3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf1= new StringBuffer();
+		StringBuilder buf1= new StringBuilder();
 		buf1.append("package test1;\n");
 		buf1.append("import java.util.function.Consumer;\n");
 		buf1.append("public class MyClass {\n");
@@ -5241,5 +5242,83 @@ public class AssistQuickFixTest18 extends QuickFixTest {
 		buf.append("    };\n");
 		buf.append("}\n");
 		assertProposalPreviewEquals(buf.toString(), "Convert to anonymous class creation", proposals);		
+	}
+	
+	public void testNoRedundantNonNullInConvertArrayForLoop() throws Exception {
+		NullTestUtils.prepareNullTypeAnnotations(fSourceFolder);
+		try {
+			IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+			StringBuffer buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("import annots.*;\n");
+			buf.append("public class A {\n");
+			buf.append("    public void foo(@NonNull String[] array) {\n");
+			buf.append("		for (int i = 0; i < array.length; i++){\n");
+			buf.append("			System.out.println(array[i]);\n");
+			buf.append("		}\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			ICompilationUnit cu= pack1.createCompilationUnit("A.java", buf.toString(), false, null);
+
+	        AssistContext context= getCorrectionContext(cu, buf.toString().indexOf("for"), 0);
+			ArrayList<IJavaCompletionProposal> proposals= collectAssists(context, false);
+			
+			assertCorrectLabels(proposals);
+			assertNumberOfProposals(proposals, 3);
+
+			buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("import annots.*;\n");
+			buf.append("public class A {\n");
+			buf.append("    public void foo(@NonNull String[] array) {\n");
+			buf.append("		for (String element : array) {\n");
+			buf.append("			System.out.println(element);\n");
+			buf.append("		}\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			assertProposalPreviewEquals(buf.toString(), "Convert to enhanced 'for' loop", proposals);
+		} finally {
+			NullTestUtils.disableAnnotationBasedNullAnalysis(fSourceFolder);
+		}
+	}
+	public void testNoRedundantNonNullInConvertIterableForLoop() throws Exception {
+		NullTestUtils.prepareNullTypeAnnotations(fSourceFolder);
+		try {
+			IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+			StringBuffer buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("import java.util.Iterator;\n");
+			buf.append("import annots.*;\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("public class A {\n");
+			buf.append("    public void foo(Iterable<String> x) {\n");
+			buf.append("		for (Iterator<String> iterator = x.iterator(); iterator.hasNext();){\n");
+			buf.append("			System.out.println(iterator.next());\n");
+			buf.append("		}\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			ICompilationUnit cu= pack1.createCompilationUnit("A.java", buf.toString(), false, null);
+
+	        AssistContext context= getCorrectionContext(cu, buf.toString().indexOf("for"), 0);
+			ArrayList<IJavaCompletionProposal> proposals= collectAssists(context, false);
+			
+			assertCorrectLabels(proposals);
+			assertNumberOfProposals(proposals, 3);
+
+			buf= new StringBuffer();
+			buf.append("package test1;\n");
+			buf.append("import annots.*;\n");
+			buf.append("@NonNullByDefault\n");
+			buf.append("public class A {\n");
+			buf.append("    public void foo(Iterable<String> x) {\n");
+			buf.append("		for (String string : x) {\n");
+			buf.append("			System.out.println(string);\n");
+			buf.append("		}\n");
+			buf.append("    }\n");
+			buf.append("}\n");
+			assertProposalPreviewEquals(buf.toString(), "Convert to enhanced 'for' loop", proposals);
+		} finally {
+			NullTestUtils.disableAnnotationBasedNullAnalysis(fSourceFolder);
+		}
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -43,8 +43,10 @@ public class ProfileVersioner implements IProfileVersioner {
 	private static final int VERSION_12= 12; // https://bugs.eclipse.org/318010
 	private static final int VERSION_13= 13; // https://bugs.eclipse.org/514019
 	private static final int VERSION_14= 14; // https://bugs.eclipse.org/128653, https://bugs.eclipse.org/531826
+	private static final int VERSION_15= 15; // https://bugs.eclipse.org/205973
+	private static final int VERSION_16= 16; // https://bugs.eclipse.org/543080, https://bugs.eclipse.org/543475
 
-	private static final int CURRENT_VERSION= VERSION_14;
+	private static final int CURRENT_VERSION= VERSION_16;
 
 	@Override
 	public int getFirstVersion() {
@@ -108,6 +110,12 @@ public class ProfileVersioner implements IProfileVersioner {
 			//$FALL-THROUGH$
 		case VERSION_13 :
 			version13to14(oldSettings);
+			//$FALL-THROUGH$
+		case VERSION_14:
+			version14to15(oldSettings);
+			//$FALL-THROUGH$
+		case VERSION_15:
+			version15to16(oldSettings);
 			//$FALL-THROUGH$
 		default:
 		    for (final Iterator<String> iter= oldSettings.keySet().iterator(); iter.hasNext(); ) {
@@ -457,7 +465,7 @@ public class ProfileVersioner implements IProfileVersioner {
 
 		checkAndReplace(oldSettings,
 			FORMATTER_BINARY_EXPRESSION_ALIGNMENT,
-			DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION);
+			FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION);
 
 		checkAndReplace(oldSettings,
 			FORMATTER_COMPACT_IF_ALIGNMENT,
@@ -580,8 +588,8 @@ public class ProfileVersioner implements IProfileVersioner {
 
 	private static void version9to10(Map<String, String> oldSettings) {
 		checkAndReplace(oldSettings,
-				DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION,
-				DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION);
+				FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION,
+				FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION);
 		checkAndReplace(oldSettings,
 				DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_TYPE_HEADER,
 				DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_ANNOTATION_DECLARATION_HEADER);
@@ -630,6 +638,61 @@ public class ProfileVersioner implements IProfileVersioner {
 			oldSettings.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_PARAMETER_DESCRIPTION, DefaultCodeFormatterConstants.FALSE);
 
 		oldSettings.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_ALIGN_TAGS_DESCREIPTIONS_GROUPED, DefaultCodeFormatterConstants.FALSE);
+	}
+
+	private static void version14to15(Map<String, String> oldSettings) {
+		String[][] transitions= {
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_ANNOTATION_DECLARATION_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_ANONYMOUS_TYPE_DECLARATION_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANONYMOUS_TYPE_DECLARATION },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_IF_THEN_BODY_BLOCK_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_LOOP_BODY_BLOCK_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_LAMBDA_BODY_BLOCK_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_CODE_BLOCK_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_CONSTANT_DECLARATION_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_CONSTANT },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_DECLARATION_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_DECLARATION },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_METHOD_BODY_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_METHOD_BODY },
+				{ DefaultCodeFormatterConstants.FORMATTER_KEEP_TYPE_DECLARATION_ON_ONE_LINE, FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION },
+		};
+		for (String[] transition : transitions) {
+			String value= oldSettings.get(transition[1]);
+			if (JavaCore.DO_NOT_INSERT.equals(value))
+				oldSettings.put(transition[0], DefaultCodeFormatterConstants.ONE_LINE_IF_EMPTY);
+		}
+	}
+
+	private static void version15to16(Map<String, String> oldSettings) {
+		checkAndReplace(oldSettings, FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION, new String[] {
+				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_MULTIPLICATIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ADDITIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_STRING_CONCATENATION,
+				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BITWISE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_LOGICAL_OPERATOR,
+		});
+		checkAndReplace(oldSettings, FORMATTER_WRAP_BEFORE_BINARY_OPERATOR, new String[] {
+				DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_MULTIPLICATIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_ADDITIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_STRING_CONCATENATION,
+				DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_BITWISE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_LOGICAL_OPERATOR,
+		});
+		checkAndReplace(oldSettings, FORMATTER_INSERT_SPACE_BEFORE_BINARY_OPERATOR, new String[] {
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_MULTIPLICATIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_ADDITIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_STRING_CONCATENATION,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_SHIFT_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_RELATIONAL_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_BITWISE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_LOGICAL_OPERATOR,
+		});
+		checkAndReplace(oldSettings, FORMATTER_INSERT_SPACE_AFTER_BINARY_OPERATOR, new String[] {
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_MULTIPLICATIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_ADDITIVE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_STRING_CONCATENATION,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_SHIFT_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_RELATIONAL_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_BITWISE_OPERATOR,
+				DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_LOGICAL_OPERATOR,
+		});
 	}
 
 	/* old format constant values */
@@ -771,5 +834,106 @@ public class ProfileVersioner implements IProfileVersioner {
 	/** @deprecated As of 3.1, replaced by {@link org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants#FORMATTER_COMMENT_FORMAT_HTML} */
 	@Deprecated
 	private static final String FORMATTER_COMMENT_FORMATHTML= PreferenceConstants.FORMATTER_COMMENT_FORMATHTML;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_ANNOTATION_DECLARATION_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_ANONYMOUS_TYPE_DECLARATION_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANONYMOUS_TYPE_DECLARATION= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANONYMOUS_TYPE_DECLARATION;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_IF_THEN_BODY_BLOCK_ON_ONE_LINE},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_LOOP_BODY_BLOCK_ON_ONE_LINE},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_LAMBDA_BODY_BLOCK_ON_ONE_LINE},
+	 *             and {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_CODE_BLOCK_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_ENUM_CONSTANT_DECLARATION_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_CONSTANT= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_CONSTANT;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_ENUM_DECLARATION_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_DECLARATION= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_DECLARATION;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_METHOD_BODY_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_METHOD_BODY= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_METHOD_BODY;
+
+	/**
+	 * @deprecated As of 3.16 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_KEEP_TYPE_DECLARATION_ON_ONE_LINE}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION= DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION;
+
+	/**
+	 * @deprecated As of 3.17 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_ALIGNMENT_FOR_MULTIPLICATIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_ALIGNMENT_FOR_ADDITIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_ALIGNMENT_FOR_STRING_CONCATENATION},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_ALIGNMENT_FOR_BITWISE_OPERATOR},
+	 *             and
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_ALIGNMENT_FOR_LOGICAL_OPERATOR}
+	 */
+	@Deprecated
+	private static final String FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION= DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION;
+
+	/**
+	 * @deprecated As of 3.17 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_WRAP_BEFORE_MULTIPLICATIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_WRAP_BEFORE_ADDITIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_WRAP_BEFORE_STRING_CONCATENATION},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_WRAP_BEFORE_BITWISE_OPERATOR}, and
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_WRAP_BEFORE_LOGICAL_OPERATOR}
+	 */
+	@Deprecated
+	private static final String FORMATTER_WRAP_BEFORE_BINARY_OPERATOR= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_BINARY_OPERATOR;
+
+	/**
+	 * @deprecated As of 3.17 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_MULTIPLICATIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_ADDITIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_STRING_CONCATENATION},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_SHIFT_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_RELATIONAL_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_BITWISE_OPERATOR}, and
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_BEFORE_LOGICAL_OPERATOR}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_SPACE_BEFORE_BINARY_OPERATOR= DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_BINARY_OPERATOR;
+
+	/**
+	 * @deprecated As of 3.17 replaced by
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_MULTIPLICATIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_ADDITIVE_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_STRING_CONCATENATION},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_SHIFT_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_RELATIONAL_OPERATOR},
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_BITWISE_OPERATOR}, and
+	 *             {@link DefaultCodeFormatterConstants#FORMATTER_INSERT_SPACE_AFTER_LOGICAL_OPERATOR}
+	 */
+	@Deprecated
+	private static final String FORMATTER_INSERT_SPACE_AFTER_BINARY_OPERATOR= DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_BINARY_OPERATOR;
 
  }

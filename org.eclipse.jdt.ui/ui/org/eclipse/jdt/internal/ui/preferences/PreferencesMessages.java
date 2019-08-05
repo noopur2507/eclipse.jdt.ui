@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     John Kaplan, johnkaplantech@gmail.com - 108071 [code templates] template for body of newly created class
@@ -20,6 +20,7 @@
  *     				Warning option for bug 410218 - https://bugs.eclipse.org/461999
  *     Gábor Kövesdán - Contribution for Bug 350000 - [content assist] Include non-prefix matches in auto-complete suggestions
  *     Jesper S Møller - Contributions for bug 529432 - Allow JDT UI to target Java 10
+ *     Angelo Zerr <angelo.zerr@gmail.com> - [CodeMining] Provide Java References/Implementation CodeMinings - Bug 529127
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
@@ -167,6 +168,7 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_highlightEnclosingBrackets;
 	public static String JavaEditorPreferencePage_highlightMatchingBracket;
 	public static String JavaEditorPreferencePage_insertSingleProposalsAutomatically;
+	public static String JavaEditorPreferencePage_disableCompletionProposalTriggerChars;
 	public static String JavaEditorPreferencePage_showOnlyProposalsVisibleInTheInvocationContext;
 	public static String JavaEditorPreferencePage_presentProposalsInAlphabeticalOrder;
 	public static String JavaEditorPreferencePage_coloring_element;
@@ -257,7 +259,8 @@ public final class PreferencesMessages extends NLS {
 	public static String JavadocConfigurationBlock_MalformedURL_error;
 	public static String JavadocConfigurationBlock_validate_button;
 	public static String JavadocConfigurationBlock_InvalidLocation_message;
-	public static String JavadocConfigurationBlock_ValidLocation_message;
+	public static String JavadocConfigurationBlock_ValidPackageListJavadocLocation_message;
+	public static String JavadocConfigurationBlock_ValidElementListJavadocLocation_message;
 	public static String JavadocConfigurationBlock_OK_label;
 	public static String JavadocConfigurationBlock_Open_label;
 	public static String JavadocConfigurationBlock_UnableToValidateLocation_message;
@@ -309,7 +312,7 @@ public final class PreferencesMessages extends NLS {
 	public static String AppearancePreferencePage_pkgNamePatternAbbreviateEnable_label;
 	public static String AppearancePreferencePage_pkgNamePatternAbbreviate_label;
 	public static String AppearancePreferencePage_showMembersInPackagesView;
-	public static String AppearancePreferencePage_decorateTestCodeContainerIcons;	
+	public static String AppearancePreferencePage_decorateTestCodeContainerIcons;
 	public static String AppearancePreferencePage_stackViewsVerticallyInTheJavaBrowsingPerspective;
 	public static String AppearancePreferencePage_note;
 	public static String AppearancePreferencePage_preferenceOnlyEffectiveForNewPerspectives;
@@ -529,6 +532,8 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_codegen_method_parameters_attr;
 	public static String ComplianceConfigurationBlock_compiler_compliance_label;
 	public static String ComplianceConfigurationBlock_default_settings_label;
+	public static String ComplianceConfigurationBlock_enable_preview_label;
+	public static String ComplianceConfigurationBlock_enable_preview_severity_label;
 	public static String ComplianceConfigurationBlock_source_compatibility_label;
 	public static String ComplianceConfigurationBlock_codegen_targetplatform_label;
 	public static String ComplianceConfigurationBlock_pb_assert_as_identifier_label;
@@ -810,10 +815,10 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_jrecompliance_info;
 	public static String ComplianceConfigurationBlock_jrecompliance_info_project;
 	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_info;
+	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_warning;
 	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_label;
 	public static String ProblemSeveritiesConfigurationBlock_section_generics;
 	public static String JavaBasePreferencePage_dialogs;
-	public static String JavaBasePreferencePage_EnableNewJavaIndex;
 	public static String JavaBasePreferencePage_do_not_hide_description;
 	public static String JavaBasePreferencePage_do_not_hide_button;
 	public static String JavaBasePreferencePage_do_not_hide_dialog_title;
@@ -826,6 +831,7 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_version9;
 	public static String ComplianceConfigurationBlock_version10;
 	public static String ComplianceConfigurationBlock_version_11;
+	public static String ComplianceConfigurationBlock_version_12;
 	public static String ComplianceConfigurationBlock_versionCLDC11;
 	public static String ComplianceConfigurationBlock_src_greater_compliance;
 	public static String ComplianceConfigurationBlock_classfile_greater_compliance;
@@ -879,4 +885,15 @@ public final class PreferencesMessages extends NLS {
 	public static String FilteredPreferencesTree_expandAll_tooltip;
 	public static String FilterTextControl_Clear;
 	public static String FilterTextControl_ClearFilterField;
+
+	public static String JavaEditorCodeMiningConfigurationBlock_common_description;
+	public static String JavaEditorCodeMiningConfigurationBlock_enableCodeMining_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showCodeMining_atLeastOne_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_section_general;
+	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_onTypes_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_onFields_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_onMethods_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showImplementations_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showParameterNames_label;
 }

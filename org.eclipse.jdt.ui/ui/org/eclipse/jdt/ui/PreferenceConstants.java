@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Guven Demir <guven.internet+eclipse@gmail.com> - [package explorer] Alternative package name shortening: abbreviation - https://bugs.eclipse.org/bugs/show_bug.cgi?id=299514
  *     Red Hat Inc - modify to use CodeGenerationSettingsConstants
+ *     Angelo Zerr <angelo.zerr@gmail.com> - [CodeMining] Provide Java References/Implementation CodeMinings - Bug 529127
  *******************************************************************************/
 package org.eclipse.jdt.ui;
 
@@ -30,6 +31,8 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.JFacePreferences;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.resource.JFaceResources;
+
+import org.eclipse.jface.text.contentassist.ContentAssistant;
 
 import org.eclipse.ui.PlatformUI;
 
@@ -148,7 +151,7 @@ public class PreferenceConstants {
 	 * will abbreviate 'javax.management.monitor' to '&lt;JMX&gt;.monitor'. A '#' at the beginning
 	 * of a line disables an entry.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	public static final String APPEARANCE_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW= "org.eclipse.jdt.ui.pkgNameAbbreviationPatternForPackagesView"; //$NON-NLS-1$
@@ -158,7 +161,7 @@ public class PreferenceConstants {
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
-	 * 
+	 *
 	 * @see #APPEARANCE_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW
 	 * @since 3.7
 	 */
@@ -192,6 +195,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>: A comma separated list of the
 	 * following entries. Each entry must be in the list, no duplication. List
 	 * order defines the sort order.
+	 * </p>
 	 * <ul>
 	 * <li><b>T</b>: Types</li>
 	 * <li><b>C</b>: Constructors</li>
@@ -202,7 +206,6 @@ public class PreferenceConstants {
 	 * <li><b>SM</b>: Static Methods</li>
 	 * <li><b>SF</b>: Static Fields</li>
 	 * </ul>
-	 * </p>
 	 * @since 2.1
 	 */
 	public static final String APPEARANCE_MEMBER_SORT_ORDER= MembersOrderPreferenceCacheCommon.APPEARANCE_MEMBER_SORT_ORDER;
@@ -214,13 +217,13 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>: A comma separated list of the
 	 * following entries. Each entry must be in the list, no duplication. List
 	 * order defines the sort order.
+	 * </p>
 	 * <ul>
 	 * <li><b>B</b>: Public</li>
 	 * <li><b>V</b>: Private</li>
 	 * <li><b>R</b>: Protected</li>
 	 * <li><b>D</b>: Default</li>
 	 * </ul>
-	 * </p>
 	 * @since 3.0
 	 */
 	public static final String APPEARANCE_VISIBILITY_SORT_ORDER= MembersOrderPreferenceCacheCommon.APPEARANCE_VISIBILITY_SORT_ORDER;
@@ -319,7 +322,7 @@ public class PreferenceConstants {
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static final String CODEGEN_IS_FOR_GETTERS= "org.eclipse.jdt.ui.gettersetter.use.is"; //$NON-NLS-1$
@@ -740,7 +743,7 @@ public class PreferenceConstants {
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	public final static String EDITOR_HIGHLIGHT_BRACKET_AT_CARET_LOCATION= "highlightBracketAtCaretLocation"; //$NON-NLS-1$
@@ -751,7 +754,7 @@ public class PreferenceConstants {
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	public final static String EDITOR_ENCLOSING_BRACKETS= "enclosingBrackets"; //$NON-NLS-1$
@@ -2338,7 +2341,6 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>: possible values are <code>
 	 * EDITOR_NO_HOVER_CONFIGURED_ID</code> or the hover id of a hover
 	 * contributed as <code>javaEditorTextHovers</code>.
-	 * </p>
 	 * @since 2.1
 	 * @deprecated As of 3.0, replaced by {@link #EDITOR_TEXT_HOVER_MODIFIERS}
 	 */
@@ -2989,6 +2991,18 @@ public class PreferenceConstants {
 	public final static String CODEASSIST_AUTOINSERT= "content_assist_autoinsert"; //$NON-NLS-1$
 
 	/**
+	 * A named preference that controls if the Java code assist ignores the insertion trigger
+	 * characters for completion proposals.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 * @see ContentAssistant#enableCompletionProposalTriggerChars(boolean)
+	 */
+	public static final String CODEASSIST_DISABLE_COMPLETION_PROPOSAL_TRIGGER_CHARS= "content_assist_disable_completion_trigger_chars"; //$NON-NLS-1$
+
+	/**
 	 * A named preference that controls if the Java code assist adds import
 	 * statements.
 	 * <p>
@@ -3331,6 +3345,7 @@ public class PreferenceConstants {
 	 * A named preference that controls which the order of the specific code assist commands.
 	 * <p>
 	 * Value is of type <code>String</code>, a "\0"-separated list with categoryId:cycleState where
+	 * </p>
 	 * <ul>
 	 * <li>categoryId is the <code>String</code> holding the category ID</li>
 	 * <li>cycleState is an <code>int</code> which specifies the rank and the enablement:
@@ -3339,9 +3354,7 @@ public class PreferenceConstants {
 	 *		<li>rank= enabled ? cycleState : cycleState - 65535)</li>
 	 * </ul></li>
 	 * </ul>
-	 * 
-	 * </p>
-	 * 
+	 *
 	 * @since 3.2
 	 */
 	public static final String CODEASSIST_CATEGORY_ORDER= "content_assist_category_order"; //$NON-NLS-1$
@@ -3423,7 +3436,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>: semicolon separated list of fully qualified type names
 	 * appended with ".*" or "." + method name.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public static final String PREF_DEFAULT_EXPAND_WITH_CONSTRUCTORS_MEMBERS= "CallHierarchy.defaultExpandWithConstructorsMembers"; //$NON-NLS-1$
@@ -3434,7 +3447,7 @@ public class PreferenceConstants {
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
 	 * </p>
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public static final String PREF_ANONYMOUS_EXPAND_WITH_CONSTRUCTORS= "CallHierarchy.anonymousExpandWithConstructors"; //$NON-NLS-1$
@@ -3780,6 +3793,144 @@ public class PreferenceConstants {
 	public final static String DECORATE_TEST_CODE_CONTAINER_ICONS= "decorateTestCodeContainerIcons"; //$NON-NLS-1$
 
 	/**
+	 * A named preference that controls whether codemining is enabled in the Java editor.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_CODEMINING_ENABLED= "editor_codemining_enabled"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Only if there is at least one result".
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_CODEMINING_AT_LEAST_ONE = "java.codemining.atLeastOne"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show references" codemining.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_REFERENCES = "java.codemining.references"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show references" on types.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_TYPES= "java.codemining.references.onTypes"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show references" on fields.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_FIELDS= "java.codemining.references.onFields"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show references" on methods.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_METHODS= "java.codemining.references.onMethods"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show implementations"
+	 * codemining.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.16
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_IMPLEMENTATIONS = "java.codemining.implementations"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the value for "Show parameter names"
+	 * codemining.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.18
+	 */
+	public static final String EDITOR_JAVA_CODEMINING_SHOW_PARAMETER_NAMES = "java.codemining.parameterNames"; //$NON-NLS-1$
+
+	/**
+	 * A named preference that stores the maximum number of chain completions
+	 * to be proposed at one time.
+	 * <p>
+	 * Value is of type <code>Integer</code>
+	 * </p>
+	 *
+	 * @since 3.18
+	 */
+	public static final String PREF_MAX_CHAINS = "recommenders.chain.max_chains"; //$NON-NLS-1$
+
+    /**
+     * A named preference that stores the minimum number of chain sequences
+     * for a given completion.
+     * <p>
+     * Value is of type <code>Integer</code>
+     * </p>
+     *
+	 * @since 3.18
+	 */
+
+    public static final String PREF_MIN_CHAIN_LENGTH = "recommenders.chain.min_chain_length"; //$NON-NLS-1$
+    /**
+     * A named preference that stores the maximum number of chain sequences
+     * for a given completion.
+     * <p>
+     * Value is of type <code>Integer</code>
+     * </p>
+     *
+     * @since 3.18
+     */
+    public static final String PREF_MAX_CHAIN_LENGTH = "recommenders.chain.max_chain_length"; //$NON-NLS-1$
+
+    /**
+     * A named preference that stores the amount of time (in seconds) to
+     * allow for chain completion processing. The chain completion processor
+     * timeout value.
+     * <p>
+     * Value is of type <code>Integer</code>
+     * </p>
+     *
+	 * @since 3.18
+	 */
+    public static final String PREF_CHAIN_TIMEOUT = "recommenders.chain.timeout"; //$NON-NLS-1$
+
+    /**
+	 * A named preference that stores a '|' separated list of types to exclude
+	 * from chain completion processing.
+	 * <p>
+	 * Value is of type <code>String</code>
+	 * </p>
+	 *
+	 * @since 3.18
+	 */
+    public static final String PREF_CHAIN_IGNORED_TYPES = "recommenders.chain.ignore_types"; //$NON-NLS-1$
+
+	/**
 	 * Initializes the given preference store with the default values.
 	 *
 	 * @param store the preference store to be initialized
@@ -3935,6 +4086,12 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOACTIVATION, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOACTIVATION_DELAY, 0);
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOINSERT, true);
+		store.setDefault(PreferenceConstants.CODEASSIST_DISABLE_COMPLETION_PROPOSAL_TRIGGER_CHARS, false);
+		store.setDefault(PreferenceConstants.PREF_MIN_CHAIN_LENGTH, 2);
+		store.setDefault(PreferenceConstants.PREF_MAX_CHAIN_LENGTH, 4);
+		store.setDefault(PreferenceConstants.PREF_MAX_CHAINS, 20);
+		store.setDefault(PreferenceConstants.PREF_CHAIN_TIMEOUT, 1);
+		store.setDefault(PreferenceConstants.PREF_CHAIN_IGNORED_TYPES, "java.lang.Object"); //$NON-NLS-1$
 
 		// Set the value for the deprecated color constants
 		initializeDeprecatedColorConstants(store);
@@ -3948,8 +4105,8 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.CODEASSIST_FILL_ARGUMENT_NAMES, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_GUESS_METHOD_ARGUMENTS, false);
 		store.setDefault(PreferenceConstants.CODEASSIST_PREFIX_COMPLETION, false);
-		store.setDefault(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES, "org.eclipse.jdt.ui.textProposalCategory\0org.eclipse.jdt.ui.javaTypeProposalCategory\0org.eclipse.jdt.ui.javaNoTypeProposalCategory\0"); //$NON-NLS-1$
-		store.setDefault(PreferenceConstants.CODEASSIST_CATEGORY_ORDER, "org.eclipse.jdt.ui.spellingProposalCategory:65545\0org.eclipse.jdt.ui.javaTypeProposalCategory:65540\0org.eclipse.jdt.ui.javaNoTypeProposalCategory:65539\0org.eclipse.jdt.ui.textProposalCategory:65541\0org.eclipse.jdt.ui.javaAllProposalCategory:65542\0org.eclipse.jdt.ui.templateProposalCategory:2\0org.eclipse.jdt.ui.swtProposalCategory:3\0"); //$NON-NLS-1$
+		store.setDefault(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES, "org.eclipse.jdt.ui.textProposalCategory\0org.eclipse.jdt.ui.javaTypeProposalCategory\0org.eclipse.jdt.ui.javaNoTypeProposalCategory\0org.eclipse.jdt.ui.javaChainProposalCategory\0"); //$NON-NLS-1$
+		store.setDefault(PreferenceConstants.CODEASSIST_CATEGORY_ORDER, "org.eclipse.jdt.ui.javaChainProposalCategory:65546\0org.eclipse.jdt.ui.spellingProposalCategory:65545\0org.eclipse.jdt.ui.javaTypeProposalCategory:65540\0org.eclipse.jdt.ui.javaNoTypeProposalCategory:65539\0org.eclipse.jdt.ui.textProposalCategory:65541\0org.eclipse.jdt.ui.javaAllProposalCategory:65542\0org.eclipse.jdt.ui.templateProposalCategory:2\0org.eclipse.jdt.ui.swtProposalCategory:3\0"); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_LRU_HISTORY, ""); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_SORTER, "org.eclipse.jdt.ui.RelevanceSorter"); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, ""); //$NON-NLS-1$
@@ -4009,8 +4166,9 @@ public class PreferenceConstants {
 			store.setValue(isInitializedKey, true);
 			Locale locale= SpellCheckEngine.getDefaultLocale();
 			locale= SpellCheckEngine.findClosestLocale(locale);
-			if (locale != null)
+			if (locale != null) {
 				store.setValue(PreferenceConstants.SPELLING_LOCALE, locale.toString());
+			}
 		}
 		store.setDefault(PreferenceConstants.SPELLING_IGNORE_DIGITS, true);
 		store.setDefault(PreferenceConstants.SPELLING_IGNORE_MIXED, true);
@@ -4114,6 +4272,17 @@ public class PreferenceConstants {
 			store.setValue(PREF_DEFAULT_EXPAND_WITH_CONSTRUCTORS_MEMBERS, ExpandWithConstructorsConfigurationBlock.serializeMembers(Arrays.asList(oldPrefStr)));
 			store.setToDefault(CallHierarchyContentProvider.OLD_PREF_DEFAULT_EXPAND_WITH_CONSTRUCTORS);
 		}
+
+		// Code minings preferences
+		store.setDefault(PreferenceConstants.EDITOR_CODEMINING_ENABLED, false);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_CODEMINING_AT_LEAST_ONE,
+				true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_TYPES, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_FIELDS, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_METHODS, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_IMPLEMENTATIONS, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_PARAMETER_NAMES, false);
 	}
 
 	/**
@@ -4186,8 +4355,9 @@ public class PreferenceConstants {
 		String encodedPreference= getPreference(CODEASSIST_EXCLUDED_CATEGORIES, null);
 		StringTokenizer tokenizer= new StringTokenizer(encodedPreference, "\0"); //$NON-NLS-1$
 		String[] result= new String[tokenizer.countTokens()];
-		for (int i= 0; i < result.length; i++)
+		for (int i= 0; i < result.length; i++) {
 			result[i]= tokenizer.nextToken();
+		}
 		return result;
 	}
 
@@ -4202,8 +4372,8 @@ public class PreferenceConstants {
 	public static void setExcludedCompletionProposalCategories(String[] categories) {
 		Assert.isLegal(categories != null);
 		StringBuilder buf= new StringBuilder(50 * categories.length);
-		for (int i= 0; i < categories.length; i++) {
-			buf.append(categories[i]);
+		for (String category : categories) {
+			buf.append(category);
 			buf.append('\0');
 		}
 		getPreferenceStore().setValue(CODEASSIST_EXCLUDED_CATEGORIES, buf.toString());
@@ -4240,7 +4410,7 @@ public class PreferenceConstants {
 
 	/**
 	 * Initializes deprecated color constants.
-	 * 
+	 *
 	 * @param store the preference store
 	 * @since 3.6
 	 */
@@ -4255,10 +4425,12 @@ public class PreferenceConstants {
 		}
 
 		// Workaround for https://bugs.eclipse.org/306736
-		if (bgRGB == null)
+		if (bgRGB == null) {
 			bgRGB= new RGB(255, 255, 255);
-		if (fgRGB == null)
+		}
+		if (fgRGB == null) {
 			fgRGB= new RGB(0, 0, 0);
+		}
 
 		setRGBValue(store, PreferenceConstants.CODEASSIST_PROPOSALS_BACKGROUND, bgRGB);
 		setRGBValue(store, PreferenceConstants.CODEASSIST_PROPOSALS_FOREGROUND, fgRGB);

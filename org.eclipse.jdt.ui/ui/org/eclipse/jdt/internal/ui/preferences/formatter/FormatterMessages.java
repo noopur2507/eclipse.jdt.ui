@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -47,6 +47,7 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_blankLines_tree_blank_lines;
 	public static String FormatterModifyDialog_blankLines_tree_class_declarations;
 	public static String FormatterModifyDialog_blankLines_tree_compilation_unit;
+	public static String FormatterModifyDialog_blankLines_val_remove_extra_lines;
 	public static String FormatterModifyDialog_braces_pref_annotation_type_declaration;
 	public static String FormatterModifyDialog_braces_pref_anonymous_class_declaration;
 	public static String FormatterModifyDialog_braces_pref_array_initializer;
@@ -74,6 +75,7 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_comments_pref_format_html;
 	public static String FormatterModifyDialog_comments_pref_format_line_comments_on_first_column;
 	public static String FormatterModifyDialog_comments_pref_indent_description_after_param;
+	public static String FormatterModifyDialog_comments_pref_indent_other_tag_descriptions;
 	public static String FormatterModifyDialog_comments_pref_javadoc_align;
 	public static String FormatterModifyDialog_comments_pref_javadoc_align_none;
 	public static String FormatterModifyDialog_comments_pref_javadoc_align_names_and_descriptions;
@@ -92,6 +94,8 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_comments_tree_block_comments;
 	public static String FormatterModifyDialog_comments_tree_comments;
 	public static String FormatterModifyDialog_comments_tree_javadocs;
+	public static String FormatterModifyDialog_indentation_info_blank_lines_before_field;
+	public static String FormatterModifyDialog_indentation_info_blank_lines_before_field_delete;
 	public static String FormatterModifyDialog_indentation_info_blank_lines_to_preserve;
 	public static String FormatterModifyDialog_indentation_pref_align_assignment_statements_on_columns;
 	public static String FormatterModifyDialog_indentation_pref_align_fields_in_columns;
@@ -119,12 +123,14 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_indentation_tree_indentation;
 	public static String FormatterModifyDialog_indentation_tree_indented_elements;
 	public static String FormatterModifyDialog_lineWrap_indentation_policy_label;
+	public static String FormatterModifyDialog_lineWrap_pref_additive_operators;
 	public static String FormatterModifyDialog_lineWrap_pref_annotations_arguments;
 	public static String FormatterModifyDialog_lineWrap_pref_arguments;
 	public static String FormatterModifyDialog_lineWrap_pref_array_init;
 	public static String FormatterModifyDialog_lineWrap_pref_assignments;
-	public static String FormatterModifyDialog_lineWrap_pref_binary_exprs;
+	public static String FormatterModifyDialog_lineWrap_pref_bitwise_operators;
 	public static String FormatterModifyDialog_lineWrap_pref_catch;
+	public static String FormatterModifyDialog_lineWrap_pref_chained_conditionals;
 	public static String FormatterModifyDialog_lineWrap_pref_compact_if_else;
 	public static String FormatterModifyDialog_lineWrap_pref_compact_loops;
 	public static String FormatterModifyDialog_lineWrap_pref_conditionals;
@@ -137,8 +143,10 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_lineWrap_pref_extends_clause;
 	public static String FormatterModifyDialog_lineWrap_pref_for;
 	public static String FormatterModifyDialog_lineWrap_pref_implements_clause;
+	public static String FormatterModifyDialog_lineWrap_pref_logical_operators;
 	public static String FormatterModifyDialog_lineWrap_pref_max_line_width;
 	public static String FormatterModifyDialog_lineWrap_pref_module_statements;
+	public static String FormatterModifyDialog_lineWrap_pref_multiplicative_operators;
 	public static String FormatterModifyDialog_lineWrap_pref_never_join_lines;
 	public static String FormatterModifyDialog_lineWrap_pref_object_allocation_arguments;
 	public static String FormatterModifyDialog_lineWrap_pref_param_type_arguments;
@@ -147,11 +155,15 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_lineWrap_pref_parameters;
 	public static String FormatterModifyDialog_lineWrap_pref_qualified_invocations;
 	public static String FormatterModifyDialog_lineWrap_pref_qualified_object_allocation_arguments;
+	public static String FormatterModifyDialog_lineWrap_pref_relational_operators;
+	public static String FormatterModifyDialog_lineWrap_pref_shift_operators;
+	public static String FormatterModifyDialog_lineWrap_pref_string_concatenation;
 	public static String FormatterModifyDialog_lineWrap_pref_superinterfaces;
 	public static String FormatterModifyDialog_lineWrap_pref_throws_clause;
 	public static String FormatterModifyDialog_lineWrap_pref_try;
 	public static String FormatterModifyDialog_lineWrap_pref_wrap_outer_expressions_when_nested;
 	public static String FormatterModifyDialog_lineWrap_tree_annotations;
+	public static String FormatterModifyDialog_lineWrap_tree_binary_expressions;
 	public static String FormatterModifyDialog_lineWrap_tree_class_decls;
 	public static String FormatterModifyDialog_lineWrap_tree_constructor_decls;
 	public static String FormatterModifyDialog_lineWrap_tree_enum_decls;
@@ -183,13 +195,6 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_newLines_pref_before_else_statements;
 	public static String FormatterModifyDialog_newLines_pref_before_finally_statements;
 	public static String FormatterModifyDialog_newLines_pref_before_while_in_do_statements;
-	public static String FormatterModifyDialog_newLines_pref_empty_annotation_decl;
-	public static String FormatterModifyDialog_newLines_pref_empty_anonymous_class_body;
-	public static String FormatterModifyDialog_newLines_pref_empty_block;
-	public static String FormatterModifyDialog_newLines_pref_empty_class_body;
-	public static String FormatterModifyDialog_newLines_pref_empty_enum_constant;
-	public static String FormatterModifyDialog_newLines_pref_empty_enum_declaration;
-	public static String FormatterModifyDialog_newLines_pref_empty_method_body;
 	public static String FormatterModifyDialog_newLines_pref_empty_statement;
 	public static String FormatterModifyDialog_newLines_pref_end_of_file;
 	public static String FormatterModifyDialog_newLines_pref_enum_constants;
@@ -202,6 +207,17 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_newLines_pref_keep_simple_if_on_one_line;
 	public static String FormatterModifyDialog_newLines_pref_keep_simple_while_body_on_one_line;
 	public static String FormatterModifyDialog_newLines_pref_keep_then_on_same_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_annotation_declaration_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_anonymous_type_declaration_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_code_block_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_enum_constant_declaration_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_enum_declaration_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_if_then_body_block_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_lambda_body_block_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_loop_body_block_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_method_body_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_simple_getter_setter_on_one_line;
+	public static String FormatterModifyDialog_newLines_pref_keep_type_declaration_on_one_line;
 	public static String FormatterModifyDialog_newLines_pref_local_variables;
 	public static String FormatterModifyDialog_newLines_pref_methods;
 	public static String FormatterModifyDialog_newLines_pref_packages;
@@ -209,11 +225,16 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_newLines_pref_type_annotations;
 	public static String FormatterModifyDialog_newLines_pref_types;
 	public static String FormatterModifyDialog_newLines_tree_after_annotations;
-	public static String FormatterModifyDialog_newLines_tree_between_empty_braces;
 	public static String FormatterModifyDialog_newLines_tree_control_statements;
 	public static String FormatterModifyDialog_newLines_tree_if_else;
+	public static String FormatterModifyDialog_newLines_tree_keep_braced_code_on_one_line;
 	public static String FormatterModifyDialog_newLines_tree_new_lines;
 	public static String FormatterModifyDialog_newLines_tree_simple_loops;
+	public static String FormatterModifyDialog_newLines_val_one_line_always;
+	public static String FormatterModifyDialog_newLines_val_one_line_if_empty;
+	public static String FormatterModifyDialog_newLines_val_one_line_if_single_item;
+	public static String FormatterModifyDialog_newLines_val_one_line_never;
+	public static String FormatterModifyDialog_newLines_val_one_line_preserve;
 	public static String FormatterModifyDialog_offOn_description;
 	public static String FormatterModifyDialog_offOn_error_endsWithWhitespace;
 	public static String FormatterModifyDialog_offOn_error_startsWithWhitespace;
@@ -243,10 +264,18 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_preview_show_whitespace_toggle;
 	public static String FormatterModifyDialog_preview_show_raw_source_toggle;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_and_list;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_arrow_in_case;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_arrow_in_default;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_arrow_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_assignment_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_at;
-	public static String FormatterModifyDialog_whiteSpace_pref_after_binary_operators;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_multiplicative_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_additive_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_string_concatenation;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_shift_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_relational_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_bitwise_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_logical_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_closing_angle_bracket;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_closing_brace;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_closing_paren;
@@ -257,6 +286,7 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_fields;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_implements;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_in_alloc;
+	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_in_case_expressions;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_in_method_args;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_in_params;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_comma_in_qalloc;
@@ -276,10 +306,18 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_whiteSpace_pref_after_semicolon;
 	public static String FormatterModifyDialog_whiteSpace_pref_after_unary_operators;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_and_list;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_arrow_in_case;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_arrow_in_default;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_arrow_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_assignment_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_at;
-	public static String FormatterModifyDialog_whiteSpace_pref_before_binary_operators;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_multiplicative_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_additive_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_string_concatenation;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_shift_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_relational_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_bitwise_operator;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_logical_operator;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_closing_angle_bracket;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_closing_brace;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_closing_bracket;
@@ -294,6 +332,7 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_fields;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_implements;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_in_alloc;
+	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_in_case_expressions;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_in_method_args;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_in_params;
 	public static String FormatterModifyDialog_whiteSpace_pref_before_comma_in_qalloc;
@@ -349,7 +388,8 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_whiteSpace_tree_lambda;
 	public static String FormatterModifyDialog_whiteSpace_tree_localvars;
 	public static String FormatterModifyDialog_whiteSpace_tree_methods;
-	public static String FormatterModifyDialog_whiteSpace_tree_operators;
+	public static String FormatterModifyDialog_whiteSpace_tree_unary_operators;
+	public static String FormatterModifyDialog_whiteSpace_tree_binary_operators;
 	public static String FormatterModifyDialog_whiteSpace_tree_param_type_ref;
 	public static String FormatterModifyDialog_whiteSpace_tree_parameterized_types;
 	public static String FormatterModifyDialog_whiteSpace_tree_parenexpr;

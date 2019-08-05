@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -57,6 +57,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -106,7 +107,8 @@ public class CodeStyleFix extends CompilationUnitRewriteOperationsFix {
 
 		@Override
 		public boolean visit(TypeDeclaration node) {
-			if (!fFindUnqualifiedStaticAccesses && !fFindUnqualifiedStaticMethodAccesses && node.isInterface())
+			if (!fFindUnqualifiedStaticAccesses && !fFindUnqualifiedStaticMethodAccesses
+					&& !fFindUnqualifiedAccesses && !fFindUnqualifiedMethodAccesses && node.isInterface())
 				return false;
 
 			return super.visit(node);
@@ -164,7 +166,7 @@ public class CodeStyleFix extends CompilationUnitRewriteOperationsFix {
 				return;
 
 			StructuralPropertyDescriptor parentDescription= node.getLocationInParent();
-			if (parentDescription == VariableDeclarationFragment.NAME_PROPERTY || parentDescription == SwitchCase.EXPRESSION_PROPERTY)
+			if (parentDescription == VariableDeclarationFragment.NAME_PROPERTY || parentDescription == SwitchCase.EXPRESSION_PROPERTY || parentDescription == SwitchCase.EXPRESSIONS2_PROPERTY)
 				return;
 
 			IBinding binding= node.resolveBinding();
@@ -424,7 +426,7 @@ public class CodeStyleFix extends CompilationUnitRewriteOperationsFix {
 		public void rewriteAST(CompilationUnitRewrite cuRewrite, LinkedProposalModel model) throws CoreException {
 			ASTRewrite rewrite= cuRewrite.getASTRewrite();
 			CompilationUnit compilationUnit= cuRewrite.getRoot();
-			importType(fDeclaringClass, fName, cuRewrite.getImportRewrite(), compilationUnit);
+			importType(fDeclaringClass, fName, cuRewrite.getImportRewrite(), compilationUnit, TypeLocation.OTHER);
 			TextEditGroup group;
 			if (fName.resolveBinding() instanceof IMethodBinding) {
 				group= createTextEditGroup(FixMessages.CodeStyleFix_QualifyMethodWithDeclClass_description, cuRewrite);
@@ -465,7 +467,7 @@ public class CodeStyleFix extends CompilationUnitRewriteOperationsFix {
 			if (fQualifier instanceof MethodInvocation || fQualifier instanceof ClassInstanceCreation)
 				extractQualifier(fQualifier, cuRewrite, group);
 
-			Type type= importType(fDeclaringTypeBinding, fQualifier, cuRewrite.getImportRewrite(), cuRewrite.getRoot());
+			Type type= importType(fDeclaringTypeBinding, fQualifier, cuRewrite.getImportRewrite(), cuRewrite.getRoot(), TypeLocation.UNKNOWN);
 			cuRewrite.getASTRewrite().replace(fQualifier, type, group);
 		}
 

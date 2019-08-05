@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2018 IBM Corporation and others.
+ * Copyright (c) 2012, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -143,6 +143,8 @@ public interface IProposalRelevance {
 	public static final int CHANGE_TO_RETURN= 5;
 	public static final int INCOMPATIBLE_FOREACH_TYPE= 5;
 	public static final int CHANGE_RETURN_TYPE_TO_VOID= 5;
+	public static final int CHANGE_TYPE_TO_VAR= 5;
+	public static final int CHANGE_TYPE_FROM_VAR= 5;
 	public static final int CHANGE_TO_CONSTRUCTOR= 5;
 	public static final int FIX_SUPPRESS_TOKEN= 5;
 	public static final int REMOVE_ANNOTATION= 5;
@@ -191,6 +193,7 @@ public interface IProposalRelevance {
 	public static final int ADD_MISSING_NULLNESS_ANNOTATION= 5;
 	public static final int REPLACE_WITH_UNQUALIFIED_ENUM_CONSTANT= 5;
 	public static final int OVERRIDE_DEFAULT_METHOD= 5;
+	public static final int CREATE_JUNIT_TEST_CASE= 5;
 
 	public static final int ADD_MISSING_TAG= 4;
 	public static final int INSERT_FALL_THROUGH= 4;
@@ -291,6 +294,7 @@ public interface IProposalRelevance {
 	public static final int EXTRACT_LOCAL_ZERO_SELECTION= -1;
 	public static final int MAKE_VARIABLE_DECLARATION_FINAL= -1;
 
+	public static final int ENABLE_PREVIEW_FEATURES= -2;
 	public static final int ADD_SUPPRESSWARNINGS= -2;
 	public static final int VARIABLE_TYPE_PROPOSAL_2= -2;
 	public static final int EXTRACT_CONSTANT_ZERO_SELECTION= -2;

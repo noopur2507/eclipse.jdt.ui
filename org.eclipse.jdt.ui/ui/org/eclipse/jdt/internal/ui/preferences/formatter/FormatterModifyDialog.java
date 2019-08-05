@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -66,6 +66,7 @@ import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.preferences.FilteredPreferenceTree;
 import org.eclipse.jdt.internal.ui.preferences.FilteredPreferenceTree.PreferenceTreeNode;
 import org.eclipse.jdt.internal.ui.preferences.PreferenceHighlight;
+import org.eclipse.jdt.internal.ui.preferences.formatter.ModifyDialog.ProfilePreferenceTree.SectionBuilder;
 import org.eclipse.jdt.internal.ui.preferences.formatter.ModifyDialog.ProfilePreferenceTree.SimpleTreeBuilder;
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.Profile;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
@@ -443,6 +444,148 @@ public class FormatterModifyDialog extends ModifyDialog {
 		}
 	}
 
+	private static class BlankLinesPreference extends Preference<Spinner> {
+
+		static final int MIN_LINES= 0;
+
+		static final int MAX_LINES= 99;
+
+		private final ToolItem fRemoveLinesItem;
+
+		public static BlankLinesPreference create(Composite parentComposite, String label, String key, NumberPreference preserveLinesPref, Images images) {
+			Spinner spinner= NumberPreference.createSpinner(parentComposite, MIN_LINES, MAX_LINES);
+
+			ToolBar toolBar= new ToolBar(parentComposite, SWT.FLAT);
+			ToolItem item= new ToolItem(toolBar, SWT.CHECK);
+			item.setToolTipText(FormatterMessages.FormatterModifyDialog_blankLines_val_remove_extra_lines);
+			item.setImage(images.get(JavaPluginImages.DESC_ELCL_REMOVE_EXTRA_LINES));
+			item.setDisabledImage(images.get(JavaPluginImages.DESC_DLCL_REMOVE_EXTRA_LINES));
+
+			return new BlankLinesPreference(spinner, toolBar, label, key, preserveLinesPref);
+		}
+
+		private BlankLinesPreference(Spinner spinner, ToolBar toolBar, String label, String key, NumberPreference preserveLinesPref) {
+			super(spinner, label, key, FilteredPreferenceTree.SPINNER_VALUE_MATCHER);
+			fRemoveLinesItem= toolBar.getItem(0);
+
+			PreferenceTreeNode<?> toolBarNode= new PreferenceTreeNode<>(label, toolBar, true);
+			addChild(toolBarNode);
+			Predicate<String> valueChecker= v -> spinner.getSelection() < Integer.parseInt(preserveLinesPref.getValue());
+			this.addDependant(toolBarNode, valueChecker);
+			preserveLinesPref.addDependant(toolBarNode, valueChecker);
+
+			Label labelControl= createLabel(GRID_COLUMNS - 3, spinner.getParent(), label, 0);
+			labelControl.moveAbove(spinner);
+			fHighlight= PreferenceHighlight.addHighlight(labelControl, spinner, false);
+			addChild(new PreferenceTreeNode<>(label, labelControl, true));
+
+			SelectionAdapter listener= new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					fControl.setFocus();
+					updateValue();
+				}
+			};
+			spinner.addSelectionListener(listener);
+			fRemoveLinesItem.addSelectionListener(listener);
+		}
+
+		@Override
+		protected void updateWidget() {
+			int number;
+			try {
+				String s= getPreferences().get(getKey());
+				number= Integer.parseInt(s);
+			} catch (NumberFormatException x) {
+				final String message= Messages.format(FormatterMessages.ModifyDialogTabPage_NumberPreference_error_invalid_key, getKey());
+				JavaPlugin.log(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IStatus.OK, message, null));
+				number= 0;
+			}
+			fRemoveLinesItem.setSelection(number < 0);
+			if (number < 0)
+				number= ~number;
+			number= Math.max(fControl.getMinimum(), Math.min(fControl.getMaximum(), number));
+			fControl.setSelection(number);
+		}
+
+		@Override
+		protected String getValue() {
+			int number= fControl.getSelection();
+			return Integer.toString(fRemoveLinesItem.getSelection() ? ~number : number);
+		}
+
+		public static ModifyAll<Spinner> addModifyAll(Section section, final Images images) {
+			return new ModifyAll<Spinner>(section, images) {
+
+				private Label fLabel;
+				private ToolItem fRemoveLinesItem;
+
+				@Override
+				protected Spinner createControl(Composite parent) {
+					GridLayout layout= new GridLayout(3, false);
+					layout.marginWidth= layout.marginHeight= 0;
+					parent.setLayout(layout);
+
+					fLabel= createLabel(1, parent, "", 0); //$NON-NLS-1$
+
+					Spinner spinner= NumberPreference.createSpinner(parent, MIN_LINES, MAX_LINES);
+					spinner.addSelectionListener(new SelectionAdapter() {
+						@Override
+						public void widgetSelected(SelectionEvent e) {
+							int value= fControl.getSelection();
+							for (BlankLinesPreference pref : findPreferences(BlankLinesPreference.class)) {
+								pref.getControl().setSelection(value);
+								pref.updateValue();
+							}
+							prepareControl();
+						}
+					});
+
+					ToolBar toolBar= new ToolBar(parent, SWT.FLAT);
+					fRemoveLinesItem= new ToolItem(toolBar, SWT.CHECK);
+					fRemoveLinesItem.setImage(images.get(JavaPluginImages.DESC_ELCL_REMOVE_EXTRA_LINES));
+					fRemoveLinesItem.setDisabledImage(images.get(JavaPluginImages.DESC_DLCL_REMOVE_EXTRA_LINES));
+					fRemoveLinesItem.addSelectionListener(new SelectionAdapter() {
+						@Override
+						public void widgetSelected(SelectionEvent e) {
+							boolean value= fRemoveLinesItem.getSelection();
+							for (BlankLinesPreference pref : findPreferences(BlankLinesPreference.class)) {
+								pref.fRemoveLinesItem.setSelection(value);
+								pref.updateValue();
+							}
+							prepareControl();
+						}
+					});
+					return spinner;
+				}
+
+				@Override
+				protected void prepareControl() {
+					int modeValue= 0;
+					int modeCount= -1;
+					HashMap<Integer, Integer> counts= new HashMap<>();
+					int removeLinesCount= 0;
+					List<BlankLinesPreference> preferences= findPreferences(BlankLinesPreference.class);
+					for (BlankLinesPreference pref : preferences) {
+						int value= pref.getControl().getSelection();
+						int count= counts.merge(value, 1, Integer::sum);
+						if (count > modeCount) {
+							modeValue= value;
+							modeCount= count;
+						}
+
+						if (pref.fRemoveLinesItem.getSelection())
+							removeLinesCount++;
+					}
+					fControl.setSelection(modeValue);
+					fLabel.setText(Messages.format(FormatterMessages.ModifyDialog_modifyAll_summary, new Object[] { modeCount, preferences.size() }));
+					fLabel.requestLayout();
+					fRemoveLinesItem.setToolTipText(FormatterMessages.FormatterModifyDialog_blankLines_val_remove_extra_lines + Messages.format(FormatterMessages.ModifyDialog_modifyAll_summary, new Object[] { removeLinesCount, preferences.size() }));
+				}
+			};
+		}
+	}
+
 	private static final String DIALOG_PREFERENCE_KEY= "formatter_page"; //$NON-NLS-1$
 
 	private static final String SHOW_INVISIBLE_PREFERENCE_KEY= JavaUI.ID_PLUGIN + '.' + DIALOG_PREFERENCE_KEY + ".show_invisible_characters"; //$NON-NLS-1$
@@ -789,14 +932,21 @@ public class FormatterModifyDialog extends ModifyDialog {
 		alignAssignmentsPref.addDependant(groupingPref, anyAlignChecker);
 
 		groupingPref.setValueValidator(value -> {
-			int blankLinesToPreserve= Integer.parseInt(fWorkingValues.get(DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE));
+			String warningMessage= null;
 			int groupingLines= value != null ? Integer.parseInt(value) : Integer.MAX_VALUE;
-			if (value != null && groupingLines > blankLinesToPreserve && groupingLines != Integer.MAX_VALUE) {
-				updateStatus(new Status(IStatus.INFO, JavaPlugin.getPluginId(), 0,
-						Messages.format(FormatterMessages.FormatterModifyDialog_indentation_info_blank_lines_to_preserve, Integer.valueOf(blankLinesToPreserve)), null));
-			} else {
-				updateStatus(null);
+			if (value != null && groupingLines != Integer.MAX_VALUE) {
+				int blankLinesToPreserve= Integer.parseInt(fWorkingValues.get(DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE));
+				boolean alignFields= Boolean.parseBoolean(fWorkingValues.get(DefaultCodeFormatterConstants.FORMATTER_ALIGN_TYPE_MEMBERS_ON_COLUMNS));
+				int blankLinesBeforeField= Integer.parseInt(fWorkingValues.get(DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_FIELD));
+				if (groupingLines > blankLinesToPreserve) {
+					warningMessage= Messages.format(FormatterMessages.FormatterModifyDialog_indentation_info_blank_lines_to_preserve, blankLinesToPreserve);
+				} else if (alignFields && groupingLines <= blankLinesBeforeField) {
+					warningMessage= Messages.format(FormatterMessages.FormatterModifyDialog_indentation_info_blank_lines_before_field, blankLinesBeforeField);
+				} else if (alignFields && blankLinesBeforeField < 0 && groupingLines > ~blankLinesBeforeField) {
+					warningMessage= Messages.format(FormatterMessages.FormatterModifyDialog_indentation_info_blank_lines_before_field_delete, ~blankLinesBeforeField);
+				}
 			}
+			updateStatus(warningMessage == null ? null : new Status(IStatus.INFO, JavaPlugin.getPluginId(), 0, warningMessage, null));
 			return true;
 		});
 	}
@@ -965,10 +1115,16 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_switch, "-switch", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_colon_case, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COLON_IN_CASE)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_colon_default, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COLON_IN_DEFAULT)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_SWITCH)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_arrow_in_case, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_ARROW_IN_SWITCH_CASE)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_arrow_in_case, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_ARROW_IN_SWITCH_CASE)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_arrow_in_default, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_ARROW_IN_SWITCH_DEFAULT)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_arrow_in_default, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_ARROW_IN_SWITCH_DEFAULT)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_comma_in_case_expressions, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COMMA_IN_SWITCH_CASE_EXPRESSIONS)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_comma_in_case_expressions, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COMMA_IN_SWITCH_CASE_EXPRESSIONS)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_SWITCH)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_SWITCH)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_CLOSING_PAREN_IN_SWITCH))
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_CLOSING_PAREN_IN_SWITCH)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_SWITCH))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_do, "-while", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_WHILE)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_WHILE)
@@ -1007,18 +1163,36 @@ public class FormatterModifyDialog extends ModifyDialog {
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_comma_in_alloc, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COMMA_IN_ALLOCATION_EXPRESSION)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_comma_in_qalloc, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COMMA_IN_EXPLICIT_CONSTRUCTOR_CALL_ARGUMENTS)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_comma_in_qalloc, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COMMA_IN_EXPLICIT_CONSTRUCTOR_CALL_ARGUMENTS))
+						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_unary_operators, "-unaryoperators", modAll) //$NON-NLS-1$
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_postfix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_POSTFIX_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_postfix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_POSTFIX_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_PREFIX_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_PREFIX_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_UNARY_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_UNARY_OPERATOR))
+						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_binary_operators, "-binaryoperators", modAll) //$NON-NLS-1$
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_multiplicative_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_MULTIPLICATIVE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_multiplicative_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_MULTIPLICATIVE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_additive_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_ADDITIVE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_additive_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_ADDITIVE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_string_concatenation, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_STRING_CONCATENATION)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_string_concatenation, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_STRING_CONCATENATION)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_shift_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_SHIFT_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_shift_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_SHIFT_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_relational_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_RELATIONAL_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_relational_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_RELATIONAL_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_bitwise_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_BITWISE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_bitwise_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_BITWISE_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_logical_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_LOGICAL_OPERATOR)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_logical_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_LOGICAL_OPERATOR))
+						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_conditionals, "-conditionals", modAll) //$NON-NLS-1$
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_question, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_QUESTION_IN_CONDITIONAL)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_question, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_QUESTION_IN_CONDITIONAL)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_colon, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COLON_IN_CONDITIONAL)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_colon, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COLON_IN_CONDITIONAL))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_assignments, "-assignments", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_assignment_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_ASSIGNMENT_OPERATOR)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_assignment_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_ASSIGNMENT_OPERATOR))
-						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_operators, "-operators", modAll) //$NON-NLS-1$
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_binary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_BINARY_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_binary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_BINARY_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_UNARY_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_UNARY_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_PREFIX_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_PREFIX_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_postfix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_POSTFIX_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_postfix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_POSTFIX_OPERATOR))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_parenexpr, "-parenexpr", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_PARENTHESIZED_EXPRESSION)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_PARENTHESIZED_EXPRESSION)
@@ -1026,12 +1200,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_typecasts, "-typecasts", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_CAST)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_CLOSING_PAREN_IN_CAST)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_CLOSING_PAREN_IN_CAST))
-						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_conditionals, "-conditionals", modAll) //$NON-NLS-1$
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_question, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_QUESTION_IN_CONDITIONAL)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_question, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_QUESTION_IN_CONDITIONAL)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_colon, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COLON_IN_CONDITIONAL)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_colon, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COLON_IN_CONDITIONAL)))
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_CLOSING_PAREN_IN_CAST)))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_arrays, "-arrays", modAll) //$NON-NLS-1$
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_arraydecls, "-declarations", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_bracket, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACKET_IN_ARRAY_TYPE_REFERENCE)
@@ -1082,9 +1251,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 	}
 
 	private void createBlankLinesTree() {
-		final int MIN_NUMBER_LINES= 0;
-		final int MAX_NUMBER_LINES= 99;
-		Consumer<Section> modAll= s -> NumberPreference.addModifyAll(MIN_NUMBER_LINES, MAX_NUMBER_LINES, s, fImages);
+		Consumer<Section> modAll= s -> BlankLinesPreference.addModifyAll(s, fImages);
 		fTree.builder(FormatterMessages.FormatterModifyDialog_blankLines_tree_blank_lines, "section-blank-lines") //$NON-NLS-1$
 				.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_empty_lines_to_preserve, DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE)
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_blankLines_tree_compilation_unit, null, modAll)
@@ -1101,20 +1268,33 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_field_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_FIELD)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_method_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_METHOD)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_beginning_of_method_body, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_BEGINNING_OF_METHOD_BODY))
-				.build(null, (parent, label, key) -> fTree.addNumberPref(parent, label, key, MIN_NUMBER_LINES, MAX_NUMBER_LINES));
+				.build(null, new PreferenceBuilder() {
+					NumberPreference fPreserveLinesPref;
+
+					@Override
+					public Preference<?> buildPreference(Section parent, String label, String key) {
+						if (key.equals(DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE)) {
+							fPreserveLinesPref= fTree.addNumberPref(parent, label, key, BlankLinesPreference.MIN_LINES, BlankLinesPreference.MAX_LINES);
+							return fPreserveLinesPref;
+						}
+						BlankLinesPreference pref= BlankLinesPreference.create(parent.fInnerComposite, label, key, fPreserveLinesPref, fImages);
+						fTree.addChild(parent, pref);
+						return pref;
+					}
+				});
 	}
 
 	private void createNewLinesTree() {
 		Consumer<Section> modAll= s -> CheckboxPreference.addModifyAll(s, fImages);
 		fTree.builder(FormatterMessages.FormatterModifyDialog_newLines_tree_new_lines, "section-newlines") //$NON-NLS-1$
-				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_newLines_tree_between_empty_braces, "-declarations", modAll) //$NON-NLS-1$
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_block, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_BLOCK)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_class_body, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_TYPE_DECLARATION)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_anonymous_class_body, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANONYMOUS_TYPE_DECLARATION)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_method_body, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_METHOD_BODY)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_enum_declaration, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_DECLARATION)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_enum_constant, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ENUM_CONSTANT)
-						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_annotation_decl, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_IN_EMPTY_ANNOTATION_DECLARATION))
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_statement, DefaultCodeFormatterConstants.FORMATTER_PUT_EMPTY_STATEMENT_ON_NEW_LINE)
+				.gap()
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_after_opening_brace_of_array_initializer,
+						DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_OPENING_BRACE_IN_ARRAY_INITIALIZER)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_before_closing_brace_of_array_initializer,
+						DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_BEFORE_CLOSING_BRACE_IN_ARRAY_INITIALIZER)
+				.gap()
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_end_of_file, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AT_END_OF_FILE_IF_MISSING)
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_newLines_tree_control_statements, "-controlstatements", modAll) //$NON-NLS-1$
 						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_before_else_statements, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_BEFORE_ELSE_IN_IF_STATEMENT)
 						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_before_catch_statements, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_BEFORE_CATCH_IN_TRY_STATEMENT)
@@ -1128,8 +1308,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 									pref.addDependant(child, valueAcceptor(DefaultCodeFormatterConstants.FALSE));
 								})
 								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_else_on_same_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ELSE_STATEMENT_ON_SAME_LINE)
-								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_else_if_on_one_line, DefaultCodeFormatterConstants.FORMATTER_COMPACT_ELSE_IF)
-								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_guardian_clause_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_GUARDIAN_CLAUSE_ON_ONE_LINE))
+								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_else_if_on_one_line, DefaultCodeFormatterConstants.FORMATTER_COMPACT_ELSE_IF))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_newLines_tree_simple_loops, "-simpleloops", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_simple_for_body_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_SIMPLE_FOR_BODY_ON_SAME_LINE)
 								.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_simple_while_body_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_SIMPLE_WHILE_BODY_ON_SAME_LINE)
@@ -1143,13 +1322,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_local_variables, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_LOCAL_VARIABLE)
 						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_paramters, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_PARAMETER)
 						.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_type_annotations, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_TYPE_ANNOTATION))
-				.gap()
-				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_empty_statement, DefaultCodeFormatterConstants.FORMATTER_PUT_EMPTY_STATEMENT_ON_NEW_LINE)
-				.gap()
-				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_after_opening_brace_of_array_initializer, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_OPENING_BRACE_IN_ARRAY_INITIALIZER)
-				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_before_closing_brace_of_array_initializer, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_BEFORE_CLOSING_BRACE_IN_ARRAY_INITIALIZER)
-				.gap()
-				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_end_of_file, DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AT_END_OF_FILE_IF_MISSING)
+				.node(createKeepOnOneLineSection())
 				.build(null, (parent, label, key) -> {
 					String[] values= CheckboxPreference.DO_NOT_INSERT_INSERT;
 					if (parent.getKey().endsWith("-ifelse") || parent.getKey().endsWith("-simpleloops") //$NON-NLS-1$ //$NON-NLS-2$
@@ -1158,6 +1331,60 @@ public class FormatterModifyDialog extends ModifyDialog {
 					}
 					return fTree.addCheckbox(parent, label, key, values);
 				});
+	}
+
+	private SimpleTreeBuilder<?> createKeepOnOneLineSection() {
+		String[] oneLineOptions= {
+				DefaultCodeFormatterConstants.ONE_LINE_NEVER,
+				DefaultCodeFormatterConstants.ONE_LINE_IF_EMPTY,
+				DefaultCodeFormatterConstants.ONE_LINE_IF_SINGLE_ITEM,
+				DefaultCodeFormatterConstants.ONE_LINE_ALWAYS,
+				DefaultCodeFormatterConstants.ONE_LINE_PRESERVE,
+		};
+		String[] oneLineLabels= {
+				FormatterMessages.FormatterModifyDialog_newLines_val_one_line_never,
+				FormatterMessages.FormatterModifyDialog_newLines_val_one_line_if_empty,
+				FormatterMessages.FormatterModifyDialog_newLines_val_one_line_if_single_item,
+				FormatterMessages.FormatterModifyDialog_newLines_val_one_line_always,
+				FormatterMessages.FormatterModifyDialog_newLines_val_one_line_preserve,
+		};
+		PreferenceBuilder prefBuilder= (parent, label, key) -> {
+			String[] values= oneLineOptions;
+			String[] items= oneLineLabels;
+			if (DefaultCodeFormatterConstants.FORMATTER_KEEP_CODE_BLOCK_ON_ONE_LINE.equals(key)) {
+				values= Arrays.copyOf(values, 2);
+				items= Arrays.copyOf(items, 2);
+			}
+			return fTree.addComboPref(parent, label, key, values, items);
+		};
+		SectionBuilder sectionBuilder= fTree
+				.builder(FormatterMessages.FormatterModifyDialog_newLines_tree_keep_braced_code_on_one_line, "-keepononeline", s -> ComboPreference.addModifyAll(s, fImages)) //$NON-NLS-1$
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_loop_body_block_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_LOOP_BODY_BLOCK_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_if_then_body_block_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_IF_THEN_BODY_BLOCK_ON_ONE_LINE, pref -> {
+					CheckboxPreference guardianPref= fTree.addCheckbox(pref, FormatterMessages.FormatterModifyDialog_newLines_pref_keep_guardian_clause_on_one_line,
+							DefaultCodeFormatterConstants.FORMATTER_KEEP_GUARDIAN_CLAUSE_ON_ONE_LINE, CheckboxPreference.FALSE_TRUE);
+					pref.addDependant(guardianPref, valueAcceptor(oneLineOptions[0], oneLineOptions[1], oneLineOptions[4]));
+				})
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_lambda_body_block_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_LAMBDA_BODY_BLOCK_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_code_block_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_CODE_BLOCK_ON_ONE_LINE)
+				.gap()
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_method_body_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_METHOD_BODY_ON_ONE_LINE, pref -> {
+					CheckboxPreference getterSetterPref= fTree.addCheckbox(pref, FormatterMessages.FormatterModifyDialog_newLines_pref_keep_simple_getter_setter_on_one_line,
+							DefaultCodeFormatterConstants.FORMATTER_KEEP_SIMPLE_GETTER_SETTER_ON_ONE_LINE, CheckboxPreference.FALSE_TRUE);
+					pref.addDependant(getterSetterPref, valueAcceptor(oneLineOptions[0], oneLineOptions[1], oneLineOptions[4]));
+				})
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_type_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_TYPE_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_anonymous_type_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ANONYMOUS_TYPE_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_enum_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_enum_constant_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_CONSTANT_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_annotation_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ANNOTATION_DECLARATION_ON_ONE_LINE);
+
+		return fTree.new SimpleTreeBuilder<PreferenceTreeNode<?>>(null, null, null) {
+			@Override
+			protected PreferenceTreeNode<?> build(Section parent, PreferenceBuilder ignored) {
+				return sectionBuilder.build(parent, prefBuilder);
+			}
+		};
 	}
 
 	private void createLineWrapTree() {
@@ -1197,11 +1424,19 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_explicit_constructor_invocations, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ARGUMENTS_IN_EXPLICIT_CONSTRUCTOR_CALL)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_object_allocation_arguments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ARGUMENTS_IN_ALLOCATION_EXPRESSION)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_qualified_object_allocation_arguments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ARGUMENTS_IN_QUALIFIED_ALLOCATION_EXPRESSION))
+				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_binary_expressions, "-binary-expressions", modAll) //$NON-NLS-1$
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_multiplicative_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_MULTIPLICATIVE_OPERATOR)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_additive_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ADDITIVE_OPERATOR)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_string_concatenation, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_STRING_CONCATENATION)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_shift_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_SHIFT_OPERATOR)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_relational_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_RELATIONAL_OPERATOR)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_bitwise_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BITWISE_OPERATOR)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_logical_operators, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_LOGICAL_OPERATOR))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_expressions, null, modAll)
-						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_binary_exprs, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_conditionals, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_CONDITIONAL_EXPRESSION)
-						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_array_init, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_EXPRESSIONS_IN_ARRAY_INITIALIZER)
-						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_assignments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ASSIGNMENT))
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_chained_conditionals, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_CONDITIONAL_EXPRESSION_CHAIN)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_assignments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ASSIGNMENT)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_array_init, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_EXPRESSIONS_IN_ARRAY_INITIALIZER))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_statements, null, modAll)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_for, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_EXPRESSIONS_IN_FOR_LOOP_HEADER)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_compact_if_else, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_COMPACT_IF)
@@ -1220,8 +1455,26 @@ public class FormatterModifyDialog extends ModifyDialog {
 						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_CONDITIONAL_EXPRESSION:
 							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_CONDITIONAL_OPERATOR;
 							break;
-						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BINARY_EXPRESSION:
-							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_BINARY_OPERATOR;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_MULTIPLICATIVE_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_MULTIPLICATIVE_OPERATOR;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ADDITIVE_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_ADDITIVE_OPERATOR;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_STRING_CONCATENATION:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_STRING_CONCATENATION;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_SHIFT_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_SHIFT_OPERATOR;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_RELATIONAL_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_RELATIONAL_OPERATOR;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_BITWISE_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_BITWISE_OPERATOR;
+							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_LOGICAL_OPERATOR:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_LOGICAL_OPERATOR;
 							break;
 						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_UNION_TYPE_IN_MULTICATCH:
 							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_OR_OPERATOR_MULTICATCH;
@@ -1369,10 +1622,12 @@ public class FormatterModifyDialog extends ModifyDialog {
 				alignPref.addLabel(FormatterMessages.FormatterModifyDialog_comments_pref_javadoc_align, true, fTree.getIndent(parent));
 				fTree.addChild(parent, alignPref);
 
-				fTree.addCheckbox(alignPref, FormatterMessages.FormatterModifyDialog_comments_pref_indent_description_after_param,
-						DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_PARAMETER_DESCRIPTION, CheckboxPreference.FALSE_TRUE);
 				fTree.addCheckbox(alignPref, FormatterMessages.FormatterModifyDialog_comments_pref_new_line_after_param_tags,
 						DefaultCodeFormatterConstants.FORMATTER_COMMENT_INSERT_NEW_LINE_FOR_PARAMETER, CheckboxPreference.DO_NOT_INSERT_INSERT);
+				fTree.addCheckbox(alignPref, FormatterMessages.FormatterModifyDialog_comments_pref_indent_description_after_param,
+						DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_PARAMETER_DESCRIPTION, CheckboxPreference.FALSE_TRUE);
+				fTree.addCheckbox(alignPref, FormatterMessages.FormatterModifyDialog_comments_pref_indent_other_tag_descriptions,
+						DefaultCodeFormatterConstants.FORMATTER_COMMENT_INDENT_TAG_DESCRIPTION, CheckboxPreference.FALSE_TRUE);
 				return alignPref;
 			}
 		};

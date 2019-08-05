@@ -91,10 +91,8 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstall2;
-import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.environments.IExecutionEnvironment;
-import org.eclipse.jdt.launching.environments.IExecutionEnvironmentsManager;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.actions.OrganizeImportsAction;
@@ -117,6 +115,7 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.CorrectPackageDecla
 import org.eclipse.jdt.internal.ui.text.correction.proposals.FixCorrectionProposal;
 import org.eclipse.jdt.internal.ui.util.BusyIndicatorRunnableContext;
 import org.eclipse.jdt.internal.ui.util.CoreUtility;
+import org.eclipse.jdt.internal.ui.util.ClasspathVMUtil;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElement;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ClasspathFixSelectionDialog;
@@ -299,17 +298,17 @@ public class ReorgCorrectionsSubProcessor {
 		proposals.add(new ClasspathFixCorrectionProposal(context.getCompilationUnit(), problem.getOffset(), problem.getLength(), missingType));
 	}
 
-
-	public static void importNotFoundProposals(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals) throws CoreException {
+	/* answers false if the problem location is not an import declaration, and hence no proposal have been added. */
+	public static boolean importNotFoundProposals(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals) throws CoreException {
 		ICompilationUnit cu= context.getCompilationUnit();
 
 		ASTNode selectedNode= problem.getCoveringNode(context.getASTRoot());
 		if (selectedNode == null) {
-			return;
+			return false;
 		}
 		ImportDeclaration importDeclaration= (ImportDeclaration) ASTNodes.getParent(selectedNode, ASTNode.IMPORT_DECLARATION);
 		if (importDeclaration == null) {
-			return;
+			return false;
 		}
 		if (!importDeclaration.isOnDemand()) {
 			Name name= importDeclaration.getName();
@@ -328,6 +327,7 @@ public class ReorgCorrectionsSubProcessor {
 			name= JavaModelUtil.concatenateName(name, "*"); //$NON-NLS-1$
 		}
 		addProjectSetupFixProposal(context, problem, name, proposals);
+		return true;
 	}
 
 	private static final class OpenBuildPathCorrectionProposal extends ChangeCorrectionProposal {
@@ -400,41 +400,6 @@ public class ReorgCorrectionsSubProcessor {
 			return false;
 		}
 
-		private String getVMInstallCompliance(IVMInstall install) {
-			if (install instanceof IVMInstall2) {
-				String compliance= JavaModelUtil.getCompilerCompliance((IVMInstall2) install, JavaCore.VERSION_1_3);
-				return compliance;
-			}
-			return JavaCore.VERSION_1_1;
-		}
-		
-		private IVMInstall findRequiredOrGreaterVMInstall() {
-			String bestMatchingCompliance= null;
-			IVMInstall bestMatchingVMInstall= null;
-			IVMInstallType[] installTypes= JavaRuntime.getVMInstallTypes();
-			for (int i= 0; i < installTypes.length; i++) {
-				IVMInstall[] installs= installTypes[i].getVMInstalls();
-				for (int k= 0; k < installs.length; k++) {
-					String vmInstallCompliance= getVMInstallCompliance(installs[k]);
-					
-					if (fRequiredVersion.equals(vmInstallCompliance)) {
-						return installs[k]; // perfect match
-						
-					} else if (JavaModelUtil.isVersionLessThan(vmInstallCompliance, fRequiredVersion)) {
-						continue; // no match
-						
-					} else if (bestMatchingVMInstall != null) {
-						if (JavaModelUtil.isVersionLessThan(bestMatchingCompliance, vmInstallCompliance)) {
-							continue; // the other one is the least matching
-						}
-					}
-					bestMatchingCompliance= vmInstallCompliance;
-					bestMatchingVMInstall= installs[k];
-				}
-			}
-			return null;
-		}
-
 		@Override
 		public void run(IProgressMonitor monitor) throws CoreException {
 			boolean needsBuild= updateJRE(monitor);
@@ -450,7 +415,7 @@ public class ReorgCorrectionsSubProcessor {
 			// the compiler compliance in #apply(IDocument).
 			try {
 				if (fChangeOnWorkspace) {
-					IVMInstall vmInstall= findRequiredOrGreaterVMInstall();
+					IVMInstall vmInstall= ClasspathVMUtil.findRequiredOrGreaterVMInstall(fRequiredVersion, false, false);
 					fRequiredJREFound= vmInstall != null;
 					if (vmInstall != null) {
 						IVMInstall install= JavaRuntime.getVMInstall(fProject); // can be null
@@ -458,7 +423,7 @@ public class ReorgCorrectionsSubProcessor {
 						IVMInstall defaultVM= JavaRuntime.getDefaultVMInstall(); // can be null
 						if (defaultVM != null && !defaultVM.equals(install)) {
 							IPath newPath= new Path(JavaRuntime.JRE_CONTAINER);
-							updateClasspath(newPath, new SubProgressMonitor(monitor, 1));
+							ClasspathVMUtil.updateClasspath(newPath, fProject, new SubProgressMonitor(monitor, 1));
 						} else {
 							monitor.worked(1);
 						}
@@ -470,11 +435,11 @@ public class ReorgCorrectionsSubProcessor {
 					}
 
 				} else {
-					IExecutionEnvironment bestEE= findBestMatchingEE();
+					IExecutionEnvironment bestEE= ClasspathVMUtil.findBestMatchingEE(fRequiredVersion);
 					fRequiredJREFound= bestEE != null;
 					if (bestEE != null) {
 						IPath newPath= JavaRuntime.newJREContainerPath(bestEE);
-						boolean classpathUpdated= updateClasspath(newPath, monitor);
+						boolean classpathUpdated= ClasspathVMUtil.updateClasspath(newPath, fProject, monitor);
 						return !classpathUpdated;
 					}
 				}
@@ -482,63 +447,6 @@ public class ReorgCorrectionsSubProcessor {
 				monitor.done();
 			}
 			return true;
-		}
-
-		private IExecutionEnvironment findBestMatchingEE() {
-			IExecutionEnvironmentsManager eeManager= JavaRuntime.getExecutionEnvironmentsManager();
-			IExecutionEnvironment[] ees= eeManager.getExecutionEnvironments();
-			IExecutionEnvironment bestEE= null;
-			String bestEECompliance= null;
-			
-			for (int i= 0; i < ees.length; i++) {
-				IExecutionEnvironment ee= ees[i];
-				String eeCompliance= JavaModelUtil.getExecutionEnvironmentCompliance(ee);
-				String eeId= ee.getId();
-				
-				if (fRequiredVersion.equals(eeCompliance)) {
-					if (eeId.startsWith("J") && eeId.endsWith(fRequiredVersion)) { //$NON-NLS-1$
-						bestEE= ee;
-						break; // perfect match
-					}
-					
-				} else if (JavaModelUtil.isVersionLessThan(eeCompliance, fRequiredVersion)) {
-					continue; // no match
-					
-				} else { // possible match
-					if (bestEE != null) {
-						if (! eeId.startsWith("J")) { //$NON-NLS-1$
-							continue; // avoid taking e.g. OSGi profile if a Java profile is available
-						}
-						if (JavaModelUtil.isVersionLessThan(bestEECompliance, eeCompliance)) {
-							continue; // the other one is the least matching
-						}
-					}
-				}
-				// found a new best
-				bestEE= ee;
-				bestEECompliance= eeCompliance;
-			}
-			return bestEE;
-		}
-
-		private boolean updateClasspath(IPath newPath, IProgressMonitor monitor) throws JavaModelException {
-			boolean updated= false;
-			
-			IClasspathEntry[] classpath= fProject.getRawClasspath();
-			IPath jreContainerPath= new Path(JavaRuntime.JRE_CONTAINER);
-			for (int i= 0; i < classpath.length; i++) {
-				IClasspathEntry curr= classpath[i];
-				if (curr.getEntryKind() == IClasspathEntry.CPE_CONTAINER && curr.getPath().matchingFirstSegments(jreContainerPath) > 0) {
-					if (! newPath.equals(curr.getPath())) {
-						updated= true;
-						classpath[i]= JavaCore.newContainerEntry(newPath, curr.getAccessRules(), curr.getExtraAttributes(), curr.isExported());
-					}
-				}
-			}
-			if (updated) {
-				fProject.setRawClasspath(classpath, monitor);
-			}
-			return updated;
 		}
 
 		@Override
@@ -553,7 +461,7 @@ public class ReorgCorrectionsSubProcessor {
 			try {
 				IVMInstall install= JavaRuntime.getVMInstall(fProject); // can be null
 				if (fChangeOnWorkspace) {
-					IVMInstall vmInstall= findRequiredOrGreaterVMInstall();
+					IVMInstall vmInstall= ClasspathVMUtil.findRequiredOrGreaterVMInstall(fRequiredVersion, false, false);
 					if (vmInstall != null) {
 						IVMInstall defaultVM= JavaRuntime.getDefaultVMInstall(); // can be null
 						if (defaultVM != null && !defaultVM.equals(install)) {
@@ -564,7 +472,7 @@ public class ReorgCorrectionsSubProcessor {
 						}
 					}
 				} else {
-					IExecutionEnvironment bestEE= findBestMatchingEE();
+					IExecutionEnvironment bestEE= ClasspathVMUtil.findBestMatchingEE(fRequiredVersion);
 					if (bestEE != null) {
 						if (install == null || !isEEOnClasspath(bestEE)) {
 							message.append(Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_50_compliance_changeProjectJRE_description, bestEE.getId()));

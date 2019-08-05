@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import org.eclipse.swt.graphics.Image;
@@ -39,6 +40,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.BreakStatement;
 import org.eclipse.jdt.core.dom.CastExpression;
@@ -2084,8 +2086,11 @@ public class AdvancedQuickAssistProcessor implements IQuickAssistProcessor {
 			return true;
 		}
 		// find linked nodes
-		final MethodDeclaration method= ASTResolving.findParentMethodDeclaration(covering);
-		SimpleName[] linkedNodes= LinkedNodeFinder.findByBinding(method, variableBinding);
+		final BodyDeclaration bodyDecl= ASTResolving.findParentBodyDeclaration(covering);
+		if (bodyDecl == null) {
+			return false;
+		}
+		SimpleName[] linkedNodes= LinkedNodeFinder.findByBinding(bodyDecl, variableBinding);
 		//
 		final ASTRewrite rewrite= ASTRewrite.create(ast);
 		// create proposal
@@ -2449,6 +2454,9 @@ public class AdvancedQuickAssistProcessor implements IQuickAssistProcessor {
 			Statement statement= iter.next();
 			if (statement instanceof SwitchCase) {
 				SwitchCase switchCase= (SwitchCase) statement;
+				if (ast.apiLevel() >= AST.JLS12 && switchCase.expressions().size() > 1) {
+					return false;
+				}
 				// special case: pass through
 				if (currentBlock != null) {
 					if (!hasStopAsLastExecutableStatement) {
@@ -2547,7 +2555,14 @@ public class AdvancedQuickAssistProcessor implements IQuickAssistProcessor {
 
 	private static Expression createSwitchCaseCondition(AST ast, ASTRewrite rewrite, ImportRewrite importRewrite, ImportRewriteContext importRewriteContext, Name switchExpression,
 			SwitchCase switchCase, boolean isStringsInSwitch, boolean preserveNPE) {
-		Expression expression= switchCase.getExpression();
+		Expression expression= null;
+		if (ast.apiLevel() >= AST.JLS12) {
+			if (switchCase.expressions().size() == 1) {
+				expression= (Expression) switchCase.expressions().get(0);
+			}
+		} else {
+			expression= switchCase.getExpression();
+		}
 		if (expression == null)
 			return null;
 		
@@ -2848,14 +2863,27 @@ public class AdvancedQuickAssistProcessor implements IQuickAssistProcessor {
 
 	private static Expression getNextSiblingExpression(Expression expression) {
 		InfixExpression parentInfixExpression= (InfixExpression) expression.getParent();
+		List<Expression> extendedOperands= parentInfixExpression.extendedOperands();
 		Expression sibiling;
 		if (expression.equals(parentInfixExpression.getLeftOperand())) {
 			sibiling= parentInfixExpression.getRightOperand();
 		} else if (expression.equals(parentInfixExpression.getRightOperand())) {
-			if (parentInfixExpression.getParent() instanceof InfixExpression)
+			if (parentInfixExpression.getParent() instanceof InfixExpression) {
 				sibiling= getNextSiblingExpression(parentInfixExpression);
-			else
+			} else if (extendedOperands.size() > 0) {
+				sibiling= extendedOperands.get(0);
+			} else {
 				sibiling= null;
+			}
+		} else if (extendedOperands.contains(expression)) {
+			sibiling= null;
+			ListIterator<Expression> it= extendedOperands.listIterator();
+			while (it.hasNext()) {
+				if (expression.equals(it.next()) && it.hasNext()) {
+					sibiling= it.next();
+					break;
+				}
+			}
 		} else {
 			sibiling= null;
 		}
@@ -2867,12 +2895,19 @@ public class AdvancedQuickAssistProcessor implements IQuickAssistProcessor {
 		SwitchCase[] switchCaseStatements= new SwitchCase[len];
 		if (caseExpressions.size() == 0) {
 			switchCaseStatements[0]= ast.newSwitchCase();
-			switchCaseStatements[0].setExpression(null);
+			if (ast.apiLevel() < AST.JLS12) {
+				switchCaseStatements[0].setExpression(null);
+			}
 		} else {
 			for (int i= 0; i < caseExpressions.size(); i++) {
 				ASTNode astNode= caseExpressions.get(i);
 				switchCaseStatements[i]= ast.newSwitchCase();
-				switchCaseStatements[i].setExpression((Expression) rewrite.createCopyTarget(astNode));
+				Expression copyTarget= (Expression) rewrite.createCopyTarget(astNode);
+				if (ast.apiLevel() >= AST.JLS12) {
+					switchCaseStatements[i].expressions().add(copyTarget);
+				} else {
+					switchCaseStatements[i].setExpression(copyTarget);
+				}
 			}
 		}
 		return switchCaseStatements;

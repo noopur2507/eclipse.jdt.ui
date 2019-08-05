@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- *
+ * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Benjamin Muskalla <b.muskalla@gmx.net> - [quick fix] Quick fix for missing synchronized modifier - https://bugs.eclipse.org/bugs/show_bug.cgi?id=245250
@@ -33,6 +33,8 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Name;
 
 import org.eclipse.jdt.internal.corext.fix.NullAnnotationsRewriteOperations.ChangeKind;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -294,6 +296,14 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.MissingNonNullByDefaultAnnotationOnPackage:
 			case IProblem.UndefinedModule:
 			case IProblem.PackageDoesNotExistOrIsEmpty:
+			case IProblem.NotAccessibleType:
+			case IProblem.AbstractServiceImplementation:
+			case IProblem.ProviderMethodOrConstructorRequiredForServiceImpl:
+			case IProblem.ServiceImplDefaultConstructorNotPublic:
+			case IProblem.PreviewFeatureDisabled:
+			case IProblem.PreviewFeatureNotSupported:
+			case IProblem.SwitchExpressionMissingEnumConstantCase:
+			case IProblem.SwitchExpressionMissingDefaultCase:
 				return true;
 			default:
 				return SuppressWarningsSubProcessor.hasSuppressWarningsProposal(cu.getJavaProject(), problemId)
@@ -718,9 +728,11 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				break;
 			case IProblem.MissingEnumConstantCase:
 			case IProblem.MissingEnumDefaultCase:
+			case IProblem.SwitchExpressionMissingEnumConstantCase:
 				LocalCorrectionsSubProcessor.getMissingEnumConstantCaseProposals(context, problem, proposals);
 				break;
 			case IProblem.MissingDefaultCase:
+			case IProblem.SwitchExpressionMissingDefaultCase:
 				LocalCorrectionsSubProcessor.addMissingDefaultCaseProposal(context, problem, proposals);
 				break;
 			case IProblem.MissingEnumConstantCaseDespiteDefault:
@@ -820,10 +832,28 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				break;
 			case IProblem.NotAccessibleType:
 				// Handle the case in an import statement, if a requires needs to be added.
-				ReorgCorrectionsSubProcessor.importNotFoundProposals(context, problem, proposals);
+				if (!ReorgCorrectionsSubProcessor.importNotFoundProposals(context, problem, proposals)) {
+					ASTNode node= context.getCoveredNode();
+					if (node instanceof Name) {
+						UnresolvedElementsSubProcessor.addRequiresModuleProposals(context.getCompilationUnit(), (Name) node, IProposalRelevance.IMPORT_NOT_FOUND_ADD_REQUIRES_MODULE, proposals, true);
+					}
+				}
 				break;
 			case IProblem.PackageDoesNotExistOrIsEmpty:
 				ModuleCorrectionsSubProcessor.getPackageDoesNotExistProposals(context, problem, proposals);
+				break;
+			case IProblem.AbstractServiceImplementation:
+			case IProblem.ProviderMethodOrConstructorRequiredForServiceImpl:
+			case IProblem.ServiceImplDefaultConstructorNotPublic:
+				LocalCorrectionsSubProcessor.addServiceProviderProposal(context, problem, proposals);
+				LocalCorrectionsSubProcessor.addServiceProviderConstructorProposals(context, problem, proposals);
+				break;
+			case IProblem.PreviewFeatureDisabled:
+				PreviewFeaturesSubProcessor.getEnablePreviewFeaturesProposal(context, proposals);
+				PreviewFeaturesSubProcessor.getOpenCompliancePageToEnablePreviewFeaturesProposal(context, proposals);
+				break;
+			case IProblem.PreviewFeatureNotSupported:
+				PreviewFeaturesSubProcessor.getNeedHigherComplianceProposals(context, problem, proposals);
 				break;
 			default:
 		}

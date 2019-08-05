@@ -715,4 +715,12 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 		return null;
 	}
 
+	/**
+	 * Reset the registered code mining providers.
+	 *
+	 * @since 3.16
+	 */
+	void resetCodeMinings() {
+		super.setCodeMiningProviders(null);
+	}
 }
