@@ -90,9 +90,7 @@ public class DefaultModulepathFixProcessor extends DefaultClasspathFixProcessor 
 		SearchParticipant[] participants= new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };
 		try {
 			new SearchEngine().search(searchPattern, participants, scope, requestor, null);
-		} catch (CoreException e) {
-			//do nothing
-		} catch (OperationCanceledException e) {
+		} catch (CoreException | OperationCanceledException e) {
 			//do nothing
 		}
 
@@ -104,8 +102,7 @@ public class DefaultModulepathFixProcessor extends DefaultClasspathFixProcessor 
 		HashMap<IClasspathEntry, IModuleDescription> classPathEntryToModuleMap= new HashMap<>();
 		HashSet<IClasspathEntry> classpaths= new HashSet<>();
 		HashSet<String> typesWithModule= new HashSet<>();
-		for (int i= 0; i < res.size(); i++) {
-			IModuleDescription curr= res.get(i);
+		for (IModuleDescription curr : res) {
 			if (curr != null) {
 				IPackageFragmentRoot root= (IPackageFragmentRoot) curr.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
 				try {
@@ -120,15 +117,6 @@ public class DefaultModulepathFixProcessor extends DefaultClasspathFixProcessor 
 					if (classpaths.add(entry) && moduleName != null) {
 						classPathEntryToModuleMap.put(entry, curr);
 						typesWithModule.add(moduleName);
-					} else {
-						Object typeNameMatch= classPathEntryToModuleMap.get(entry);
-						if (typeNameMatch != null) {
-							if (moduleName != null) {
-								if (typesWithModule.contains(moduleName)) {
-									typesWithModule.remove(typeNameMatch);
-								}
-							}
-						}
 					}
 				} catch (JavaModelException e) {
 					// ignore
@@ -138,8 +126,7 @@ public class DefaultModulepathFixProcessor extends DefaultClasspathFixProcessor 
 
 
 		HashSet<Object> addedClaspaths= new HashSet<>();
-		for (int i= 0; i < res.size(); i++) {
-			IModuleDescription curr= res.get(i);
+		for (IModuleDescription curr : res) {
 			if (curr != null) {
 				IPackageFragmentRoot root= (IPackageFragmentRoot) curr.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
 				try {

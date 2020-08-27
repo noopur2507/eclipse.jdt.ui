@@ -61,14 +61,12 @@ public final class PropertyValueScanner extends AbstractJavaScanner {
 				while (Character.isWhitespace(fDocument.getChar(i))) {
 					i--;
 				}
-				
+
 				ITypedRegion partition= null;
 				if (fDocument instanceof IDocumentExtension3)
 					partition= ((IDocumentExtension3)fDocument).getPartition(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, i, false);
 				return partition != null && IDocument.DEFAULT_CONTENT_TYPE.equals(partition.getType());
-			} catch (BadLocationException ex) {
-				return false;
-			} catch (BadPartitioningException e) {
+			} catch (BadLocationException | BadPartitioningException e) {
 				return false;
 			}
 		}

@@ -229,10 +229,10 @@ public class MemberFilterActionGroup extends ActionGroup {
 
 			IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 			boolean found= false;
-			for (int j= 0; j < fFilterActions.length; j++) {
-				int currProperty= fFilterActions[j].getFilterProperty();
+			for (MemberFilterAction fFilterAction : fFilterActions) {
+				int currProperty= fFilterAction.getFilterProperty();
 				if (currProperty == filterProperty) {
-					fFilterActions[j].setChecked(set);
+					fFilterAction.setChecked(set);
 					found= true;
 					store.setValue(getPreferenceKey(filterProperty), set);
 				}
@@ -247,12 +247,7 @@ public class MemberFilterActionGroup extends ActionGroup {
 		}
 		if (refresh) {
 			fViewer.getControl().setRedraw(false);
-			BusyIndicator.showWhile(fViewer.getControl().getDisplay(), new Runnable() {
-				@Override
-				public void run() {
-					fViewer.refresh();
-				}
-			});
+			BusyIndicator.showWhile(fViewer.getControl().getDisplay(), () -> fViewer.refresh());
 			fViewer.getControl().setRedraw(true);
 		}
 	}
@@ -316,8 +311,8 @@ public class MemberFilterActionGroup extends ActionGroup {
 	public void contributeToToolBar(IToolBarManager tbm) {
 		if (fInViewMenu)
 			return;
-		for (int i= 0; i < fFilterActions.length; i++) {
-			tbm.add(fFilterActions[i]);
+		for (MemberFilterAction fFilterAction : fFilterActions) {
+			tbm.add(fFilterAction);
 		}
 	}
 
@@ -332,12 +327,12 @@ public class MemberFilterActionGroup extends ActionGroup {
 			return;
 		final String filters= "filters"; //$NON-NLS-1$
 		if (menu.find(filters) != null) {
-			for (int i= 0; i < fFilterActions.length; i++) {
-				menu.prependToGroup(filters, fFilterActions[i]);
+			for (MemberFilterAction action : fFilterActions) {
+				menu.prependToGroup(filters, action);
 			}
 		} else {
-			for (int i= 0; i < fFilterActions.length; i++) {
-				menu.add(fFilterActions[i]);
+			for (MemberFilterAction action : fFilterActions) {
+				menu.add(action);
 			}
 		}
 	}

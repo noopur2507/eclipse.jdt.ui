@@ -13,9 +13,9 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.refactoring;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,10 +33,8 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.IMessageProvider;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
@@ -98,9 +96,7 @@ public class UseSupertypeWizard extends RefactoringWizard{
 					result.add(superclass);
 				}
 				IType[] superInterface= fHierarchy.getSuperInterfaces(type);
-				for (int i=0; i < superInterface.length; i++){
-					result.add(superInterface[i]);
-				}
+				result.addAll(Arrays.asList(superInterface));
 				try {
 					if (type.isInterface()) {
 						IType found= type.getJavaProject().findType("java.lang.Object"); //$NON-NLS-1$
@@ -239,19 +235,16 @@ public class UseSupertypeWizard extends RefactoringWizard{
 					return getComparator().compare(type1.getElementName(), type2.getElementName());
 				}
 			});
-			fTreeViewer.addSelectionChangedListener(new ISelectionChangedListener(){
-				@Override
-				public void selectionChanged(SelectionChangedEvent event) {
-					IStructuredSelection ss= (IStructuredSelection)event.getSelection();
-					if (Integer.valueOf(0).equals(fFileCount.get(ss.getFirstElement()))){
-						setMessage(RefactoringMessages.UseSupertypeInputPage_No_updates, IMessageProvider.INFORMATION);
-						setPageComplete(false);
-					} else {
-						setMessage(MESSAGE);
-						setPageComplete(true);
-					}
-					fTreeViewer.refresh();
+			fTreeViewer.addSelectionChangedListener(event -> {
+				IStructuredSelection ss= (IStructuredSelection)event.getSelection();
+				if (Integer.valueOf(0).equals(fFileCount.get(ss.getFirstElement()))){
+					setMessage(RefactoringMessages.UseSupertypeInputPage_No_updates, IMessageProvider.INFORMATION);
+					setPageComplete(false);
+				} else {
+					setMessage(MESSAGE);
+					setPageComplete(true);
 				}
+				fTreeViewer.refresh();
 			});
 			try {
 				fTreeViewer.setInput(SuperTypeHierarchyCache.getTypeHierarchy(getUseSupertypeProcessor().getSubType()));
@@ -293,8 +286,8 @@ public class UseSupertypeWizard extends RefactoringWizard{
 
 		private int countFilesWithValue(int i) {
 			int count= 0;
-			for (Iterator<IType> iter= fFileCount.keySet().iterator(); iter.hasNext();) {
-				if (fFileCount.get(iter.next()).intValue() == i)
+			for (IType iType : fFileCount.keySet()) {
+				if (fFileCount.get(iType).intValue() == i)
 					count++;
 			}
 			return count;
@@ -343,15 +336,22 @@ public class UseSupertypeWizard extends RefactoringWizard{
 				if  (! fFileCount.containsKey(element))
 					return superText;
 				int count= fFileCount.get(element).intValue();
-				if (count == 0){
+				switch (count) {
+				case 0:
+				{
 					String[] keys= {superText};
 					return Messages.format(RefactoringMessages.UseSupertypeInputPage_no_possible_updates, keys);
-				} else if (count == 1){
+				}
+				case 1:
+				{
 					String [] keys= {superText};
 					return Messages.format(RefactoringMessages.UseSupertypeInputPage_updates_possible_in_file, keys);
-				}	else {
+				}
+				default:
+				{
 					String[] keys= {superText, String.valueOf(count)};
 					return Messages.format(RefactoringMessages.UseSupertypeInputPage_updates_possible_in_files, keys);
+				}
 				}
 			}
 		}

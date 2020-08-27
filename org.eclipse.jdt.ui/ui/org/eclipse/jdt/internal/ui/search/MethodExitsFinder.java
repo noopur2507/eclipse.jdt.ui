@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.search;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -30,6 +29,7 @@ import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -179,6 +179,12 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 	}
 
 	@Override
+	public boolean visit(LambdaExpression node) {
+		// Don't dive into a Lambda Expression.
+		return false;
+	}
+
+	@Override
 	public boolean visit(ReturnStatement node) {
 		fResult.add(new OccurrenceLocation(node.getStartPosition(), node.getLength(), 0, fExitDescription));
 		return super.visit(node);
@@ -188,12 +194,12 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 	public boolean visit(TryStatement node) {
 		int currentSize= fCaughtExceptions.size();
 		List<CatchClause> catchClauses= node.catchClauses();
-		for (Iterator<CatchClause> iter= catchClauses.iterator(); iter.hasNext();) {
-			Type type= iter.next().getException().getType();
+		for (CatchClause catchClause : catchClauses) {
+			Type type= catchClause.getException().getType();
 			if (type instanceof UnionType) {
 				List<Type> types= ((UnionType) type).types();
-				for (Iterator<Type> iterator= types.iterator(); iterator.hasNext();) {
-					addCaughtException(iterator.next());
+				for (Type type2 : types) {
+					addCaughtException(type2);
 				}
 			} else {
 				addCaughtException(type);
@@ -202,8 +208,8 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 		node.getBody().accept(this);
 
 		List<Expression> resources= node.resources();
-		for (Iterator<Expression> iterator= resources.iterator(); iterator.hasNext();) {
-			iterator.next().accept(this);
+		for (Expression expression : resources) {
+			expression.accept(this);
 		}
 
 		//check if the method could exit as a result of resource#close()
@@ -218,9 +224,9 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 			if (typeBinding != null) {
 				IMethodBinding methodBinding= Bindings.findMethodInHierarchy(typeBinding, "close", new ITypeBinding[0]); //$NON-NLS-1$
 				if (methodBinding != null) {
-					ITypeBinding[] exceptionTypes= methodBinding.getExceptionTypes();
-					for (int j= 0; j < exceptionTypes.length; j++) {
-						if (isExitPoint(exceptionTypes[j])) { // a close() throws an uncaught exception
+					for (ITypeBinding exceptionType : methodBinding.getExceptionTypes()) {
+						if (isExitPoint(exceptionType)) {
+							// a close() throws an uncaught exception
 							// mark name of resource
 							if (variable instanceof VariableDeclarationExpression) {
 								VariableDeclarationExpression varDeclExpr= (VariableDeclarationExpression) variable;
@@ -238,7 +244,7 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 								Block body= node.getBody();
 								int offset= body.getStartPosition() + body.getLength() - 1; // closing bracket of try block
 								fResult.add(new OccurrenceLocation(offset, 1, 0, Messages.format(SearchMessages.MethodExitsFinder_occurrence_exit_impclict_close_description,
-										BasicElementLabels.getJavaElementName(fMethodDeclaration.getName().toString()))));
+									BasicElementLabels.getJavaElementName(fMethodDeclaration.getName().toString()))));
 							}
 						}
 					}
@@ -252,8 +258,8 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 		}
 
 		// visit catch and finally
-		for (Iterator<CatchClause> iter= catchClauses.iterator(); iter.hasNext();) {
-			iter.next().accept(this);
+		for (CatchClause catchClause : catchClauses) {
+			catchClause.accept(this);
 		}
 		if (node.getFinally() != null)
 			node.getFinally().accept(this);
@@ -333,17 +339,16 @@ public class MethodExitsFinder extends ASTVisitor implements IOccurrencesFinder 
 	private boolean isExitPoint(IMethodBinding binding) {
 		if (binding == null)
 			return false;
-		ITypeBinding[] exceptions= binding.getExceptionTypes();
-		for (int i= 0; i < exceptions.length; i++) {
-			if (!isCaught(exceptions[i]))
+		for (ITypeBinding exception : binding.getExceptionTypes()) {
+			if (!isCaught(exception)) {
 				return true;
+			}
 		}
 		return false;
 	}
 
 	private boolean isCaught(ITypeBinding binding) {
-		for (Iterator<ITypeBinding> iter= fCaughtExceptions.iterator(); iter.hasNext();) {
-			ITypeBinding catchException= iter.next();
+		for (ITypeBinding catchException : fCaughtExceptions) {
 			if (catches(catchException, binding))
 				return true;
 		}

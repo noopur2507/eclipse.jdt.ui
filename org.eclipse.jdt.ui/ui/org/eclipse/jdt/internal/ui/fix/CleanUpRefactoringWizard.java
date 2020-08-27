@@ -21,7 +21,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -86,8 +85,6 @@ import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.CustomPr
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.Profile;
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileStore;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.IListAdapter;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.ListDialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogField;
@@ -130,12 +127,10 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 		}
 
 		private Hashtable<String, Profile> loadProfiles() {
-    		List<Profile> list= CleanUpPreferenceUtil.loadProfiles(InstanceScope.INSTANCE);
     		Hashtable<String, Profile> profileIdsTable= new Hashtable<>();
-    		for (Iterator<Profile> iterator= list.iterator(); iterator.hasNext();) {
-	            Profile profile= iterator.next();
-	            profileIdsTable.put(profile.getID(), profile);
-            }
+			for (Profile profile : CleanUpPreferenceUtil.loadProfiles(InstanceScope.INSTANCE)) {
+				profileIdsTable.put(profile.getID(), profile);
+			}
 
     		return profileIdsTable;
         }
@@ -376,12 +371,7 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 
 			updateEnableState(isCustom, settingsField, configure, bulletListBlock);
 
-			fUseCustomField.setDialogFieldListener(new IDialogFieldListener() {
-				@Override
-				public void dialogFieldChanged(DialogField field) {
-					updateEnableState(fUseCustomField.isSelected(), settingsField, configure, bulletListBlock);
-                }
-			});
+			fUseCustomField.setDialogFieldListener(field -> updateEnableState(fUseCustomField.isSelected(), settingsField, configure, bulletListBlock));
 
 			Link preferencePageLink= new Link(composite, SWT.WRAP);
 			preferencePageLink.setText(MultiFixMessages.CleanUpRefactoringWizard_HideWizard_Link);
@@ -417,20 +407,19 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
         private void showCustomSettings(BulletListBlock bulletListBlock) {
         	StringBuilder buf= new StringBuilder();
 
-			final ICleanUp[] cleanUps= JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps();
 			CleanUpOptions options= new MapCleanUpOptions(fCustomSettings);
-	    	for (int i= 0; i < cleanUps.length; i++) {
-	    		cleanUps[i].setOptions(options);
-		        String[] descriptions= cleanUps[i].getStepDescriptions();
-		        if (descriptions != null) {
-	    	        for (int j= 0; j < descriptions.length; j++) {
-	    	        	if (buf.length() > 0) {
-	    	        		buf.append('\n');
-	    	        	}
-	    	            buf.append(descriptions[j]);
-	                }
-		        }
-	        }
+			for (ICleanUp cleanUp : JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps()) {
+				cleanUp.setOptions(options);
+				String[] descriptions= cleanUp.getStepDescriptions();
+				if (descriptions != null) {
+					for (String description : descriptions) {
+						if (buf.length() > 0) {
+							buf.append('\n');
+						}
+						buf.append(description);
+					}
+				}
+			}
 	    	bulletListBlock.setText(buf.toString());
         }
 
@@ -470,11 +459,12 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 
 			refactoring.clearCleanUps();
 			ICleanUp[] cleanups= JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps();
-			for (int i= 0; i < cleanups.length; i++) {
-				if (options != null)
-					cleanups[i].setOptions(options);
-	            refactoring.addCleanUp(cleanups[i]);
-            }
+			for (ICleanUp cleanup : cleanups) {
+				if (options != null) {
+					cleanup.setOptions(options);
+				}
+				refactoring.addCleanUp(cleanup);
+			}
         }
 
 		public String encodeSettings(Map<String, String> settings) throws CoreException {
@@ -505,7 +495,7 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
 			InputStream is= new ByteArrayInputStream(bytes);
 			try {
 				List<Profile> res= ProfileStore.readProfilesFromStream(new InputSource(is));
-				if (res == null || res.size() == 0)
+				if (res == null || res.isEmpty())
 					return JavaPlugin.getDefault().getCleanUpRegistry().getDefaultOptions(CleanUpConstants.DEFAULT_CLEAN_UP_OPTIONS).getMap();
 
 				CustomProfile profile= (CustomProfile)res.get(0);

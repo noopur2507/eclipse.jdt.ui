@@ -91,9 +91,7 @@ public class JavaCompareUtilities {
 				String s= bundle.getString(key);
 				if (s != null)
 					return Integer.parseInt(s);
-			} catch (NumberFormatException x) {
-				// NeedWork
-			} catch (MissingResourceException x) {
+			} catch (NumberFormatException | MissingResourceException x) {
 				// NeedWork
 			}
 		}
@@ -476,5 +474,8 @@ public class JavaCompareUtilities {
 	 */
 	public static boolean isCompareEditorInput(IEditorInput input) {
 		return input instanceof CompareEditorInput;
+	}
+
+	private JavaCompareUtilities() {
 	}
 }

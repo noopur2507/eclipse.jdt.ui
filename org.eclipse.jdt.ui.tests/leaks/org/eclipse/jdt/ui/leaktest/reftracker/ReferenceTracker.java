@@ -76,11 +76,7 @@ public final class ReferenceTracker {
 			} finally {
 				setAccessible(fld, isAccessible);
 			}
-		} catch (IllegalArgumentException e) {
-			handleError(e, fld);
-		} catch (IllegalAccessException e) {
-			handleError(e, fld);
-		} catch (ExceptionInInitializerError e) {
+		} catch (IllegalArgumentException | IllegalAccessException | ExceptionInInitializerError e) {
 			handleError(e, fld);
 		}
 	}
@@ -99,9 +95,7 @@ public final class ReferenceTracker {
 	}
 
 	private void followStaticReferences(Class<?> classInstance) {
-		Field[] declaredFields= classInstance.getDeclaredFields();
-		for (int i= 0; i < declaredFields.length; i++) {
-			Field fld= declaredFields[i];
+		for (Field fld : classInstance.getDeclaredFields()) {
 			if (isStatic(fld.getModifiers()) && !fld.getType().isPrimitive()) {
 				followFieldReference(new RootReference(classInstance), null, fld);
 			}
@@ -109,11 +103,15 @@ public final class ReferenceTracker {
 	}
 
 	private static boolean setAccessible(Field fld, boolean enable) {
-		boolean isAccessible= fld.isAccessible();
-		if (isAccessible != enable) {
-			fld.setAccessible(enable);
+		try {
+			boolean isAccessible= fld.isAccessible();
+			if (isAccessible != enable) {
+				fld.setAccessible(enable);
+			}
+			return isAccessible;
+		} catch (RuntimeException ex) {
+			throw new RuntimeException("JVM settings `--add-modules ALL-SYSTEM --add-opens java.base/jdk.internal.loader=ALL-UNNAMED --add-opens jdk.localedata/sun.util.resources.cldr.provider=ALL-UNNAMED --add-opens jdk.localedata/sun.util.resources.provider=ALL-UNNAMED --add-opens java.base/jdk.internal.module=ALL-UNNAMED --add-opens java.base/java.lang.module=ALL-UNNAMED --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/jdk.internal.math=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED` are probably missing.", ex);
 		}
-		return isAccessible;
 	}
 
 	private void visit(ReferencedObject ref) {
@@ -148,9 +146,7 @@ public final class ReferenceTracker {
 				followStaticReferences((Class<?>) curr);
 			}
 			do {
-				Field[] declaredFields= currClass.getDeclaredFields();
-				for (int i= 0; i < declaredFields.length; i++) {
-					Field fld= declaredFields[i];
+				for (Field fld : currClass.getDeclaredFields()) {
 					if (!isStatic(fld.getModifiers()) && !fld.getType().isPrimitive()) {
 						followFieldReference(ref, curr, fld);
 					}

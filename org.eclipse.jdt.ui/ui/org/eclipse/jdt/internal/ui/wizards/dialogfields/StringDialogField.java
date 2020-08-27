@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.ui.wizards.dialogfields;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -41,7 +40,7 @@ public class StringDialogField extends DialogField {
 		super();
 		fText= ""; //$NON-NLS-1$
 	}
-	
+
 	public void setContentAssistProcessor(IContentAssistProcessor processor) {
 	    fContentAssistProcessor= processor;
 	    if (fContentAssistProcessor != null && isOkToUse(fTextControl)) {
@@ -90,7 +89,7 @@ public class StringDialogField extends DialogField {
 
 	/**
 	 * Tries to set the focus to the string dialog field.
-	 * 
+	 *
 	 * @param selectText <code>true</code> if the text should be selected in the string dialog
 	 *            field. Otherwise, the text is left unselected and the caret is placed at the end
 	 *            of the text
@@ -116,7 +115,7 @@ public class StringDialogField extends DialogField {
 	public boolean setFocus() {
 		return setFocus(true);
 	}
-	
+
 	// ------- ui creation
 
 	/**
@@ -128,12 +127,7 @@ public class StringDialogField extends DialogField {
 	public Text getTextControl(Composite parent) {
 		if (fTextControl == null) {
 			assertCompositeNotNull(parent);
-			fModifyListener= new ModifyListener() {
-				@Override
-				public void modifyText(ModifyEvent e) {
-					doModifyText();
-				}
-			};
+			fModifyListener= e -> doModifyText();
 
 			fTextControl= createTextControl(parent);
 			// moved up due to 1GEUNW2
@@ -151,7 +145,7 @@ public class StringDialogField extends DialogField {
 
 	/**
 	 * Creates and returns a new text control.
-	 * 
+	 *
 	 * @param parent the parent
 	 * @return the text control
 	 * @since 3.6

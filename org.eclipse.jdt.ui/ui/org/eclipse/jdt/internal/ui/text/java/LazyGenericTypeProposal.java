@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -32,7 +32,6 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentExtension;
-import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.Region;
@@ -60,14 +59,14 @@ import org.eclipse.jdt.core.dom.ASTRequestor;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
-import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.javaeditor.EditorHighlightingSynchronizer;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 
@@ -385,7 +384,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 * <li>the type parameter name for all other (unbounded or more than one bound) type parameters</li>
 	 * </ul>
 	 * Type argument proposals for type parameters are always ambiguous.
-	 * 
+	 *
 	 * @param parameter the type parameter of the inserted type
 	 * @return a type argument proposal for <code>parameter</code>
 	 * @throws JavaModelException if this element does not exist or if an exception occurs while
@@ -426,7 +425,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 * </ul>
 	 * </li>
 	 * </ul>
-	 * 
+	 *
 	 * @param binding the type argument binding in the expected type
 	 * @param parameter the type parameter of the inserted type
 	 * @return a type argument proposal for <code>binding</code>
@@ -463,7 +462,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 * <code>subType</code> at its last index. If <code>subType</code> equals <code>superType</code>
 	 * , an array of length 1 is returned containing that type.
 	 * </p>
-	 * 
+	 *
 	 * @param subType the sub type
 	 * @param superType the super type
 	 * @return an inheritance path from <code>superType</code> to <code>subType</code>, or
@@ -510,7 +509,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 * , this method computes the corresponding type parameter index in the type at
 	 * <code>path[0]</code>. If the type parameter does not map to a type parameter of the super
 	 * type, <code>-1</code> is returned.
-	 * 
+	 *
 	 * @param path the type inheritance path, a non-empty array of consecutive sub types
 	 * @param pathIndex an index into <code>path</code> specifying the type to start with
 	 * @param paramIndex the index of the type parameter to map - <code>path[pathIndex]</code> must
@@ -558,9 +557,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 *         signature to <code>superType</code>
 	 */
 	private String findMatchingSuperTypeSignature(IType subType, IType superType) throws JavaModelException {
-		String[] signatures= getSuperTypeSignatures(subType, superType);
-		for (int i= 0; i < signatures.length; i++) {
-			String signature= signatures[i];
+		for (String signature : getSuperTypeSignatures(subType, superType)) {
 			String qualified= SignatureUtil.qualifySignature(signature, subType);
 			String subFQN= SignatureUtil.stripSignatureToFQN(qualified);
 
@@ -674,7 +671,10 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 		if (completion.length == 0)
 			return false;
 
-		/* No argument list if there already is a generic signature behind the name. */
+		/*
+		 * No argument list if there already is a generic signature behind the name or a period to
+		 * qualify an inner type.
+		 * */
 		try {
 			IRegion region= document.getLineInformationOfOffset(offset);
 			String line= document.get(region.getOffset(), region.getLength());
@@ -687,7 +687,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 				return true;
 
 			char ch= line.charAt(index);
-			return ch != '<';
+			return ch != '<' && ch != '.';
 
 		} catch (BadLocationException e) {
 			return true;
@@ -757,7 +757,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 			if (editor != null) {
 				model.addLinkingListener(new EditorHighlightingSynchronizer(editor));
 			}
-			
+
 			if (!onlyAppendArguments && (document instanceof IDocumentExtension)) { // see bug 301990
 				FormatterPrefs prefs= getFormatterPrefs();
 				final Position firstBracketPosition;
@@ -783,16 +783,13 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 						try {
 							if (getTextViewer().getSelectedRange().y > 1 || flags != ILinkedModeListener.EXTERNAL_MODIFICATION)
 								return;
-							((IDocumentExtension) document).registerPostNotificationReplace(null, new IDocumentExtension.IReplace() {
-								@Override
-								public void perform(IDocument d, IDocumentListener owner) {
-									try {
-										if ((firstBracketPosition.length == 0 || firstBracketPosition.isDeleted) && !secondBracketPosition.isDeleted) {
-											d.replace(firstBracketPosition.offset, secondBracketPosition.offset - firstBracketPosition.offset, ""); //$NON-NLS-1$
-										}
-									} catch (BadLocationException e) {
-										JavaPlugin.log(e);
+							((IDocumentExtension) document).registerPostNotificationReplace(null, (d, owner) -> {
+								try {
+									if ((firstBracketPosition.length == 0 || firstBracketPosition.isDeleted) && !secondBracketPosition.isDeleted) {
+										d.replace(firstBracketPosition.offset, secondBracketPosition.offset - firstBracketPosition.offset, ""); //$NON-NLS-1$
 									}
+								} catch (BadLocationException e) {
+									JavaPlugin.log(e);
 								}
 							});
 						} finally {
@@ -827,8 +824,8 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 
 	private boolean hasAmbiguousProposals(TypeArgumentProposal[] typeArgumentProposals) {
 		boolean hasAmbiguousProposals= false;
-		for (int i= 0; i < typeArgumentProposals.length; i++) {
-			if (typeArgumentProposals[i].isAmbiguous()) {
+		for (TypeArgumentProposal typeArgumentProposal : typeArgumentProposals) {
+			if (typeArgumentProposal.isAmbiguous()) {
 				hasAmbiguousProposals= true;
 				break;
 			}
@@ -905,7 +902,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 
 	/**
 	 * Sets whether this proposal can use the diamond.
-	 * 
+	 *
 	 * @param canUseDiamond <code>true</code> if a diamond can be inserted
 	 * @see CompletionProposal#canUseDiamond(org.eclipse.jdt.core.CompletionContext)
 	 * @since 3.7
@@ -916,7 +913,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 
 	/**
 	 * Tells whether this proposal can use the diamond.
-	 * 
+	 *
 	 * @return <code>true</code> if a diamond can be used
 	 * @see CompletionProposal#canUseDiamond(org.eclipse.jdt.core.CompletionContext)
 	 * @since 3.7

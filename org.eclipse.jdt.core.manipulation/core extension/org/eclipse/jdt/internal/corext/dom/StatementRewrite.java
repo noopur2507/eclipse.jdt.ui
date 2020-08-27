@@ -28,7 +28,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 /**
  * Rewrite helper for {@link Statement}s. Ensures that
  * the replacement nodes are enclosed in a Block if necessary.
- * 
+ *
  * see JDTUIHelperClasses
  */
 public class StatementRewrite extends ReplaceRewrite {
@@ -45,8 +45,8 @@ public class StatementRewrite extends ReplaceRewrite {
 		if (ASTNodes.isControlStatementBody(fDescriptor)) {
 			Block block= ast.newBlock();
 			ListRewrite statements= fRewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
-			for (int i= 0; i < replacements.length; i++) {
-				statements.insertLast(replacements[i], description);
+			for (ASTNode replacement : replacements) {
+				statements.insertLast(replacement, description);
 			}
 			fRewrite.replace(fToReplace[0], block, description);
 		} else {

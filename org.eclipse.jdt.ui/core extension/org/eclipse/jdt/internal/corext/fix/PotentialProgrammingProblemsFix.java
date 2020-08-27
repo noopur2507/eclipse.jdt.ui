@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.corext.fix;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -72,7 +71,7 @@ public class PotentialProgrammingProblemsFix extends CompilationUnitRewriteOpera
 			boolean calculatedId,
 			boolean defaultId,
 			boolean randomId) throws CoreException {
-		
+
 		return PotentialProgrammingProblemsFixCore.checkPreConditions(project, compilationUnits, monitor, calculatedId, defaultId, randomId);
     }
 
@@ -98,9 +97,9 @@ public class PotentialProgrammingProblemsFix extends CompilationUnitRewriteOpera
 				return null;
 
 			List<ASTNode> declarationNodes= new ArrayList<>();
-			for (int i= 0; i < problems.length; i++) {
-				if (problems[i].getProblemId() == IProblem.MissingSerialVersion) {
-					final SimpleName simpleName= PotentialProgrammingProblemsFixCore.getSelectedName(compilationUnit, (ProblemLocationCore)problems[i]);
+			for (IProblemLocation problem : problems) {
+				if (problem.getProblemId() == IProblem.MissingSerialVersion) {
+					final SimpleName simpleName= PotentialProgrammingProblemsFixCore.getSelectedName(compilationUnit, (ProblemLocationCore)problem);
 					if (simpleName != null) {
 						ASTNode declarationNode= PotentialProgrammingProblemsFixCore.getDeclarationNode(simpleName);
 						if (declarationNode != null) {
@@ -109,11 +108,10 @@ public class PotentialProgrammingProblemsFix extends CompilationUnitRewriteOpera
 					}
 				}
 			}
-			if (declarationNodes.size() == 0)
+			if (declarationNodes.isEmpty())
 				return null;
 
-			for (Iterator<ASTNode> iter= declarationNodes.iterator(); iter.hasNext();) {
-	            ASTNode declarationNode= iter.next();
+			for (ASTNode declarationNode : declarationNodes) {
 	            ITypeBinding binding= PotentialProgrammingProblemsFixCore.getTypeBinding(declarationNode);
 	            if (fCurrentContext.getSerialVersionId(binding) != null) {
 	            	PotentialProgrammingProblemsFixCore.SerialVersionHashBatchOperation op= new PotentialProgrammingProblemsFixCore.SerialVersionHashBatchOperation(unit, declarationNodes.toArray(new ASTNode[declarationNodes.size()]), fCurrentContext);

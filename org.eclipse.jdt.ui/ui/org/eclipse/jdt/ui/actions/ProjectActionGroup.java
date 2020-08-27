@@ -28,7 +28,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 
 import org.eclipse.ui.IActionBars;
@@ -110,13 +109,10 @@ public class ProjectActionGroup extends ActionGroup {
 			fCloseUnrelatedAction.selectionChanged(s);
 		}
 
-		fSelectionChangedListener= new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				ISelection s= event.getSelection();
-				if (s instanceof IStructuredSelection) {
-					performSelectionChanged((IStructuredSelection) s);
-				}
+		fSelectionChangedListener= event -> {
+			ISelection s= event.getSelection();
+			if (s instanceof IStructuredSelection) {
+				performSelectionChanged((IStructuredSelection) s);
 			}
 		};
 		selectionProvider.addSelectionChangedListener(fSelectionChangedListener);
@@ -145,8 +141,7 @@ public class ProjectActionGroup extends ActionGroup {
 
 	private int evaluateSelection(Object[] array, List<IProject> allOpenProjects) {
 		int status= 0;
-		for (int i= 0; i < array.length; i++) {
-			Object curr= array[i];
+		for (Object curr : array) {
 			if (curr instanceof IJavaProject) {
 				curr= ((IJavaProject) curr).getProject();
 			}
@@ -170,10 +165,10 @@ public class ProjectActionGroup extends ActionGroup {
 	}
 
 	private boolean hasClosedProjectsInWorkspace() {
-		IProject[] projects= ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		for (int i = 0; i < projects.length; i++) {
-			if (!projects[i].isOpen())
+		for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+			if (!project.isOpen()) {
 				return true;
+			}
 		}
 		return false;
 	}

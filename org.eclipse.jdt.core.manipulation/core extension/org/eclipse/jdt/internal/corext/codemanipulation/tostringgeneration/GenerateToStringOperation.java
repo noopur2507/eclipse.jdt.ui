@@ -54,7 +54,7 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
  * <p>
  * A workspace runnable to add implementation for <code>{@link java.lang.Object#toString()}</code>
  * </p>
- * 
+ *
  * @since 3.5
  */
 public class GenerateToStringOperation implements IWorkspaceRunnable {
@@ -106,9 +106,7 @@ public class GenerateToStringOperation implements IWorkspaceRunnable {
 				if (replace == null || ((Boolean)toStringMethod.getProperty(AbstractToStringGenerator.OVERWRITE_METHOD_PROPERTY)).booleanValue())
 					insertMethod(toStringMethod, rewriter, replace);
 
-				List<MethodDeclaration> helperMethods= fGenerator.generateHelperMethods();
-				for (Iterator<MethodDeclaration> iterator= helperMethods.iterator(); iterator.hasNext();) {
-					MethodDeclaration method= iterator.next();
+				for (MethodDeclaration method : fGenerator.generateHelperMethods()) {
 					replace= findMethodToReplace(list, method);
 					if (replace == null || ((Boolean)method.getProperty(AbstractToStringGenerator.OVERWRITE_METHOD_PROPERTY)).booleanValue()) {
 						insertMethod(method, rewriter, replace);
@@ -158,15 +156,14 @@ public class GenerateToStringOperation implements IWorkspaceRunnable {
 
 	/**
 	 * Determines if given method exists in a given list
-	 * 
+	 *
 	 * @param list list of method to search through
 	 * @param method method to find
 	 * @return declaration of method from the list that has the same name and parameter types, or
 	 *         null if not found
 	 */
 	protected BodyDeclaration findMethodToReplace(final List<BodyDeclaration> list, MethodDeclaration method) {
-		for (final Iterator<BodyDeclaration> iterator= list.iterator(); iterator.hasNext();) {
-			final BodyDeclaration bodyDecl= iterator.next();
+		for (BodyDeclaration bodyDecl : list) {
 			if (bodyDecl instanceof MethodDeclaration) {
 				final MethodDeclaration method2= (MethodDeclaration)bodyDecl;
 				if (method2.getName().getIdentifier().equals(method.getName().getIdentifier()) && method2.parameters().size() == method.parameters().size()) {
@@ -217,7 +214,7 @@ public class GenerateToStringOperation implements IWorkspaceRunnable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param toStringStyle id number of the code style (its position in the array returned by
 	 *            {@link #getStyleNames()}
 	 * @return a toString() generator implementing given code style
@@ -251,7 +248,7 @@ public class GenerateToStringOperation implements IWorkspaceRunnable {
 	/**
 	 * Creates new <code>GenerateToStringOperation</code>, using <code>settings.toStringStyle</code>
 	 * field to choose the right subclass.
-	 * 
+	 *
 	 * @param typeBinding binding for the type for which the toString() method will be created
 	 * @param selectedBindings bindings for the typetype's members to be used in created method
 	 * @param unit a compilation unit containing the type

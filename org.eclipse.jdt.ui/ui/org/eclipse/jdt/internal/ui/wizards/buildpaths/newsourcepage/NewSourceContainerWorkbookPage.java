@@ -62,7 +62,6 @@ import org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildPathsBlock;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElement;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElementAttribute;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.ListDialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogField;
@@ -140,12 +139,7 @@ public class NewSourceContainerWorkbookPage extends BuildPathBasePage implements
 		if (Display.getCurrent() != null) {
 			doUpdateUI();
 		} else {
-			Display.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					doUpdateUI();
-				}
-			});
+			Display.getDefault().asyncExec(this::doUpdateUI);
 		}
     }
 
@@ -243,36 +237,28 @@ public class NewSourceContainerWorkbookPage extends BuildPathBasePage implements
 
 		fCreateModuleInfoFileButton.doFillIntoGrid(body, 1);
 
-		fCreateModuleInfoFileButton.setDialogFieldListener(new IDialogFieldListener() {
-			@Override
-			public void dialogFieldChanged(DialogField field) {
-				fCreateModuleInfoFile= fCreateModuleInfoFileButton.isSelected();
-			}
-		});
+		fCreateModuleInfoFileButton.setDialogFieldListener(field -> fCreateModuleInfoFile= fCreateModuleInfoFileButton.isSelected());
 
 
         fActionGroup= new DialogPackageExplorerActionGroup(fHintTextGroup, fContext, fPackageExplorer, this);
 		fActionGroup.addBuildpathModifierListener(this);
 
 
-        fUseFolderOutputs.setDialogFieldListener(new IDialogFieldListener() {
-            @Override
-			public void dialogFieldChanged(DialogField field) {
-                boolean isUseFolders= fUseFolderOutputs.isSelected();
-                if (!isUseFolders) {
-                	ResetAllOutputFoldersAction action= new ResetAllOutputFoldersAction(fContext, fJavaProject, fPackageExplorer) {
-                		@Override
-						public void run() {
-                    		commitDefaultOutputFolder();
-                    	    super.run();
-                    	}
-                	};
-                	action.addBuildpathModifierListener(NewSourceContainerWorkbookPage.this);
-                	action.run();
-                }
-				fPackageExplorer.showOutputFolders(isUseFolders);
-            }
-        });
+        fUseFolderOutputs.setDialogFieldListener(field -> {
+		    boolean isUseFolders= fUseFolderOutputs.isSelected();
+		    if (!isUseFolders) {
+		    	ResetAllOutputFoldersAction action= new ResetAllOutputFoldersAction(fContext, fJavaProject, fPackageExplorer) {
+		    		@Override
+					public void run() {
+		        		commitDefaultOutputFolder();
+		        	    super.run();
+		        	}
+		    	};
+		    	action.addBuildpathModifierListener(NewSourceContainerWorkbookPage.this);
+		    	action.run();
+		    }
+			fPackageExplorer.showOutputFolders(isUseFolders);
+		});
 
         Composite outputLocation= new Composite(body, SWT.NONE);
         outputLocation.setLayout(new GridLayout(2, false));
@@ -378,7 +364,7 @@ public class NewSourceContainerWorkbookPage extends BuildPathBasePage implements
 	public void setSelection(List<?> selection, boolean expand) {
 		// page switch
 
-        if (selection.size() == 0)
+        if (selection.isEmpty())
             return;
 
 		List<CPListElement> cpEntries= new ArrayList<>();
@@ -451,7 +437,7 @@ public class NewSourceContainerWorkbookPage extends BuildPathBasePage implements
 				}
 			}
 
-			if (packageFragmentRootsAsList.size() == 0) {
+			if (packageFragmentRootsAsList.isEmpty()) {
 				setSelection= false;
 				setEnabled= false;
 			} else {
@@ -486,8 +472,6 @@ public class NewSourceContainerWorkbookPage extends BuildPathBasePage implements
 				}
 			}
 	        fJavaProject.setOutputLocation(path, null);
-        } catch (JavaModelException e) {
-	     	JavaPlugin.log(e);
         } catch (CoreException e) {
 	        JavaPlugin.log(e);
         }

@@ -33,9 +33,9 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
+import org.eclipse.jdt.core.manipulation.JavaManipulation;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
-import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 
@@ -94,14 +94,13 @@ public class CompilationUnitRewriteOperationsFixCore extends AbstractFix {
 		CompilationUnitRewrite cuRewrite= new CompilationUnitRewrite((ICompilationUnit)fCompilationUnit.getJavaElement(), fCompilationUnit);
 
 		fLinkedProposalModel.clear();
-		for (int i= 0; i < fOperations.length; i++) {
-			CompilationUnitRewriteOperation operation= fOperations[i];
+		for (CompilationUnitRewriteOperation operation : fOperations) {
 			operation.rewriteAST(cuRewrite, fLinkedProposalModel);
 		}
 
 		CompilationUnitChange result= cuRewrite.createChange(getDisplayString(), true, null);
 		if (result == null)
-			throw new CoreException(new Status(IStatus.ERROR, JavaManipulationPlugin.getPluginId(), Messages.format(FixMessages.CompilationUnitRewriteOperationsFix_nullChangeError, getDisplayString())));
+			throw new CoreException(new Status(IStatus.ERROR, JavaManipulation.ID_PLUGIN, Messages.format(FixMessages.CompilationUnitRewriteOperationsFix_nullChangeError, getDisplayString())));
 
 		return result;
 	}
@@ -109,8 +108,7 @@ public class CompilationUnitRewriteOperationsFixCore extends AbstractFix {
 	@Override
 	public String getAdditionalProposalInfo(){
 		StringBuilder sb= new StringBuilder();
-		for (int i= 0; i < fOperations.length; i++) {
-			CompilationUnitRewriteOperation operation= fOperations[i];
+		for (CompilationUnitRewriteOperation operation : fOperations) {
 			String info= operation.getAdditionalInfo();
 			if (info != null)
 				sb.append(info);

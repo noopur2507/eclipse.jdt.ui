@@ -45,7 +45,6 @@ import org.eclipse.swt.widgets.TreeItem;
 
 import org.eclipse.core.runtime.Assert;
 
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -177,8 +176,8 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 		@Override
 		protected void open(ISelection selection, boolean activate) {
 			if (selection instanceof IStructuredSelection) {
-				for (Iterator<?> iter= ((IStructuredSelection)selection).iterator(); iter.hasNext();) {
-					boolean noError= CallHierarchyUI.openInEditor(iter.next(), getSite().getShell(), OpenStrategy.activateOnOpen());
+				for (Object object : ((IStructuredSelection)selection)) {
+					boolean noError= CallHierarchyUI.openInEditor(object, getSite().getShell(), OpenStrategy.activateOnOpen());
 					if (!noError)
 						return;
 				}
@@ -268,9 +267,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
     public void setHistoryEntries(IMember[][] entries) {
         getMethodHistory().clear();
 
-        for (int i = 0; i < entries.length; i++) {
-            getMethodHistory().add(entries[i]);
-        }
+		getMethodHistory().addAll(Arrays.asList(entries));
 
         updateHistoryEntries();
     }
@@ -348,8 +345,8 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
     }
 
 	private void updateCheckedState() {
-		for (int i= 0; i < fToggleOrientationActions.length; i++) {
-			fToggleOrientationActions[i].setChecked(fOrientation == fToggleOrientationActions[i].getOrientation());
+		for (ToggleOrientationAction toaction : fToggleOrientationActions) {
+			toaction.setChecked(fOrientation == toaction.getOrientation());
 		}
 	}
 
@@ -359,9 +356,9 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
      */
     void setCallMode(int mode) {
         if (fCurrentCallMode != mode) {
-            for (int i = 0; i < fToggleCallModeActions.length; i++) {
-                fToggleCallModeActions[i].setChecked(mode == fToggleCallModeActions[i].getMode());
-            }
+			for (ToggleCallModeAction tcmaction : fToggleCallModeActions) {
+				tcmaction.setChecked(mode == tcmaction.getMode());
+			}
 
             fCurrentCallMode = mode;
             fDialogSettings.put(DIALOGSTORE_CALL_MODE, mode);
@@ -372,7 +369,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Returns the current call mode.
-	 * 
+	 *
 	 * @return the current call mode: CALL_MODE_CALLERS or CALL_MODE_CALLEES
 	 * @since 3.5
 	 */
@@ -387,9 +384,9 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
      */
     void setFieldMode(int mode) {
         if (fCurrentFieldMode != mode) {
-            for (int i = 0; i < fToggleFieldModeActions.length; i++) {
-                fToggleFieldModeActions[i].setChecked(mode == fToggleFieldModeActions[i].getMode());
-            }
+			for (SelectFieldModeAction toggleFieldModeAction : fToggleFieldModeActions) {
+				toggleFieldModeAction.setChecked(mode == toggleFieldModeAction.getMode());
+			}
 
             fCurrentFieldMode = mode;
             fDialogSettings.put(DIALOGSTORE_FIELD_MODE, mode);
@@ -400,7 +397,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Fetches the search scope with the appropriate include mask.
-	 * 
+	 *
 	 * @param includeMask the include mask
 	 * @return the search scope with the appropriate include mask
 	 * @since 3.7
@@ -488,12 +485,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
         getSite().setSelectionProvider(fSelectionProviderMediator);
 
         fCallHierarchyViewer.initContextMenu(
-        		new IMenuListener() {
-		            @Override
-					public void menuAboutToShow(IMenuManager menu) {
-		                fillCallHierarchyViewerContextMenu(menu);
-		            }
-		        }, getSite(), fSelectionProviderMediator);
+        		this::fillCallHierarchyViewerContextMenu, getSite(), fSelectionProviderMediator);
 
 
         fClipboard= new Clipboard(parent.getDisplay());
@@ -533,7 +525,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Tells whether the given part reference references this view.
-	 * 
+	 *
 	 * @param partRef the workbench part reference
 	 * @return <code>true</code> if the given part reference references this view
 	 * @since 3.7
@@ -710,24 +702,24 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
         IMenuManager viewMenu = actionBars.getMenuManager();
         viewMenu.add(new Separator());
 
-        for (int i = 0; i < fToggleCallModeActions.length; i++) {
-            viewMenu.add(fToggleCallModeActions[i]);
-        }
+		for (ToggleCallModeAction fToggleCallModeAction : fToggleCallModeActions) {
+			viewMenu.add(fToggleCallModeAction);
+		}
 
         viewMenu.add(new Separator());
 
         MenuManager layoutSubMenu= new MenuManager(CallHierarchyMessages.CallHierarchyViewPart_layout_menu);
-        for (int i = 0; i < fToggleOrientationActions.length; i++) {
-        	layoutSubMenu.add(fToggleOrientationActions[i]);
-        }
+		for (ToggleOrientationAction fToggleOrientationAction : fToggleOrientationActions) {
+			layoutSubMenu.add(fToggleOrientationAction);
+		}
         viewMenu.add(layoutSubMenu);
 
 		viewMenu.add(new Separator(IContextMenuConstants.GROUP_SEARCH));
 
         MenuManager fieldSubMenu= new MenuManager(CallHierarchyMessages.CallHierarchyViewPart_field_menu);
-        for (int i = 0; i < fToggleFieldModeActions.length; i++) {
-        	fieldSubMenu.add(fToggleFieldModeActions[i]);
-        }
+		for (SelectFieldModeAction fToggleFieldModeAction : fToggleFieldModeActions) {
+			fieldSubMenu.add(fToggleFieldModeAction);
+		}
         viewMenu.add(fieldSubMenu);
         viewMenu.add(fShowSearchInDialogAction);
     }
@@ -752,8 +744,8 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
      * @param entry the history entry
      */
     public void gotoHistoryEntry(IMember[] entry) {
-    	for (Iterator<IMember[]> iter= getMethodHistory().iterator(); iter.hasNext(); ) {
-			if (Arrays.equals(entry, iter.next())) {
+    	for (IMember[] name : getMethodHistory()) {
+			if (Arrays.equals(entry, name)) {
 				setInputElements(entry);
 				return;
 			}
@@ -870,12 +862,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 			return (T) JavaUIHelp.getHelpContextProvider(this, IJavaHelpContextIds.CALL_HIERARCHY_VIEW);
     	}
 		if (adapter == IShowInTargetList.class) {
-			return (T) new IShowInTargetList() {
-				@Override
-				public String[] getShowInTargetIds() {
-					return new String[] { JavaUI.ID_PACKAGES, JavaPlugin.ID_RES_NAV };
-				}
-			};
+			return (T) (IShowInTargetList) () -> new String[] { JavaUI.ID_PACKAGES };
 		}
     	return super.getAdapter(adapter);
     }
@@ -884,14 +871,9 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 	 * @return the <code>IShowInSource</code> for this view.
 	 */
 	private IShowInSource getShowInSource() {
-		return new IShowInSource() {
-			@Override
-			public ShowInContext getShowInContext() {
-				return new ShowInContext(null, fSelectionProviderMediator.getSelection());
-			}
-		};
+		return () -> new ShowInContext(null, fSelectionProviderMediator.getSelection());
 	}
-	
+
     /**
      * Returns the current selection.
      * @return selection
@@ -941,8 +923,8 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
     	}
         if (fCallerRoots == null) {
             fCallerRoots = CallHierarchy.getDefault().getCallerRoots(fInputElements);
-        	for (int i= 0; i < fCallerRoots.length; i++) {
-        		fCallerRoots[i].setFieldSearchMode(fCurrentFieldMode);
+			for (MethodWrapper fCallerRoot : fCallerRoots) {
+				fCallerRoot.setFieldSearchMode(fCurrentFieldMode);
 			}
         }
 
@@ -960,7 +942,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Updates the input, history and description for the new input.
-	 * 
+	 *
 	 * @param currentInput the current input
 	 * @param entry the new input elements
 	 * @since 3.7
@@ -973,7 +955,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Updates the history with the latest input.
-	 * 
+	 *
 	 * @param currentInput the current input
 	 * @param entry the new input elements
 	 * @since 3.7
@@ -993,12 +975,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
         fLocationViewer= new LocationViewer(parent);
 
 
-        fLocationViewer.initContextMenu(new IMenuListener() {
-                @Override
-				public void menuAboutToShow(IMenuManager menu) {
-                    fillLocationViewerContextMenu(menu);
-                }
-            }, ID_CALL_HIERARCHY, getSite());
+        fLocationViewer.initContextMenu(this::fillLocationViewerContextMenu, ID_CALL_HIERARCHY, getSite());
     }
 
     private void createHierarchyLocationSplitter(Composite parent) {
@@ -1023,7 +1000,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
         if (fExpandWithConstructorsAction.canActionBeAdded()) {
         	menu.appendToGroup(GROUP_FOCUS, fExpandWithConstructorsAction);
         }
-        
+
         if (fRemoveFromViewAction.canActionBeAdded()){
         	menu.appendToGroup(GROUP_FOCUS, fRemoveFromViewAction);
         }
@@ -1048,9 +1025,9 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
         toolBar.add(fRefreshViewAction);
         toolBar.add(fCancelSearchAction);
-        for (int i = 0; i < fToggleCallModeActions.length; i++) {
-            toolBar.add(fToggleCallModeActions[i]);
-        }
+		for (ToggleCallModeAction fToggleCallModeAction : fToggleCallModeActions) {
+			toolBar.add(fToggleCallModeAction);
+		}
         toolBar.add(fHistoryDropDownAction);
         toolBar.add(fPinViewAction);
     }
@@ -1122,9 +1099,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
     private void updateHistoryEntries() {
         for (int i = getMethodHistory().size() - 1; i >= 0; i--) {
-            IMember[] members = getMethodHistory().get(i);
-            for (int j= 0; j < members.length; j++) {
-				IMember member= members[j];
+         	for (IMember member : getMethodHistory().get(i)) {
 				if (! member.exists()) {
 					getMethodHistory().remove(i);
 					break;
@@ -1163,7 +1138,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Sets the content description.
-	 * 
+	 *
 	 * @param includeMask the include mask
 	 * @since 3.7
 	 */
@@ -1175,7 +1150,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Gets the include mask.
-	 * 
+	 *
 	 * @return the include mask
 	 * @since 3.7
 	 */
@@ -1185,7 +1160,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Computes the content description for the call hierarchy computation.
-	 * 
+	 *
 	 * @param includeMask the include mask
 	 * @return the content description
 	 * @since 3.7
@@ -1294,7 +1269,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
     /**
      * Returns the call hierarchy viewer.
-     * 
+     *
      * @return the call hierarchy viewer
      * @since 3.5
      */
@@ -1304,7 +1279,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Returns the location viewer.
-	 * 
+	 *
 	 * @return the location viewer
 	 * @since 3.6
 	 */
@@ -1314,7 +1289,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Marks the view as pinned.
-	 * 
+	 *
 	 * @param pinned if <code>true</code> the view is marked as pinned
 	 * @since 3.7
 	 */
@@ -1324,7 +1299,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Indicates whether the Call Hierarchy view is pinned.
-	 * 
+	 *
 	 * @return <code>true</code> if the view is pinned, <code>false</code> otherwise
 	 * @since 3.7
 	 */
@@ -1334,7 +1309,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Returns the method history.
-	 * 
+	 *
 	 * @return the method history
 	 * @since 3.7
 	 */
@@ -1355,7 +1330,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Fetches the progress service for the workbench part site.
-	 * 
+	 *
 	 * @return the progress service for the workbench part site
 	 * @since 3.7
 	 */
@@ -1369,35 +1344,33 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Adds the new input elements to the current list.
-	 * 
+	 *
 	 * @param newElements the new input elements to add
 	 * @since 3.7
 	 */
 	void addInputElements(IMember[] newElements) {
 		// Caveat: RemoveFromViewAction#run() disposes TreeItems. When we add a previously removed element,
 		// we have to consider the real Tree state, not only fInputElements.
-		
+
 		List<IMember> inputElements= Arrays.asList(fInputElements);
 		List<IMember> treeElements= new ArrayList<>();
-		TreeItem[] treeItems= fCallHierarchyViewer.getTree().getItems();
-		for (int i= 0; i < treeItems.length; i++) {
-			Object data= treeItems[i].getData();
+		for (TreeItem treeItem : fCallHierarchyViewer.getTree().getItems()) {
+			Object data= treeItem.getData();
 			if (data instanceof MethodWrapper)
 				treeElements.add(((MethodWrapper) data).getMember());
 		}
-		
+
 		List<IMember> newInput= new ArrayList<>();
 		newInput.addAll(inputElements);
 		List<IMember> addedElements= new ArrayList<>();
-		
-		for (int i= 0; i < newElements.length; i++) {
-			IMember newElement= newElements[i];
+
+		for (IMember newElement : newElements) {
 			if (! inputElements.contains(newElement))
 				newInput.add(newElement);
 			if (! treeElements.contains(newElement))
 				addedElements.add(newElement);
 		}
-		if (treeElements.size() == 0)
+		if (treeElements.isEmpty())
 			updateInputHistoryAndDescription(fInputElements, newElements);
 		else if (newInput.size() > fInputElements.length)
 			updateInputHistoryAndDescription(fInputElements, newInput.toArray(new IMember[newInput.size()]));
@@ -1407,7 +1380,7 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 
 	/**
 	 * Updates the view with the newly added input elements.
-	 * 
+	 *
 	 * @param newElements the newly added elements
 	 * @since 3.7
 	 */
@@ -1419,11 +1392,11 @@ public class CallHierarchyViewPart extends ViewPart implements ICallHierarchyVie
 			roots= CallHierarchy.getDefault().getCallerRoots(newElements);
 		else
 			roots= CallHierarchy.getDefault().getCalleeRoots(newElements);
-		CallHierarchyViewer hierarchyViewer= getViewer();		
+		CallHierarchyViewer hierarchyViewer= getViewer();
 		TreeRoot treeRoot= hierarchyViewer.getTreeRoot(roots, true);
 		hierarchyViewer.add(treeRoot, (Object[]) roots);
-		for (int i= 0; i < roots.length; i++) {
-			hierarchyViewer.setExpandedState(roots[i], true);
+		for (MethodWrapper root : roots) {
+			hierarchyViewer.setExpandedState(root, true);
 		}
 		hierarchyViewer.setSelection(new StructuredSelection(roots), true);
 	}

@@ -90,14 +90,11 @@ public class AddLibraryToBuildpathAction extends BuildpathModifierAction {
 			@Override
 			public boolean performFinish() {
 				if (super.performFinish()) {
-					IWorkspaceRunnable op= new IWorkspaceRunnable() {
-						@Override
-						public void run(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
-							try {
-								finishPage(monitor);
-							} catch (InterruptedException e) {
-								throw new OperationCanceledException(e.getMessage());
-							}
+					IWorkspaceRunnable op= monitor -> {
+						try {
+							finishPage(monitor);
+						} catch (InterruptedException e) {
+							throw new OperationCanceledException(e.getMessage());
 						}
 					};
 					try {
@@ -129,8 +126,8 @@ public class AddLibraryToBuildpathAction extends BuildpathModifierAction {
 						pm.beginTask(NewWizardMessages.ClasspathModifier_Monitor_AddToBuildpath, 4);
 
 						List<CPListElement> addedEntries= new ArrayList<>();
-						for (int i= 0; i < selected.length; i++) {
-							addedEntries.add(CPListElement.create(selected[i], true, project));
+						for (IClasspathEntry entry : selected) {
+							addedEntries.add(CPListElement.create(entry, true, project));
 						}
 
 						pm.worked(1);

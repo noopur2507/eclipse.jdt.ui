@@ -27,7 +27,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 
 import org.eclipse.jface.operation.IRunnableContext;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.resource.ImageDescriptor;
 
 import org.eclipse.jface.text.DocumentEvent;
@@ -198,18 +197,13 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 		}
 
 		final CleanUpRefactoring refactoring= new CleanUpRefactoring(changeName);
-		for (int i= 0; i < targets.length; i++) {
-			refactoring.addCleanUpTarget(targets[i]);
+		for (MultiFixTarget target : targets) {
+			refactoring.addCleanUpTarget(target);
 		}
 
 		refactoring.addCleanUp(fCleanUp);
 
-		IRunnableContext context= new IRunnableContext() {
-			@Override
-			public void run(boolean fork, boolean cancelable, IRunnableWithProgress runnable) throws InvocationTargetException, InterruptedException {
-				runnable.run(monitor == null ? new NullProgressMonitor() : monitor);
-			}
-		};
+		IRunnableContext context= (fork, cancelable, runnable) -> runnable.run(monitor == null ? new NullProgressMonitor() : monitor);
 
 		Shell shell= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 		RefactoringExecutionHelper helper= new RefactoringExecutionHelper(refactoring, IStatus.INFO, RefactoringSaveHelper.SAVE_REFACTORING, shell, context);
@@ -257,7 +251,7 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 
 	/**
 	 * Compute the number of problems that can be fixed by the clean up in a compilation unit.
-	 * 
+	 *
 	 * @param cleanUp the clean up
 	 * @return the maximum number of fixes or -1 if unknown
 	 * @since 3.6

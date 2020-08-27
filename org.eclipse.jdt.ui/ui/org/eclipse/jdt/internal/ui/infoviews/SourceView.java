@@ -333,7 +333,7 @@ public class SourceView extends AbstractInfoView {
 	 */
 	private IStructuredSelection convertToJavaElementSelection(ISelection selection) {
 
-		if (!(selection instanceof ITextSelection && fCurrentViewInput instanceof ISourceReference))
+		if (!(selection instanceof ITextSelection) || !(fCurrentViewInput instanceof ISourceReference))
 			return StructuredSelection.EMPTY;
 
 		ITextSelection textSelection= (ITextSelection)selection;
@@ -448,12 +448,7 @@ public class SourceView extends AbstractInfoView {
 				if (!shell.isDisposed()) {
 					Display display= shell.getDisplay();
 					if (!display.isDisposed()) {
-						display.asyncExec(new Runnable() {
-							@Override
-							public void run() {
-								updateViewerConfiguration((IJavaElement) input);
-							}
-						});
+						display.asyncExec(() -> updateViewerConfiguration((IJavaElement) input));
 					}
 				}
 			}

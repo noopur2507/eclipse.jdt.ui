@@ -58,7 +58,7 @@ import org.eclipse.jdt.internal.ui.wizards.dialogfields.ListDialogField;
  */
 // inspired by org.eclipse.debug.internal.ui.launchConfigurations.ShowCommandLineDialog
 public class ShowJPMSOptionsDialog extends Dialog {
-	
+
 	private static final String BLANK= " "; //$NON-NLS-1$
 	private static final String COMMA= ","; //$NON-NLS-1$
 	private static final String OPTION_START= "--"; //$NON-NLS-1$
@@ -198,11 +198,10 @@ public class ShowJPMSOptionsDialog extends Dialog {
 				buf.append(LIMIT_MODULES).append(joinedSortedList(fReduceFun.apply(limit))).append(BLANK); // ... but print in reduced form
 			}
 
-			// ... here minimal form is perfect:
-			Set<String> add= new HashSet<>(selected);
-			add.removeAll(fDefaultSystemModules);
-			if (!add.isEmpty()) { // add = selected \ default
-				buf.append(ADD_MODULES).append(joinedSortedList(add)).append(BLANK);
+			// ... here all must be explicit:
+			closureOfSelected.removeAll(fDefaultSystemModules);
+			if (!closureOfSelected.isEmpty()) { // add = selected \ default
+				buf.append(ADD_MODULES).append(joinedSortedList(closureOfSelected)).append(BLANK);
 			}
 		} else {
 			Arrays.sort(modules);

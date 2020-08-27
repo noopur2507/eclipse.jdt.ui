@@ -18,7 +18,6 @@ package org.eclipse.jdt.internal.junit.ui;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
@@ -34,7 +33,6 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.jface.util.IOpenEventListener;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.OpenStrategy;
 import org.eclipse.jface.util.PropertyChangeEvent;
@@ -46,7 +44,7 @@ import org.eclipse.jdt.internal.junit.model.TestElement;
  * A pane that shows a stack trace of a failed test.
  */
 public class FailureTrace implements IMenuListener {
-	
+
 	/**
 	 * Internal property change listener for handling workbench font changes.
 	 */
@@ -100,20 +98,17 @@ public class FailureTrace implements IMenuListener {
 		fClipboard= clipboard;
 
 		OpenStrategy handler = new OpenStrategy(fTable);
-		handler.addOpenListener(new IOpenEventListener() {
-			@Override
-			public void handleOpen(SelectionEvent e) {
-				if (fTable.getSelectionIndex() == 0 && fFailure.isComparisonFailure()) {
-					fCompareAction.run();
-				}
-				if (fTable.getSelection().length != 0) {
-					Action a = createOpenEditorAction(getSelectedText());
-					if (a != null)
-						a.run();
-				}
+		handler.addOpenListener(e -> {
+			if (fTable.getSelectionIndex() == 0 && fFailure.isComparisonFailure()) {
+				fCompareAction.run();
+			}
+			if (fTable.getSelection().length != 0) {
+				Action a = createOpenEditorAction(getSelectedText());
+				if (a != null)
+					a.run();
 			}
 		});
-		
+
 		fFontPropertyChangeListener = new FontPropertyChangeListener();
 		JFaceResources.getFontRegistry().addListener(fFontPropertyChangeListener);
 
@@ -173,9 +168,7 @@ public class FailureTrace implements IMenuListener {
 			lineNumber= lineNumber.substring(lineNumber.indexOf(':') + 1, lineNumber.lastIndexOf(')'));
 			int line= Integer.valueOf(lineNumber).intValue();
 			return new OpenEditorAtLineAction(fTestRunner, testName, line);
-		} catch(NumberFormatException e) {
-		}
-		catch(IndexOutOfBoundsException e) {
+		} catch(NumberFormatException | IndexOutOfBoundsException e) {
 		}
 		return null;
 	}
@@ -223,7 +216,7 @@ public class FailureTrace implements IMenuListener {
 	}
 
 	private void updateTable(String trace) {
-		if(trace == null || trace.trim().equals("")) { //$NON-NLS-1$
+		if(trace == null || trace.trim().isEmpty()) {
 			clear();
 			return;
 		}

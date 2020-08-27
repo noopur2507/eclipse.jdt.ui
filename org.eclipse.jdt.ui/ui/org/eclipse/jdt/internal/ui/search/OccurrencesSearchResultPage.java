@@ -243,9 +243,7 @@ public class OccurrencesSearchResultPage extends AbstractTextSearchViewPage {
 			// activating at the end avoids an outdated selection event from JavaUI.openInEditor(..):
 			if (editor != null && activate)
 				editor.getEditorSite().getPage().activate(editor);
-		} catch (PartInitException e1) {
-			return;
-		} catch (JavaModelException e1) {
+		} catch (PartInitException | JavaModelException e1) {
 			return;
 		}
 
@@ -331,7 +329,7 @@ public class OccurrencesSearchResultPage extends AbstractTextSearchViewPage {
 			String id= ((OccurrencesSearchQuery) input.getQuery()).getFinderId();
 			if (id == OccurrencesFinder.ID) {
 				finder= new OccurrencesFinder();
-			} else if (id == ExceptionOccurrencesFinder.ID) {
+			} else if (ExceptionOccurrencesFinder.ID.equals(id)) {
 				finder= new ExceptionOccurrencesFinder();
 			} else {
 				finder= new ImplementOccurrencesFinder();
@@ -346,22 +344,15 @@ public class OccurrencesSearchResultPage extends AbstractTextSearchViewPage {
 			OccurrencesSearchResult result= (OccurrencesSearchResult) query.getSearchResult();
 			final JavaElementLine line= getMatchingLine(result, offset, length);
 
-			getSite().getShell().getDisplay().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					setInput(query.getSearchResult(), line == null ? null : new StructuredSelection(line));
-				}
-			});
+			getSite().getShell().getDisplay().asyncExec(() -> setInput(query.getSearchResult(), line == null ? null : new StructuredSelection(line)));
 		}
 	}
 
 	private static JavaElementLine getMatchingLine(OccurrencesSearchResult result, int offset, int length) {
-		Object[] elements= result.getElements();
-		for (int i= 0; i < elements.length; i++) {
-			JavaElementLine line= (JavaElementLine) elements[i];
-			Match[] matches= result.getMatches(line);
-			for (int j= 0; j < matches.length; j++) {
-				OccurrenceMatch match= (OccurrenceMatch) matches[j];
+		for (Object element : result.getElements()) {
+			JavaElementLine line = (JavaElementLine) element;
+			for (Match matche : result.getMatches(line)) {
+				OccurrenceMatch match= (OccurrenceMatch) matche;
 				if (match.getOriginalOffset() <= offset && offset + length <= match.getOriginalOffset() + match.getOriginalLength()) {
 					return line;
 				}

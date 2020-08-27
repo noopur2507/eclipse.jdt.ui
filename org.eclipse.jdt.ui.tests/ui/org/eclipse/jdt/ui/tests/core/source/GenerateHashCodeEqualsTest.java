@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,10 +18,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core.source;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -46,30 +50,15 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 /**
  * Tests generation of delegate methods
  *
  */
 public class GenerateHashCodeEqualsTest extends SourceTestCase {
-
-	static final Class<GenerateHashCodeEqualsTest> THIS= GenerateHashCodeEqualsTest.class;
-
-	public GenerateHashCodeEqualsTest(String name) {
-		super(name);
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	public void runOperation(IType type, IField[] fields, IJavaElement insertBefore, boolean createComments, boolean useInstanceof, boolean useJ7HashEquals, boolean useBlocks, boolean force) throws CoreException {
 
@@ -78,7 +67,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		IVariableBinding[] fKeys= new IVariableBinding[fields.length];
 		for (int i= 0; i < fields.length; i++) {
-			Assert.assertTrue(fields[i].exists());
+			assertTrue(fields[i].exists());
 			VariableDeclarationFragment frag= ASTNodeSearchUtil.getFieldDeclarationFragmentNode(fields[i], unit);
 			fKeys[i]= frag.resolveBinding();
 		}
@@ -116,6 +105,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test01() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -203,6 +193,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test02() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -263,6 +254,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test03() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -332,6 +324,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test04() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -401,6 +394,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test05() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -459,6 +453,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test06() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -516,6 +511,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test07() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -589,6 +585,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test08() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -643,6 +640,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test09() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -709,6 +707,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test10() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
@@ -789,6 +788,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test11() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -847,6 +847,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test12() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -915,6 +916,7 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void test13() throws Exception {
 
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
@@ -983,10 +985,11 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using non-array instance variables and Enum
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1046,14 +1049,15 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using unique non-array instance variables
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsUniqueFieldIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsUniqueFieldIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"public class A {\r\n" +
@@ -1094,14 +1098,15 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using non-array instance variables with 'instanceof' comparison
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsInstanceOfIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsInstanceOfIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1155,14 +1160,15 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using 1-dim array amongst other instance variables
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1231,7 +1237,8 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 * Using 1-dim Cloneable array amongst other instance variables
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsCloneableArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsCloneableArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1294,13 +1301,14 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using 1-dim Serializable array amongst other instance variables
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsSerializableArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsSerializableArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1365,13 +1373,14 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using 1-dim Object array amongst other instance variables
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsObjectArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsObjectArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1434,13 +1443,14 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using 1-dim type variable arrays extending Serializable and Number
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsTypeVariableArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsTypeVariableArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.io.Serializable;\r\n" +
@@ -1486,13 +1496,14 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using multidimensional array amongst other instance variables
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsMultiArrayIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsMultiArrayIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1555,14 +1566,15 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using both multidimensional and 1-dimensional primitive arrays amongst other instance variables
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsVariousArraysIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsVariousArraysIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"import java.util.List;\r\n" +
@@ -1628,14 +1640,15 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls
 	 * Using ONLY multidimensional and 1-dimensional arrays as instance variables
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testHashCodeEqualsOnlyArraysIn17() throws Exception {
+	@Test
+	public void hashCodeEqualsOnlyArraysIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"public class A {\r\n" +
@@ -1680,13 +1693,14 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test member types
 	 *
 	 * @throws Exception
 	 */
-	public void testEnclosingInstance() throws Exception {
+	@Test
+	public void enclosingInstance() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"\r\n" +
@@ -1745,7 +1759,8 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
-	public void testEnclosingInstanceIn17() throws Exception {
+	@Test
+	public void enclosingInstanceIn17() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"\r\n" +
@@ -1806,7 +1821,8 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
-	public void testThenWithBlocks() throws Exception {
+	@Test
+	public void thenWithBlocks() throws Exception {
 
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"\r\n" +
@@ -1870,7 +1886,8 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception
 	 */
-	public void testSubTypeAndArraysIn14() throws Exception {
+	@Test
+	public void subTypeAndArraysIn14() throws Exception {
 		IJavaProject javaProject= fPackageP.getJavaProject();
 		Map<String, String> oldOptions= javaProject.getOptions(false);
 		Map<String, String> newOptions= new HashMap<>(oldOptions);
@@ -1975,10 +1992,11 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 
 	/**
 	 * Test with J7+ Objects.hash and Objects.equals method calls Using sub-type
-	 * 
+	 *
 	 * @throws Exception
 	 */
-	public void testSubTypeIn17() throws Exception {
+	@Test
+	public void subTypeIn17() throws Exception {
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
 				"\r\n" +
 				"public class B {\r\n" +
@@ -2039,11 +2057,58 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	}
 
 	/**
-	 * Test implementation based only on super class
-	 * 
+	 * Test with J7+ Objects.hash and Objects.equals method calls with class with "other" field
+	 * (https://bugs.eclipse.org/bugs/show_bug.cgi?id=561517)
+	 *
 	 * @throws Exception
 	 */
-	public void testSubTypeNoFields() throws Exception {
+	public void otherFieldIn17() throws Exception {
+		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
+				"\r\n" +
+				"public class A {\r\n" +
+				"	private String other;\r\n" +
+				"}\r\n" +
+				"", true, null);
+
+		IField[] fields= getFields(a.getType("A"), new String[] { "other" });
+		runJ7Operation(a.getType("A"), fields, false);
+
+		String expected= "package p;\r\n" +
+				"\r\n" +
+				"import java.util.Objects;\r\n" +
+				"\r\n" +
+				"public class A {\r\n" +
+				"	private String other;\r\n" +
+				"\r\n" +
+				"	@Override\r\n" +
+				"	public int hashCode() {\r\n" +
+				"		return Objects.hash(other);\r\n" +
+				"	}\r\n" +
+				"\r\n" +
+				"	@Override\r\n" +
+				"	public boolean equals(Object obj) {\r\n" +
+				"		if (this == obj)\r\n" +
+				"			return true;\r\n" +
+				"		if (obj == null)\r\n" +
+				"			return false;\r\n" +
+				"		if (getClass() != obj.getClass())\r\n" +
+				"			return false;\r\n" +
+				"		A other = (A) obj;\r\n" +
+				"		return Objects.equals(this.other, other.other);\r\n" +
+				"	}\r\n" +
+				"}\r\n" +
+				"";
+
+		compareSource(expected, a.getSource());
+	}
+
+	/**
+	 * Test implementation based only on super class
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void subTypeNoFields() throws Exception {
 		fPackageP.createCompilationUnit("B.java", "package p;\r\n" +
 				"\r\n" +
 				"public class B {\r\n" +
@@ -2090,7 +2155,8 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 		compareSource(expected, a.getSource());
 	}
 
-	public void testInsertAt() throws Exception {
+	@Test
+	public void insertAt() throws Exception {
 		StringBuilder buf= new StringBuilder();
 		buf.append("package p;\n");
 		buf.append("\n");
@@ -2150,8 +2216,9 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 	 *
 	 * @throws Exception rarely
 	 */
-	public void testAbstractSuperMethods() throws Exception {
-	
+	@Test
+	public void abstractSuperMethods() throws Exception {
+
 		ICompilationUnit a= fPackageP.createCompilationUnit("A.java", "package p;\r\n" +
 				"\r\n" +
 				"abstract class Super {\r\n" +
@@ -2163,10 +2230,10 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 				"	String name;\r\n" +
 				"}" +
 				"", true, null);
-	
+
 		IField[] fields= getFields(a.getType("Sub"), new String[] {"name" });
 		runOperation(a.getType("Sub"), fields, null, false, false, false, false, false);
-	
+
 		String expected= "package p;\r\n" +
 				"\r\n" +
 				"abstract class Super {\r\n" +
@@ -2203,17 +2270,18 @@ public class GenerateHashCodeEqualsTest extends SourceTestCase {
 				"	}\r\n" +
 				"}" +
 				"";
-	
+
 		compareSource(expected, a.getSource());
 	}
-	
+
 	/**
 	 * Test that generated equals() should use Arrays.deepEquals() instead of Arrays.equals() for projects with compliance >= 1.5
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=304176
 	 *
 	 * @throws Exception rarely
 	 */
-	public void testArraysDeepEqualsIn15() throws Exception {
+	@Test
+	public void arraysDeepEqualsIn15() throws Exception {
 		IJavaProject javaProject= fPackageP.getJavaProject();
 		Map<String, String> oldOptions= javaProject.getOptions(false);
 		Map<String, String> newOptions= new HashMap<>(oldOptions);

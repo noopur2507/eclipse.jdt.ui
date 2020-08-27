@@ -63,8 +63,8 @@ public class JavaEditorErrorTickUpdater implements IProblemChangedListener {
 			IJavaElement jelement= input.getAdapter(IJavaElement.class);
 			if (jelement != null) {
 				IResource resource= jelement.getResource();
-				for (int i = 0; i < changedResources.length; i++) {
-					if (changedResources[i].equals(resource)) {
+				for (IResource changedResource : changedResources) {
+					if (changedResource.equals(resource)) {
 						updateEditorImage(jelement);
 					}
 				}
@@ -90,12 +90,7 @@ public class JavaEditorErrorTickUpdater implements IProblemChangedListener {
 	private void postImageChange(final Image newImage) {
 		Shell shell= fJavaEditor.getEditorSite().getShell();
 		if (shell != null && !shell.isDisposed()) {
-			shell.getDisplay().syncExec(new Runnable() {
-				@Override
-				public void run() {
-					fJavaEditor.updatedTitleImage(newImage);
-				}
-			});
+			shell.getDisplay().syncExec(() -> fJavaEditor.updatedTitleImage(newImage));
 		}
 	}
 

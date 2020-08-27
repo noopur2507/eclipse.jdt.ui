@@ -170,7 +170,7 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 		fClassPathList= classPathList;
 		fContext= context;
 		fSWTControl= null;
-		
+
 		String[] buttonLabels= new String[] {
 				NewWizardMessages.ModuleDependenciesPage_modules_remove_button,
 				/* */ null,
@@ -222,8 +222,8 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 		title.setText(NewWizardMessages.ModuleDependenciesPage_modules_label);
 
 		fModuleList.createViewer(left, converter);
-		fModuleList.setSelectionChangedListener((elems, mod) -> selectModule(elems, mod));
-		
+		fModuleList.setSelectionChangedListener(this::selectModule);
+
 		fAddSystemModuleButton= new Button(left, SWT.NONE);
 		fAddSystemModuleButton.setText(NewWizardMessages.ModuleDependenciesPage_addSystemModule_button);
 		fAddSystemModuleButton.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> addSystemModules()));
@@ -267,12 +267,7 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 		if (Display.getCurrent() != null) {
 			scanModules();
 		} else {
-			Display.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					scanModules();
-				}
-			});
+			Display.getDefault().asyncExec(this::scanModules);
 		}
 	}
 
@@ -566,6 +561,7 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 		List<CPListElement> selectedElements= fModuleList.getSelectedElements();
 		List<String> selectedModuleNames= new ArrayList<>();
 		Set<String> allModulesToRemove= new HashSet<>();
+		boolean removeConfirmed= false;
 		for (CPListElement selectedElement : selectedElements) {
 			if (fModuleList.getModuleKind(selectedElement) == ModuleKind.Focus) {
 				MessageDialog.openError(getShell(), NewWizardMessages.ModuleDependenciesPage_removeModule_dialog_title,
@@ -620,16 +616,19 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 			if (problemModule != null) {
 				int lastArrow= problemModule.lastIndexOf("->"); //$NON-NLS-1$
 				String leafMod= lastArrow == -1 ? problemModule : problemModule.substring(lastArrow+2);
-				MessageDialog.openError(getShell(), NewWizardMessages.ModuleDependenciesPage_removeModule_dialog_title,
-						MessageFormat.format(NewWizardMessages.ModuleDependenciesPage_removeModule_error_with_hint,
-								leafMod, 
-								MessageFormat.format(NewWizardMessages.ModuleDependenciesPage_moduleIsRequired_error_hint, problemModule)));
-				return;
+				int answer= MessageDialog.open(MessageDialog.WARNING, getShell(), NewWizardMessages.ModuleDependenciesPage_removeModule_dialog_title,
+								MessageFormat.format(NewWizardMessages.ModuleDependenciesPage_moduleIsRequired_warning, leafMod, problemModule),
+								SWT.NONE,
+								NewWizardMessages.ModuleDependenciesPage_remove_button, IDialogConstants.CANCEL_LABEL);
+				if (answer != 0) {
+					return;
+				}
+				removeConfirmed= true;
 			}
 		}
 		String seedModules= String.join(", ", selectedModuleNames); //$NON-NLS-1$
 		if (allModulesToRemove.size() == selectedModuleNames.size()) {
-			if (confirmRemoveModule(MessageFormat.format(NewWizardMessages.ModuleDependenciesPage_removingModule_message, seedModules))) {
+			if (removeConfirmed || confirmRemoveModule(MessageFormat.format(NewWizardMessages.ModuleDependenciesPage_removingModule_message, seedModules))) {
 				fModuleList.fNames.removeAll(selectedModuleNames);
 				fModuleList.refresh();
 			}
@@ -688,20 +687,25 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 
 	private String collectModulesToRemove(String mod, Set<String> modulesToRemove) {
 		if (fModuleList.fNames.contains(mod) && modulesToRemove.add(mod)) {
+			String problemModules= null; // at most one path is detected, even if several exist
 			List<String> requireds= fModuleRequiredByModules.get(mod);
 			if (requireds != null) {
 				for (String required : requireds) {
-					if (fModuleList.getModuleKind(required) == ModuleKind.Focus)
-						return required + "->" + mod; //$NON-NLS-1$
-					String problemModule= collectModulesToRemove(required, modulesToRemove);
-					if (problemModule != null)
-						return problemModule + "->" + mod; //$NON-NLS-1$
+					if (fModuleList.getModuleKind(required) == ModuleKind.Focus) {
+						// direct dependency beats any indirect one:
+						problemModules= required + "->" + mod; //$NON-NLS-1$
+						continue; // do not attempt to remove the focus module
+					}
+					String probMods= collectModulesToRemove(required, modulesToRemove);
+					if (probMods != null && problemModules == null)
+						problemModules= probMods + "->" + mod; //$NON-NLS-1$
 				}
 			}
+			return problemModules;
 		}
 		return null;
 	}
-	
+
 	private boolean confirmRemoveModule(String message) {
 		int answer= MessageDialog.open(MessageDialog.QUESTION, getShell(),
 				NewWizardMessages.ModuleDependenciesPage_removeModule_dialog_title, message, SWT.NONE,
@@ -717,9 +721,9 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 				// no longer relevant, remove:
 				ModuleEncapsulationDetail[] details= (ModuleEncapsulationDetail[]) value;
 				int retainCount= 0;
-				for (int i= 0; i < details.length; i++) {
-					if (!(details[i] instanceof LimitModules)) {
-						details[retainCount++]= details[i];
+				for (ModuleEncapsulationDetail detail : details) {
+					if (!(detail instanceof LimitModules)) {
+						details[retainCount++]= detail;
 					}
 				}
 				if (retainCount < details.length)
@@ -797,7 +801,7 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 	}
 
 	/**
-	 * Find a module attribute in the current classpath that satisfies the given predicate. 
+	 * Find a module attribute in the current classpath that satisfies the given predicate.
 	 * @param predicate this predicate must be fulfilled by any detail of a found module attribte
 	 * @return if a predicate match was found the enclosing module attribute will be returned, else {@code null}
 	 */
@@ -814,7 +818,7 @@ public class ModuleDependenciesPage extends BuildPathBasePage {
 		}
 		return null;
 	}
-	
+
 	public void showJMPSOptionsDialog() {
 		new ShowJPMSOptionsDialog(getShell(), fClassPathList, allDefaultSystemModules(), this::closure, this::reduceNames).open();
 	}

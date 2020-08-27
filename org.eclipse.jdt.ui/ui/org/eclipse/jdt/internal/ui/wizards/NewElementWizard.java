@@ -66,14 +66,11 @@ public abstract class NewElementWizard extends Wizard implements INewWizard {
 		if (activePage != null) {
 			final Display display= getShell().getDisplay();
 			if (display != null) {
-				display.asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							IDE.openEditor(activePage, resource, true);
-						} catch (PartInitException e) {
-							JavaPlugin.log(e);
-						}
+				display.asyncExec(() -> {
+					try {
+						IDE.openEditor(activePage, resource, true);
+					} catch (PartInitException e) {
+						JavaPlugin.log(e);
 					}
 				});
 			}
@@ -83,7 +80,7 @@ public abstract class NewElementWizard extends Wizard implements INewWizard {
 	/**
 	 * Subclasses should override to perform the actions of the wizard. This method is run in the
 	 * wizard container's context as a workspace runnable.
-	 * 
+	 *
 	 * @param monitor the progress monitor
 	 * @throws InterruptedException when the operation is cancelled
 	 * @throws CoreException if the element cannot be created
@@ -116,14 +113,11 @@ public abstract class NewElementWizard extends Wizard implements INewWizard {
 	 */
 	@Override
 	public boolean performFinish() {
-		IWorkspaceRunnable op= new IWorkspaceRunnable() {
-			@Override
-			public void run(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
-				try {
-					finishPage(monitor);
-				} catch (InterruptedException e) {
-					throw new OperationCanceledException(e.getMessage());
-				}
+		IWorkspaceRunnable op= monitor -> {
+			try {
+				finishPage(monitor);
+			} catch (InterruptedException e) {
+				throw new OperationCanceledException(e.getMessage());
 			}
 		};
 		try {

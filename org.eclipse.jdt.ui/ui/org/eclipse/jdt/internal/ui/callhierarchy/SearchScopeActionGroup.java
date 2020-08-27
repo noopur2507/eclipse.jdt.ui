@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
@@ -70,7 +69,7 @@ class SearchScopeActionGroup extends ActionGroup {
 
 	/**
 	 * Returns the current search scope.
-	 * 
+	 *
 	 * @param includeMask the include mask
 	 * @return the current search scope
 	 * @since 3.7
@@ -121,8 +120,8 @@ class SearchScopeActionGroup extends ActionGroup {
 			return null;
 		}
 		Set<IWorkingSet> workingSets= new HashSet<>(2);
-		for (int j= 0; j < workingSetNames.length; j++) {
-			IWorkingSet workingSet= getWorkingSetManager().getWorkingSet(workingSetNames[j]);
+		for (String workingSetName : workingSetNames) {
+			IWorkingSet workingSet= getWorkingSetManager().getWorkingSet(workingSetName);
 			if (workingSet != null) {
 				workingSets.add(workingSet);
 			}
@@ -168,11 +167,7 @@ class SearchScopeActionGroup extends ActionGroup {
 	}
 
 	protected void fillSearchActions(IMenuManager javaSearchMM) {
-		Action[] actions = getActions();
-
-		for (int i = 0; i < actions.length; i++) {
-			Action action = actions[i];
-
+		for (Action action :  getActions()) {
 			if (action.isEnabled()) {
 				javaSearchMM.add(action);
 			}
@@ -187,12 +182,7 @@ class SearchScopeActionGroup extends ActionGroup {
 				IContextMenuConstants.GROUP_SEARCH);
 		javaSearchMM.setRemoveAllWhenShown(true);
 
-		javaSearchMM.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager manager) {
-				fillSearchActions(manager);
-			}
-		});
+		javaSearchMM.addMenuListener(this::fillSearchActions);
 
 		fillSearchActions(javaSearchMM);
 		menu.appendToGroup(IContextMenuConstants.GROUP_SEARCH, javaSearchMM);
@@ -227,8 +217,7 @@ class SearchScopeActionGroup extends ActionGroup {
 		int checked = getCheckedActionCount(result);
 		if (checked != 1) {
 			if (checked > 1) {
-				for (int i = 0; i < result.length; i++) {
-					Action action = result[i];
+				for (Action action : result) {
 					action.setChecked(false);
 				}
 			}
@@ -239,8 +228,7 @@ class SearchScopeActionGroup extends ActionGroup {
 	private int getCheckedActionCount(Action[] result) {
 		// Ensure that exactly one action is selected
 		int checked= 0;
-		for (int i = 0; i < result.length; i++) {
-			Action action = result[i];
+		for (Action action : result) {
 			if (action.isChecked()) {
 				checked++;
 			}
@@ -340,11 +328,11 @@ class SearchScopeActionGroup extends ActionGroup {
 	private boolean isSelectedWorkingSet(IWorkingSet[] workingSets) {
 		if (fSelectedWorkingSetNames != null && fSelectedWorkingSetNames.length == workingSets.length) {
 			Set<String> workingSetNames= new HashSet<>(workingSets.length);
-			for (int i = 0; i < workingSets.length; i++) {
-				workingSetNames.add(workingSets[i].getName());
+			for (IWorkingSet workingSet : workingSets) {
+				workingSetNames.add(workingSet.getName());
 			}
-			for (int i = 0; i < fSelectedWorkingSetNames.length; i++) {
-				if (!workingSetNames.contains(fSelectedWorkingSetNames[i])) {
+			for (String selectedWorkingSetName : fSelectedWorkingSetNames) {
+				if (!workingSetNames.contains(selectedWorkingSetName)) {
 					return false;
 				}
 			}
@@ -355,7 +343,7 @@ class SearchScopeActionGroup extends ActionGroup {
 
 	/**
 	 * Fetches the full description of the scope with the appropriate include mask.
-	 * 
+	 *
 	 * @param includeMask the include mask
 	 * @return the description of the scope with the appropriate include mask
 	 * @since 3.7

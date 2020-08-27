@@ -14,6 +14,7 @@
 package org.eclipse.jdt.internal.ui.wizards.dialogfields;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -34,6 +35,8 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.core.runtime.Assert;
 
 import org.eclipse.jface.layout.PixelConverter;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -46,8 +49,6 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
-import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
-import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
 
@@ -57,7 +58,7 @@ import org.eclipse.jdt.internal.ui.util.SWTUtil;
  * Typical buttons are 'Add', 'Remove', 'Up' and 'Down'.
  * Tree model is independent of widget creation.
  * DialogFields controls are: Label, Tree, and Composite containing buttons.
- * 
+ *
  * @param <E> the type of the root elements
  */
 public class TreeListDialogField<E> extends DialogField {
@@ -274,7 +275,7 @@ public class TreeListDialogField<E> extends DialogField {
 			});
 			fTree.setContentProvider(fTreeViewerAdapter);
 			if(fLabelProvider instanceof IStyledLabelProvider) {
-				fTree.setLabelProvider(new DelegatingStyledCellLabelProvider((IStyledLabelProvider) fLabelProvider));				
+				fTree.setLabelProvider(new DelegatingStyledCellLabelProvider((IStyledLabelProvider) fLabelProvider));
 			} else {
 				fTree.setLabelProvider(fLabelProvider);
 			}
@@ -302,7 +303,7 @@ public class TreeListDialogField<E> extends DialogField {
 	public TreeViewer getTreeViewer() {
 		return fTree;
 	}
-	
+
 	/**
 	 * @param idx the index of the button
 	 * @return the button control, or <code>null</code> if the UI has not been created yet
@@ -457,12 +458,7 @@ public class TreeListDialogField<E> extends DialogField {
 
 
 	protected boolean containsAttributes(List<Object> selected) {
-		for (int i= 0; i < selected.size(); i++) {
-			if (!fElements.contains(selected.get(i))) {
-				return true;
-			}
-		}
-		return false;
+		return !fElements.containsAll(selected);
 	}
 
 
@@ -614,8 +610,8 @@ public class TreeListDialogField<E> extends DialogField {
 				fElements.addAll(elementsToAdd);
 				if (isOkToUse(fTreeControl)) {
 					fTree.add(fParentElement, elementsToAdd.toArray());
-					for (int i= 0; i < elementsToAdd.size(); i++) {
-						fTree.expandToLevel(elementsToAdd.get(i), fTreeExpandLevel);
+					for (E element : elementsToAdd) {
+						fTree.expandToLevel(element, fTreeExpandLevel);
 					}
 				}
 				dialogFieldChanged();
@@ -716,12 +712,9 @@ public class TreeListDialogField<E> extends DialogField {
 	public void postSetSelection(final ISelection selection) {
 		if (isOkToUse(fTreeControl)) {
 			Display d= fTreeControl.getDisplay();
-			d.asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					if (isOkToUse(fTreeControl)) {
-						selectElements(selection);
-					}
+			d.asyncExec(() -> {
+				if (isOkToUse(fTreeControl)) {
+					selectElements(selection);
 				}
 			});
 		}
@@ -762,8 +755,7 @@ public class TreeListDialogField<E> extends DialogField {
 		int nElements= elements.size();
 		List<E> res= new ArrayList<>(nElements);
 		E floating= null;
-		for (int i= 0; i < nElements; i++) {
-			E curr= elements.get(i);
+		for (E curr : elements) {
 			if (move.contains(curr)) {
 				res.add(curr);
 			} else {
@@ -794,10 +786,8 @@ public class TreeListDialogField<E> extends DialogField {
 	}
 
 	private List<E> reverse(List<E> p) {
-		List<E> reverse= new ArrayList<>(p.size());
-		for (int i= p.size() - 1; i >= 0; i--) {
-			reverse.add(p.get(i));
-		}
+		List<E> reverse= new ArrayList<>(p);
+		Collections.reverse(reverse);
 		return reverse;
 	}
 
@@ -875,7 +865,7 @@ public class TreeListDialogField<E> extends DialogField {
 		}
 		return result;
 	}
-	
+
 	public void expandElement(Object element, int level) {
 		if (isOkToUse(fTreeControl)) {
 			fTree.expandToLevel(element, level);

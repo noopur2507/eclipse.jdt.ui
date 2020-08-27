@@ -14,15 +14,12 @@
 package org.eclipse.jdt.internal.ui.search;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleEvent;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -373,8 +370,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	}
 
 	private int getLimitTo() {
-		for (int i= 0; i < fLimitTo.length; i++) {
-			Button button= fLimitTo[i];
+		for (Button button : fLimitTo) {
 			if (button.getSelection()) {
 				return getIntData(button);
 			}
@@ -390,7 +386,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 		if (searchFor != FIELD && (limitTo == READ_ACCESSES || limitTo == WRITE_ACCESSES)) {
 			limitTo= REFERENCES;
 		}
-		
+
 		if (searchFor != TYPE /*&& searchFor != FIELD*/ && searchFor != METHOD && searchFor != CONSTRUCTOR && limitTo == SPECIFIC_REFERENCES) {
 			limitTo= REFERENCES;
 		}
@@ -400,8 +396,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 
 	private int getIncludeMask() {
 		int mask= 0;
-		for (int i= 0; i < fIncludeMasks.length; i++) {
-			Button button= fIncludeMasks[i];
+		for (Button button : fIncludeMasks) {
 			if (button.getSelection()) {
 				mask |= getIntData(button);
 			}
@@ -410,8 +405,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	}
 
 	private void setIncludeMask(int includeMask) {
-		for (int i= 0; i < fIncludeMasks.length; i++) {
-			Button button= fIncludeMasks[i];
+		for (Button button : fIncludeMasks) {
 			button.setSelection((includeMask & getIntData(button)) != 0);
 		}
 	}
@@ -431,8 +425,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	}
 
 	private int getSearchFor() {
-		for (int i= 0; i < fSearchFor.length; i++) {
-			Button button= fSearchFor[i];
+		for (Button button : fSearchFor) {
 			if (button.getSelection()) {
 				return getIntData(button);
 			}
@@ -442,8 +435,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	}
 
 	private void setSearchFor(int searchFor) {
-		for (int i= 0; i < fSearchFor.length; i++) {
-			Button button= fSearchFor[i];
+		for (Button button : fSearchFor) {
 			button.setSelection(searchFor == getIntData(button));
 		}
 	}
@@ -458,8 +450,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 
 
 	private SearchPatternData findInPrevious(String pattern) {
-		for (Iterator<SearchPatternData> iter= fPreviousSearchPatterns.iterator(); iter.hasNext();) {
-			SearchPatternData element= iter.next();
+		for (SearchPatternData element : fPreviousSearchPatterns) {
 			if (pattern.equals(element.getPattern())) {
 				return element;
 			}
@@ -567,8 +558,8 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 			}
 		};
 
-		for (int i= 0; i < fSearchFor.length; i++) {
-			fSearchFor[i].addSelectionListener(javaElementInitializer);
+		for (Button b : fSearchFor) {
+			b.addSelectionListener(javaElementInitializer);
 		}
 
 		setControl(result);
@@ -622,13 +613,10 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 				updateOKStatus();
 			}
 		});
-		fPattern.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doPatternModified();
-				updateOKStatus();
+		fPattern.addModifyListener(e -> {
+			doPatternModified();
+			updateOKStatus();
 
-			}
 		});
 		TextFieldNavigationHandler.install(fPattern);
 		GridData data= new GridData(GridData.FILL, GridData.FILL, true, false, 1, 1);
@@ -740,9 +728,8 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	}
 
 	private void fillLimitToGroup(int searchFor, int limitTo) {
-		Control[] children= fLimitToGroup.getChildren();
-		for (int i= 0; i < children.length; i++) {
-			children[i].dispose();
+		for (Control child : fLimitToGroup.getChildren()) {
+			child.dispose();
 		}
 		fMatchLocationsLink= null;
 
@@ -761,7 +748,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 		if (searchFor == FIELD) {
 			buttons.add(createButton(fLimitToGroup, SWT.RADIO, SearchMessages.SearchPage_limitTo_readReferences, READ_ACCESSES, limitTo == READ_ACCESSES));
 			buttons.add(createButton(fLimitToGroup, SWT.RADIO, SearchMessages.SearchPage_limitTo_writeReferences, WRITE_ACCESSES, limitTo == WRITE_ACCESSES));
-			
+
 //			buttons.add(createMethodLocationRadio(limitTo == SPECIFIC_REFERENCES));
 		}
 
@@ -777,8 +764,8 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 				performLimitToSelectionChanged((Button) e.widget);
 			}
 		};
-		for (int i= 0; i < fLimitTo.length; i++) {
-			fLimitTo[i].addSelectionListener(listener);
+		for (Button b : fLimitTo) {
+			b.addSelectionListener(listener);
 		}
 		Dialog.applyDialogFont(fLimitToGroup); // re-apply font as we disposed the previous widgets
 
@@ -834,8 +821,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 
 	protected final void performLimitToSelectionChanged(Button button) {
 		if (button.getSelection()) {
-			for (int i= 0; i < fLimitTo.length; i++) {
-				Button curr= fLimitTo[i];
+			for (Button curr : fLimitTo) {
 				if (curr != button) {
 					curr.setSelection(false);
 				}
@@ -846,8 +832,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 
 
 	protected final void performConfigureMatchLocation() {
-		for (int i= 0; i < fLimitTo.length; i++) {
-			Button curr= fLimitTo[i];
+		for (Button curr : fLimitTo) {
 			curr.setSelection(getIntData(curr) == SPECIFIC_REFERENCES);
 		}
 
@@ -876,8 +861,8 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 				updateOKStatus();
 			}
 		};
-		for (int i= 0; i < fIncludeMasks.length; i++) {
-			fIncludeMasks[i].addSelectionListener(listener);
+		for (Button fIncludeMask : fIncludeMasks) {
+			fIncludeMask.addSelectionListener(listener);
 		}
 
 		return result;

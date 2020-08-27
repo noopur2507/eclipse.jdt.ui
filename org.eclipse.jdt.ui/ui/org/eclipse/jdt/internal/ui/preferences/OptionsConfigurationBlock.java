@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -25,15 +25,12 @@ import org.osgi.service.prefs.BackingStoreException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleEvent;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -208,7 +205,7 @@ public abstract class OptionsConfigurationBlock {
 			return fValues.length -1; // assume the last option is the least severe
 		}
 	}
-	
+
 	protected static class LinkControlData extends ControlData {
 		private Link fLink;
 
@@ -219,7 +216,7 @@ public abstract class OptionsConfigurationBlock {
 		public void setLink(Link link) {
 			fLink= link;
 		}
-		
+
 		public Link getLink() {
 			return fLink;
 		}
@@ -234,7 +231,7 @@ public abstract class OptionsConfigurationBlock {
 
 		/**
 		 * Constructs a new instance of PreferenceTree with vertical bar according to the parameters.
-		 * 
+		 *
 		 * @param configBlock the Options Configuration block
 		 * @param parentComposite the parent composite
 		 * @param label the label, or <code>null</code> if none
@@ -245,7 +242,7 @@ public abstract class OptionsConfigurationBlock {
 
 		/**
 		 * Constructs a new instance of PreferenceTree according to the parameters.
-		 * 
+		 *
 		 * @param configBlock the Options Configuration block
 		 * @param parentComposite the parent composite
 		 * @param label the label, or <code>null</code> if none
@@ -303,9 +300,9 @@ public abstract class OptionsConfigurationBlock {
 
 	/**
 	 * Bug 549457: In case auto-building on a JDT core settings change (e.g. compiler compliance) is not desired,
-	 * specify VM property: {@code -Dorg.eclipse.jdt.core.disableAutoBuildOnSettingsChange=true}
+	 * specify VM property: {@code -Dorg.eclipse.disableAutoBuildOnSettingsChange=true}
 	 */
-	private static final boolean DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE= Boolean.getBoolean("org.eclipse.jdt.core.disableAutoBuildOnSettingsChange"); //$NON-NLS-1$
+	private static final boolean DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE= Boolean.getBoolean("org.eclipse.disableAutoBuildOnSettingsChange"); //$NON-NLS-1$
 
 	protected final ArrayList<Button> fCheckBoxes;
 	protected final ArrayList<Combo> fComboBoxes;
@@ -360,8 +357,7 @@ public abstract class OptionsConfigurationBlock {
 			fDisabledProjectSettings= null;
 		} else {
 			fDisabledProjectSettings= new IdentityHashMap<>();
-			for (int i= 0; i < allKeys.length; i++) {
-				Key curr= allKeys[i];
+			for (Key curr : allKeys) {
 				fDisabledProjectSettings.put(curr, curr.getStoredValue(fLookupOrder, false, fManager));
 			}
 		}
@@ -403,8 +399,7 @@ public abstract class OptionsConfigurationBlock {
 	}
 
 	private void testIfOptionsComplete(Key[] allKeys) {
-		for (int i= 0; i < allKeys.length; i++) {
-			Key key= allKeys[i];
+		for (Key key : allKeys) {
 			if (!(key instanceof LocalKey)) {
 				if (key.getStoredValue(fLookupOrder, false, fManager) == null) {
 					JavaPlugin.logErrorMessage("preference option missing: " + key + " (" + this.getClass().getName() + ')'); //$NON-NLS-1$//$NON-NLS-2$
@@ -429,8 +424,7 @@ public abstract class OptionsConfigurationBlock {
 
 
 	public void selectOption(String key, String qualifier) {
-		for (int i= 0; i < fAllKeys.length; i++) {
-			Key curr= fAllKeys[i];
+		for (Key curr : fAllKeys) {
 			if (curr.getName().equals(key) && curr.getQualifier().equals(qualifier)) {
 				selectOption(curr);
 			}
@@ -443,8 +437,7 @@ public abstract class OptionsConfigurationBlock {
 			if (!fExpandableComposites.isEmpty()) {
 				ExpandableComposite expandable= getParentExpandableComposite(control);
 				if (expandable != null) {
-					for (int i= 0; i < fExpandableComposites.size(); i++) {
-						ExpandableComposite curr= fExpandableComposites.get(i);
+					for (ExpandableComposite curr : fExpandableComposites) {
 						curr.setExpanded(curr == expandable);
 					}
 					expandedStateChanged(expandable);
@@ -468,8 +461,8 @@ public abstract class OptionsConfigurationBlock {
 	public static boolean hasProjectSpecificOptions(IProject project, Key[] allKeys, IWorkingCopyManager manager) {
 		if (project != null) {
 			IScopeContext projectContext= new ProjectScope(project);
-			for (int i= 0; i < allKeys.length; i++) {
-				if (allKeys[i].getStoredValue(projectContext, manager) != null) {
+			for (Key key : allKeys) {
+				if (key.getStoredValue(projectContext, manager) != null) {
 					return true;
 				}
 			}
@@ -535,7 +528,7 @@ public abstract class OptionsConfigurationBlock {
 		final Button checkBox= new Button(composite, SWT.CHECK);
 		checkBox.setFont(JFaceResources.getDialogFont());
 		gd= new GridData(GridData.FILL, GridData.CENTER, false, false);
-		int offset= Util.isMac() ? -4 : Util.isLinux() ? -2 : /* Windows et al. */ 3;
+		int offset= Util.isMac() ? -4 : Util.isLinux() ? 4 : /* Windows et al. */ 3;
 		gd.widthHint= checkBox.computeSize(SWT.DEFAULT, SWT.DEFAULT).x + offset;
 		checkBox.setLayoutData(gd);
 		checkBox.setData(data);
@@ -555,7 +548,7 @@ public abstract class OptionsConfigurationBlock {
 		link.setLayoutData(gd);
 		link.setData(key);
 		data.setLink(link);
-		
+
 		// toggle checkbox when user clicks unlinked text in link:
 		final boolean[] linkSelected= { false };
 		link.addSelectionListener(new SelectionAdapter() {
@@ -582,16 +575,13 @@ public abstract class OptionsConfigurationBlock {
 				}
 			}
 		});
-		link.addTraverseListener(new TraverseListener() {
-			@Override
-			public void keyTraversed(TraverseEvent e) {
-				if (e.detail == SWT.TRAVERSE_MNEMONIC && e.doit == true) {
-					e.detail= SWT.TRAVERSE_NONE;
-					checkBox.setSelection(!checkBox.getSelection());
-					checkBox.setFocus();
-					linkSelected[0]= false;
-					controlChanged(checkBox);
-				}
+		link.addTraverseListener(e -> {
+			if (e.detail == SWT.TRAVERSE_MNEMONIC && e.doit == true) {
+				e.detail= SWT.TRAVERSE_NONE;
+				checkBox.setSelection(!checkBox.getSelection());
+				checkBox.setFocus();
+				linkSelected[0]= false;
+				controlChanged(checkBox);
 			}
 		});
 
@@ -624,7 +614,7 @@ public abstract class OptionsConfigurationBlock {
 
 		return comboBox;
 	}
-	
+
 	protected Combo addInversedComboBox(Composite parent, String label, Key key, String[] values, String[] valueLabels, int indent) {
 		GridData gd= new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
 		gd.horizontalIndent= indent;
@@ -684,7 +674,7 @@ public abstract class OptionsConfigurationBlock {
 		fLabels.put(textBox, labelControl);
 
 		updateText(textBox);
-		
+
 		textBox.addModifyListener(getTextModifyListener());
 
 		GridData data= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
@@ -746,13 +736,9 @@ public abstract class OptionsConfigurationBlock {
 			return null;
 		}
 		try {
-			IClasspathEntry[] classpathEntries= javaProject.getRawClasspath();
-			for (int i= 0; i < classpathEntries.length; i++) {
-				IClasspathEntry entry= classpathEntries[i];
+			for (IClasspathEntry entry : javaProject.getRawClasspath()) {
 				if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-					IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-					for (int j= 0; j < extraAttributes.length; j++) {
-						IClasspathAttribute attrib= extraAttributes[j];
+					for (IClasspathAttribute attrib : entry.getExtraAttributes()) {
 						if (IClasspathAttribute.IGNORE_OPTIONAL_PROBLEMS.equals(attrib.getName())) {
 							if ("true".equals(attrib.getValue())) { //$NON-NLS-1$
 								return entry;
@@ -861,12 +847,7 @@ public abstract class OptionsConfigurationBlock {
 
 	protected ModifyListener getTextModifyListener() {
 		if (fTextModifyListener == null) {
-			fTextModifyListener= new ModifyListener() {
-				@Override
-				public void modifyText(ModifyEvent e) {
-					textChanged((Text) e.widget);
-				}
-			};
+			fTextModifyListener= e -> textChanged((Text) e.widget);
 		}
 		return fTextModifyListener;
 	}
@@ -894,7 +875,7 @@ public abstract class OptionsConfigurationBlock {
 
 	/**
 	 * Checks a setting.
-	 * 
+	 *
 	 * @param key a key
 	 * @param value an assumed value for the key
 	 * @return <code>true</code> iff the given key's value is equal to the given value
@@ -905,7 +886,7 @@ public abstract class OptionsConfigurationBlock {
 
 	/**
 	 * Returns the value for the key.
-	 * 
+	 *
 	 * @param key the key
 	 * @return the stored value
 	 */
@@ -918,17 +899,17 @@ public abstract class OptionsConfigurationBlock {
 
 
 	protected boolean getBooleanValue(Key key) {
-		return Boolean.valueOf(getValue(key)).booleanValue();
+		return Boolean.parseBoolean(getValue(key));
 	}
 
 	/**
 	 * Sets the option <code>key</code> to the value <code>value</code>.
 	 * Note that callers have to make sure the corresponding controls are updated afterwards.
-	 * 
+	 *
 	 * @param key the option key
 	 * @param value the new value
 	 * @return the old value
-	 * 
+	 *
 	 * @see #updateControls()
 	 * @see #updateCheckBox(Button)
 	 * @see #updateCombo(Combo)
@@ -946,11 +927,11 @@ public abstract class OptionsConfigurationBlock {
 	/**
 	 * Sets the option <code>key</code> to the value <code>value</code>.
 	 * Note that callers have to make sure the corresponding controls are updated afterwards.
-	 * 
+	 *
 	 * @param key the option key
 	 * @param value the new value
 	 * @return the old value
-	 * 
+	 *
 	 * @see #updateControls()
 	 * @see #updateCheckBox(Button)
 	 * @see #updateCombo(Combo)
@@ -974,7 +955,7 @@ public abstract class OptionsConfigurationBlock {
 	protected String getStoredValue(Key key) {
 		return key.getStoredValue(fLookupOrder, false, fManager);
 	}
-	
+
 	/**
 	 * Returns the value as actually stored in the preference store, without considering
 	 * the working copy store.
@@ -988,13 +969,12 @@ public abstract class OptionsConfigurationBlock {
 
 	/**
 	 * Reverts the given options to the stored values.
-	 * 
+	 *
 	 * @param keys the options to revert
 	 * @since 3.5
 	 */
 	protected void revertValues(Key[] keys) {
-		for (int i= 0; i < keys.length; i++) {
-			Key curr= keys[i];
+		for (Key curr : keys) {
 			String origValue= curr.getStoredValue(fLookupOrder, false, null);
 			setValue(curr, origValue);
 		}
@@ -1002,7 +982,7 @@ public abstract class OptionsConfigurationBlock {
 
 	/**
 	 * Updates fields and validates settings.
-	 * 
+	 *
 	 * @param changedKey key that changed, or <code>null</code>, if all changed.
 	 * @param oldValue old value or <code>null</code>
 	 * @param newValue new value or <code>null</code>
@@ -1023,8 +1003,7 @@ public abstract class OptionsConfigurationBlock {
 	private boolean getChanges(IScopeContext currContext, List<Key> changedSettings) {
 		boolean completeSettings= fProject != null && fDisabledProjectSettings == null; // complete when project settings are enabled
 		boolean needsBuild= false;
-		for (int i= 0; i < fAllKeys.length; i++) {
-			Key key= fAllKeys[i];
+		for (Key key : fAllKeys) {
 			String oldVal= key.getStoredValue(currContext, null);
 			String val= key.getStoredValue(currContext, fManager);
 			if (val == null) {
@@ -1048,8 +1027,7 @@ public abstract class OptionsConfigurationBlock {
 		boolean hasProjectSpecificOption= fDisabledProjectSettings == null;
 		if (enable != hasProjectSpecificOption && fProject != null) {
 			if (enable) {
-				for (int i= 0; i < fAllKeys.length; i++) {
-					Key curr= fAllKeys[i];
+				for (Key curr : fAllKeys) {
 					String val= fDisabledProjectSettings.get(curr);
 					curr.setStoredValue(fLookupOrder[0], val, fManager);
 				}
@@ -1058,8 +1036,7 @@ public abstract class OptionsConfigurationBlock {
 				validateSettings(null, null, null);
 			} else {
 				fDisabledProjectSettings= new IdentityHashMap<>();
-				for (int i= 0; i < fAllKeys.length; i++) {
-					Key curr= fAllKeys[i];
+				for (Key curr : fAllKeys) {
 					String oldSetting= curr.getStoredValue(fLookupOrder, false, fManager);
 					fDisabledProjectSettings.put(curr, oldSetting);
 					curr.setStoredValue(fLookupOrder[0], null, fManager); // clear project settings
@@ -1170,8 +1147,7 @@ public abstract class OptionsConfigurationBlock {
 	}
 
 	public void performDefaults() {
-		for (int i= 0; i < fAllKeys.length; i++) {
-			Key curr= fAllKeys[i];
+		for (Key curr : fAllKeys) {
 			String defValue= curr.getStoredValue(fLookupOrder, true, fManager);
 			setValue(curr, defValue);
 		}
@@ -1179,6 +1155,10 @@ public abstract class OptionsConfigurationBlock {
 		settingsUpdated();
 		updateControls();
 		validateSettings(null, null, null);
+	}
+
+	protected final String getDefaultValue(Key key) {
+		return key.getStoredValue(fLookupOrder, true, fManager);
 	}
 
 	/**
@@ -1260,7 +1240,7 @@ public abstract class OptionsConfigurationBlock {
 	protected Link getCheckBoxLink(Key key) {
 		if (fCheckBoxes == null)
 			return null;
-		
+
 		for (int i= fCheckBoxes.size() - 1; i >= 0; i--) {
 			Button curr= fCheckBoxes.get(i);
 			ControlData data= (ControlData) curr.getData();
@@ -1270,7 +1250,7 @@ public abstract class OptionsConfigurationBlock {
 		}
 		return null;
 	}
-	
+
 	protected Combo getComboBox(Key key) {
 		for (int i= fComboBoxes.size() - 1; i >= 0; i--) {
 			Combo curr= fComboBoxes.get(i);
@@ -1303,7 +1283,7 @@ public abstract class OptionsConfigurationBlock {
 		}
 		return null;
 	}
-	
+
 	protected Control findControl(Key key) {
 		Combo comboBox= getComboBox(key);
 		if (comboBox != null) {
@@ -1330,7 +1310,7 @@ public abstract class OptionsConfigurationBlock {
 		combo.setEnabled(enabled);
 		label.setEnabled(enabled);
 	}
-	
+
 	protected void setTextFieldEnabled(Key key, boolean enabled) {
 		Text text= getTextControl(key);
 		Label label= fLabels.get(text);

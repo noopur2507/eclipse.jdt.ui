@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2005 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,10 +17,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.osgi.framework.Bundle;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
+
 import org.eclipse.core.runtime.Platform;
 
 import org.eclipse.ui.IWorkbench;
@@ -34,9 +38,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 
 import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
 
-import junit.framework.TestCase;
-
-public class JavaActivationTest extends TestCase {
+public class JavaActivationTest {
 
 	private IJavaProject project;
 
@@ -66,7 +68,6 @@ public class JavaActivationTest extends TestCase {
 			"org.eclipse.core.filesystem.win32.x86",
 			"org.eclipse.core.resources.compatibility",
 			"org.eclipse.core.resources.win32",
-			"org.eclipse.core.runtime.compatibility.registry",
 			"org.eclipse.equinox.http.jetty",
 			"org.eclipse.equinox.http.registry",
 			"org.eclipse.equinox.http.servlet",
@@ -164,13 +165,13 @@ public class JavaActivationTest extends TestCase {
 			"org.mortbay.jetty.source"
 		};
 
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		project= JavaProjectHelper.createJavaProject("TestProject1", "bin");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 	    getPage().closeAllEditors(false);
 		JavaProjectHelper.delete(project);
 	}
@@ -189,6 +190,7 @@ public class JavaActivationTest extends TestCase {
 		return pack.createCompilationUnit("List1.java", buf.toString(), false, null);
 	}
 
+	@Test
 	public void testOpenJavaEditor() throws Exception {
 		ICompilationUnit unit= createTestCU();
 		EditorUtility.openInEditor(unit);
@@ -199,10 +201,9 @@ public class JavaActivationTest extends TestCase {
 
 	public void checkNotLoaded(Set<String> inactiveBundles) {
 		Bundle bundle= Platform.getBundle("org.eclipse.jdt.ui.tests");
-		Bundle[] bundles= bundle.getBundleContext().getBundles();
-		for (int i= 0; i < bundles.length; i++) {
-			if (bundles[i].getState() == Bundle.ACTIVE && inactiveBundles.contains(bundles[i].getSymbolicName())) {
-				Assert.fail ("plugin should not be activated: "+bundles[i].getSymbolicName()) ;
+		for (Bundle b : bundle.getBundleContext().getBundles()) {
+			if (b.getState() == Bundle.ACTIVE && inactiveBundles.contains(b.getSymbolicName())) {
+				Assert.fail("plugin should not be activated: " + b.getSymbolicName());
 			}
 		}
 	}

@@ -143,7 +143,7 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 
 		PackageFieldAdapter adapter= new PackageFieldAdapter();
 
-		fPackageDialogField= new StringDialogField(); 
+		fPackageDialogField= new StringDialogField();
 		fPackageDialogField.setDialogFieldListener(adapter);
 		fPackageDialogField.setLabelText(NewWizardMessages.NewPackageWizardPage_package_label);
 
@@ -317,7 +317,7 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 	@Override
 	protected void handleFieldChanged(String fieldName) {
 		super.handleFieldChanged(fieldName);
-		if (fieldName == CONTAINER) {
+		if (CONTAINER.equals(fieldName)) {
 			fPackageStatus= getPackageStatus(getPackageText());
 		}
 		// do status line update
@@ -336,9 +336,9 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 
 	/**
 	 * Validates the package name and returns the status of the validation.
-	 * 
+	 *
 	 * @param packName the package name
-	 * 
+	 *
 	 * @return the status of the validation
 	 */
 	private IStatus getPackageStatus(String packName) {
@@ -401,15 +401,13 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 		}
 		return status;
 	}
-	
+
 	private boolean packageDocumentationAlreadyExists(IPackageFragment pack) throws JavaModelException {
 		ICompilationUnit packageInfoJava= pack.getCompilationUnit(PACKAGE_INFO_JAVA_FILENAME);
 		if (packageInfoJava.exists()) {
 			return true;
 		}
-		Object[] nonJavaResources= pack.getNonJavaResources();
-		for (int i= 0; i < nonJavaResources.length; i++) {
-			Object resource= nonJavaResources[i];
+		for (Object resource : pack.getNonJavaResources()) {
 			if (resource instanceof IFile) {
 				IFile file= (IFile) resource;
 				String fileName= file.getName();
@@ -489,14 +487,11 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 	 */
 	@Override
 	public IRunnableWithProgress getRunnable() {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-				try {
-					createPackage(monitor);
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
-				}
+		return monitor -> {
+			try {
+				createPackage(monitor);
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
 			}
 		};
 	}
@@ -528,7 +523,7 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 
 		IPackageFragmentRoot root= getPackageFragmentRoot();
 		IPackageFragment pack= root.getPackageFragment(getPackageText());
-		
+
 		if (pack.exists()) {
 			fCreatedPackageFragment= pack;
 		} else {
@@ -648,5 +643,5 @@ public class NewPackageWizardPage extends NewTypeWizardPage {
 		}
 		return buf.toString();
 	}
-	
+
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -186,13 +186,7 @@ public class SurroundWithTemplateProposal extends TemplateProposal {
 
 			return document.get();
 
-		} catch (MalformedTreeException e) {
-			JavaPlugin.log(e);
-		} catch (IllegalArgumentException e) {
-			JavaPlugin.log(e);
-		} catch (BadLocationException e) {
-			JavaPlugin.log(e);
-		} catch (CoreException e) {
+		} catch (MalformedTreeException | IllegalArgumentException | BadLocationException | CoreException e) {
 			JavaPlugin.log(e);
 		}
 		return null;
@@ -215,13 +209,7 @@ public class SurroundWithTemplateProposal extends TemplateProposal {
 			//Evaluate the template within the new context
 			fProposal= new TemplateProposal(fTemplate, context, region, null);
 			fProposal.apply(viewer, trigger, stateMask, context.getCompletionOffset());
-		} catch (MalformedTreeException e) {
-			handleException(viewer, e, fRegion);
-		} catch (IllegalArgumentException e) {
-			handleException(viewer, e, fRegion);
-		} catch (BadLocationException e) {
-			handleException(viewer, e, fRegion);
-		} catch (CoreException e) {
+		} catch (MalformedTreeException | IllegalArgumentException | BadLocationException | CoreException e) {
 			handleException(viewer, e, fRegion);
 		} finally {
 			setRedraw(viewer, true);
@@ -261,7 +249,7 @@ public class SurroundWithTemplateProposal extends TemplateProposal {
 
 		//Create the new context
 		CompilationUnitContextType contextType= (CompilationUnitContextType) JavaPlugin.getDefault().getTemplateContextRegistry().getContextType(fTemplate.getContextTypeId());
-		CompilationUnitContext context= contextType.createContext(document, offset, newSelection.length(), fCompilationUnit);
+		CompilationUnitContext context= (CompilationUnitContext) contextType.createContext(document, offset, newSelection.length(), fCompilationUnit);
 		context.setVariable("selection", newSelection); //$NON-NLS-1$
 		context.setForceEvaluation(true);
 		return context;

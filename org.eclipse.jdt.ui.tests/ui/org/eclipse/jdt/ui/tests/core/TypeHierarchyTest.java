@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
 import org.eclipse.jface.text.IDocument;
@@ -25,51 +33,35 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.ITypeHierarchyChangedListener;
 import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-
-public class TypeHierarchyTest extends TestCase {
-
-	private static final Class<TypeHierarchyTest> THIS= TypeHierarchyTest.class;
+public class TypeHierarchyTest {
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	private IJavaProject fJavaProject1;
 	private IJavaProject fJavaProject2;
 
-	public TypeHierarchyTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-		fJavaProject1= ProjectTestSetup.getProject();
+	@Before
+	public void setUp() throws Exception {
+		fJavaProject1= pts.getProject();
 		fJavaProject2= JavaProjectHelper.createJavaProject("TestProject2", "bin");
 	}
 
-	@Override
-	protected void tearDown () throws Exception {
-		JavaProjectHelper.clear(fJavaProject1, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown () throws Exception {
+		JavaProjectHelper.clear(fJavaProject1, pts.getDefaultClasspath());
 		JavaProjectHelper.delete(fJavaProject2);
 	}
 
+	@Test
 	public void test1() throws Exception {
 		IPackageFragmentRoot root1= JavaProjectHelper.addSourceContainer(fJavaProject1, "src");
 		IPackageFragment pack1= root1.createPackageFragment("pack1", true, null);
@@ -88,15 +80,14 @@ public class TypeHierarchyTest extends TestCase {
 		ITypeHierarchy hierarchy= type2.newSupertypeHierarchy(null);
 		IType[] allTypes= hierarchy.getAllTypes();
 
-		assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
+		assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
 
 		IType type= fJavaProject2.findType("pack1.A");
-		assertTrue("Type not found", type != null);
-
+		assertNotNull("Type not found", type);
 	}
 
-
-	public void testHierarchyWithWorkingCopy1() throws Exception {
+	@Test
+	public void hierarchyWithWorkingCopy1() throws Exception {
 
 		IPackageFragmentRoot root1= JavaProjectHelper.addSourceContainer(fJavaProject1, "src");
 		IPackageFragment pack1= root1.createPackageFragment("pack1", true, null);
@@ -112,17 +103,12 @@ public class TypeHierarchyTest extends TestCase {
 		final int[] updateCount= new int[] {0};
 
 		ITypeHierarchy hierarchy= type2.newSupertypeHierarchy(null);
-		hierarchy.addTypeHierarchyChangedListener(new ITypeHierarchyChangedListener() {
-			@Override
-			public void typeHierarchyChanged(ITypeHierarchy typeHierarchy) {
-				updateCount[0]++;
-			}
-		});
+		hierarchy.addTypeHierarchyChangedListener(typeHierarchy -> updateCount[0]++);
 
 		IType[] allTypes= hierarchy.getAllTypes();
 
-		assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
-		assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
+		assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
+		assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
 
 		IEditorPart part= JavaUI.openInEditor(type2);
 		try {
@@ -136,8 +122,8 @@ public class TypeHierarchyTest extends TestCase {
 			allTypes= hierarchy.getAllTypes();
 
 			// no update of hierarchies on working copies
-			assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
-			assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
+			assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
+			assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
 
 			part.doSave(null);
 			SharedASTProviderCore.getAST(cu2, SharedASTProviderCore.WAIT_YES, null);
@@ -146,9 +132,9 @@ public class TypeHierarchyTest extends TestCase {
 			allTypes= hierarchy.getAllTypes();
 
 			// update after save
-			assertTrue("Update count should be 1, is: " + updateCount[0], updateCount[0] == 1);
+			assertEquals("Update count should be 1, is: " + updateCount[0], 1, updateCount[0]);
 			hierarchy.refresh(null);
-			assertTrue("Should contain 2 types, contains: " + allTypes.length, allTypes.length == 2);
+			assertEquals("Should contain 2 types, contains: " + allTypes.length, 2, allTypes.length);
 
 		} finally {
 			JavaPlugin.getActivePage().closeAllEditors(false);
@@ -157,14 +143,14 @@ public class TypeHierarchyTest extends TestCase {
 		allTypes= hierarchy.getAllTypes();
 
 		// update after save
-		assertTrue("Update count should be 1, is: " + updateCount[0], updateCount[0] == 1);
-		assertTrue("Should contain 2 types, contains: " + allTypes.length, allTypes.length == 2);
+		assertEquals("Update count should be 1, is: " + updateCount[0], 1, updateCount[0]);
+		assertEquals("Should contain 2 types, contains: " + allTypes.length, 2, allTypes.length);
 
 
 	}
 
-	public void testHierarchyWithWorkingCopy2() throws Exception {
-
+	@Test
+	public void hierarchyWithWorkingCopy2() throws Exception {
 		IPackageFragmentRoot root1= JavaProjectHelper.addSourceContainer(fJavaProject1, "src");
 		IPackageFragment pack1= root1.createPackageFragment("pack1", true, null);
 
@@ -182,17 +168,12 @@ public class TypeHierarchyTest extends TestCase {
 
 		// create on type in working copy
 		ITypeHierarchy hierarchy= type2.newSupertypeHierarchy(null);
-		hierarchy.addTypeHierarchyChangedListener(new ITypeHierarchyChangedListener() {
-			@Override
-			public void typeHierarchyChanged(ITypeHierarchy typeHierarchy) {
-				updateCount[0]++;
-			}
-		});
+		hierarchy.addTypeHierarchyChangedListener(typeHierarchy -> updateCount[0]++);
 
 		IType[] allTypes= hierarchy.getAllTypes();
 
-		assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
-		assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
+		assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
+		assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
 
 		try {
 
@@ -206,8 +187,8 @@ public class TypeHierarchyTest extends TestCase {
 			allTypes= hierarchy.getAllTypes();
 
 			// no update of hierarchies on working copies
-			assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
-			assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
+			assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
+			assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
 
 			part.doSave(null);
 			SharedASTProviderCore.getAST(cu2, SharedASTProviderCore.WAIT_YES, null);
@@ -216,9 +197,9 @@ public class TypeHierarchyTest extends TestCase {
 			allTypes= hierarchy.getAllTypes();
 
 			// update after save
-			assertTrue("Update count should be 1, is: " + updateCount[0], updateCount[0] == 1);
+			assertEquals("Update count should be 1, is: " + updateCount[0], 1, updateCount[0]);
 			hierarchy.refresh(null);
-			assertTrue("Should contain 2 types, contains: " + allTypes.length, allTypes.length == 2);
+			assertEquals("Should contain 2 types, contains: " + allTypes.length, 2, allTypes.length);
 
 		} finally {
 			JavaPlugin.getActivePage().closeAllEditors(false);
@@ -227,13 +208,13 @@ public class TypeHierarchyTest extends TestCase {
 		allTypes= hierarchy.getAllTypes();
 
 		// update after save
-		assertTrue("Update count should be 1, is: " + updateCount[0], updateCount[0] == 1);
-		assertTrue("Should contain 2 types, contains: " + allTypes.length, allTypes.length == 2);
+		assertEquals("Update count should be 1, is: " + updateCount[0], 1, updateCount[0]);
+		assertEquals("Should contain 2 types, contains: " + allTypes.length, 2, allTypes.length);
 
 	}
 
-	public void testHierarchyWithWorkingCopy3() throws Exception {
-
+	@Test
+	public void hierarchyWithWorkingCopy3() throws Exception {
 		IPackageFragmentRoot root1= JavaProjectHelper.addSourceContainer(fJavaProject1, "src");
 		IPackageFragment pack1= root1.createPackageFragment("pack1", true, null);
 
@@ -252,17 +233,12 @@ public class TypeHierarchyTest extends TestCase {
 
 		// create on type in primary working copy
 		ITypeHierarchy hierarchy= type2.newSupertypeHierarchy(null);
-		hierarchy.addTypeHierarchyChangedListener(new ITypeHierarchyChangedListener() {
-			@Override
-			public void typeHierarchyChanged(ITypeHierarchy typeHierarchy) {
-				updateCount[0]++;
-			}
-		});
+		hierarchy.addTypeHierarchyChangedListener(typeHierarchy -> updateCount[0]++);
 
 		IType[] allTypes= hierarchy.getAllTypes();
 
-		assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
-		assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
+		assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
+		assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
 
 		try {
 			IDocument document= JavaUI.getDocumentProvider().getDocument(part.getEditorInput());
@@ -277,8 +253,8 @@ public class TypeHierarchyTest extends TestCase {
 			allTypes= hierarchy.getAllTypes();
 
 			// no update of hierarchies on working copies
-			assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
-			assertTrue("Update count should be 0, is: " + updateCount[0], updateCount[0] == 0);
+			assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
+			assertEquals("Update count should be 0, is: " + updateCount[0], 0, updateCount[0]);
 
 			// no save
 
@@ -289,12 +265,7 @@ public class TypeHierarchyTest extends TestCase {
 		allTypes= hierarchy.getAllTypes();
 
 		// update after close: hierarchy changed because of reconcile delta from closeAllEditors
-		assertTrue("Should contain 3 types, contains: " + allTypes.length, allTypes.length == 3);
-		assertTrue("Update count should be 1, is: " + updateCount[0], updateCount[0] == 1);
-
+		assertEquals("Should contain 3 types, contains: " + allTypes.length, 3, allTypes.length);
+		assertEquals("Update count should be 1, is: " + updateCount[0], 1, updateCount[0]);
 	}
-
-
-
-
 }

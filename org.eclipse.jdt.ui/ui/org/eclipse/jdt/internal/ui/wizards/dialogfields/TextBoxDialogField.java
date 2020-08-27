@@ -15,8 +15,6 @@
 package org.eclipse.jdt.internal.ui.wizards.dialogfields;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 
@@ -24,7 +22,7 @@ import org.eclipse.swt.widgets.Text;
  * Dialog field containing a label and a multi-line text control.
  */
 public class TextBoxDialogField extends StringDialogField {
-	
+
 	/*
 	 * @see org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField#createTextControl(org.eclipse.swt.widgets.Composite)
 	 * @since 3.6
@@ -32,25 +30,22 @@ public class TextBoxDialogField extends StringDialogField {
 	@Override
 	protected Text createTextControl(Composite parent) {
 		Text text= new Text(parent, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-		text.addTraverseListener(new TraverseListener() {
-			@Override
-			public void keyTraversed(TraverseEvent event) {
-				switch (event.detail) {
-					case SWT.TRAVERSE_ESCAPE:
-					case SWT.TRAVERSE_PAGE_NEXT:
-					case SWT.TRAVERSE_PAGE_PREVIOUS:
+		text.addTraverseListener(event -> {
+			switch (event.detail) {
+				case SWT.TRAVERSE_ESCAPE:
+				case SWT.TRAVERSE_PAGE_NEXT:
+				case SWT.TRAVERSE_PAGE_PREVIOUS:
+					event.doit= true;
+					break;
+				case SWT.TRAVERSE_RETURN:
+				case SWT.TRAVERSE_TAB_NEXT:
+				case SWT.TRAVERSE_TAB_PREVIOUS:
+					if ((event.stateMask & SWT.MODIFIER_MASK) != 0) {
 						event.doit= true;
-						break;
-					case SWT.TRAVERSE_RETURN:
-					case SWT.TRAVERSE_TAB_NEXT:
-					case SWT.TRAVERSE_TAB_PREVIOUS:
-						if ((event.stateMask & SWT.MODIFIER_MASK) != 0) {
-							event.doit= true;
-						}
-						break;
-				}
-
+					}
+					break;
 			}
+
 		});
 		return text;
 	}

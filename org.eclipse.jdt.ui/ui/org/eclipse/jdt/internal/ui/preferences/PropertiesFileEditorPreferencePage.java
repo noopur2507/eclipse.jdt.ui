@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -46,13 +44,10 @@ import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.IColorProvider;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -107,39 +102,21 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 			Assert.isNotNull(viewer);
 			Assert.isNotNull(configuration);
 			Assert.isNotNull(preferenceStore);
-			final IPropertyChangeListener fontChangeListener= new IPropertyChangeListener() {
-				/*
-				 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-				 */
-				@Override
-				public void propertyChange(PropertyChangeEvent event) {
-					if (event.getProperty().equals(PreferenceConstants.PROPERTIES_FILE_EDITOR_TEXT_FONT)) {
-						Font font= JFaceResources.getFont(PreferenceConstants.PROPERTIES_FILE_EDITOR_TEXT_FONT);
-						viewer.getTextWidget().setFont(font);
-					}
+			final IPropertyChangeListener fontChangeListener= event -> {
+				if (event.getProperty().equals(PreferenceConstants.PROPERTIES_FILE_EDITOR_TEXT_FONT)) {
+					Font font= JFaceResources.getFont(PreferenceConstants.PROPERTIES_FILE_EDITOR_TEXT_FONT);
+					viewer.getTextWidget().setFont(font);
 				}
 			};
-			final IPropertyChangeListener propertyChangeListener= new IPropertyChangeListener() {
-				/*
-				 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-				 */
-				@Override
-				public void propertyChange(PropertyChangeEvent event) {
-					if (configuration.affectsTextPresentation(event)) {
-						configuration.handlePropertyChangeEvent(event);
-						viewer.invalidateTextPresentation();
-					}
+			final IPropertyChangeListener propertyChangeListener= event -> {
+				if (configuration.affectsTextPresentation(event)) {
+					configuration.handlePropertyChangeEvent(event);
+					viewer.invalidateTextPresentation();
 				}
 			};
-			viewer.getTextWidget().addDisposeListener(new DisposeListener() {
-				/*
-				 * @see org.eclipse.swt.events.DisposeListener#widgetDisposed(org.eclipse.swt.events.DisposeEvent)
-				 */
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					preferenceStore.removePropertyChangeListener(propertyChangeListener);
-					JFaceResources.getFontRegistry().removeListener(fontChangeListener);
-				}
+			viewer.getTextWidget().addDisposeListener(e -> {
+				preferenceStore.removePropertyChangeListener(propertyChangeListener);
+				JFaceResources.getFontRegistry().removeListener(fontChangeListener);
 			});
 			JFaceResources.getFontRegistry().addListener(fontChangeListener);
 			preferenceStore.addPropertyChangeListener(propertyChangeListener);
@@ -387,8 +364,8 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 		ArrayList<OverlayKey> overlayKeys= new ArrayList<>();
 
-		for (int i= 0; i < fSyntaxColorListModel.length; i++) {
-			String colorKey= fSyntaxColorListModel[i][1];
+		for (String[] c : fSyntaxColorListModel) {
+			String colorKey= c[1];
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.STRING, colorKey));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + BOLD));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + ITALIC));
@@ -518,12 +495,7 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 		previewer.setLayoutData(gd);
 
 
-		fHighlightingColorListViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				handleSyntaxColorListSelection();
-			}
-		});
+		fHighlightingColorListViewer.addSelectionChangedListener(event -> handleSyntaxColorListSelection());
 
 		foregroundColorButton.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -650,8 +622,8 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 		initializeFields();
 
-		for (int i= 0, n= fSyntaxColorListModel.length; i < n; i++)
-			fHighlightingColorList.add(new HighlightingColorListItem (fSyntaxColorListModel[i][0], fSyntaxColorListModel[i][1], fSyntaxColorListModel[i][1] + BOLD, fSyntaxColorListModel[i][1] + ITALIC, fSyntaxColorListModel[i][1] + STRIKETHROUGH, fSyntaxColorListModel[i][1] + UNDERLINE, null));
+		for (String[] syntaxColor : fSyntaxColorListModel)
+			fHighlightingColorList.add(new HighlightingColorListItem (syntaxColor[0], syntaxColor[1], syntaxColor[1] + BOLD, syntaxColor[1] + ITALIC, syntaxColor[1] + STRIKETHROUGH, syntaxColor[1] + UNDERLINE, null));
 
 		fHighlightingColorListViewer.setInput(fHighlightingColorList);
 		fHighlightingColorListViewer.setSelection(new StructuredSelection(fHighlightingColorListViewer.getElementAt(0)));
@@ -714,7 +686,7 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 	private String loadPreviewContentFromFile(String filename) {
 		String line;
-		String separator= System.getProperty("line.separator"); //$NON-NLS-1$
+		String separator= System.lineSeparator();
 		StringBuilder buffer= new StringBuilder(512);
 		BufferedReader reader= null;
 		try {

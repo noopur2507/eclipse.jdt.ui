@@ -185,7 +185,7 @@ public abstract class ProfileConfigurationBlock {
 
 		/**
 		 * Exports all the profiles to a file.
-		 * 
+		 *
 		 * @since 3.6
 		 */
 		private void exportAllButtonPressed() {
@@ -365,12 +365,9 @@ public abstract class ProfileConfigurationBlock {
 		new StoreUpdater();
 
 		fPreferenceListenerEnabled= true;
-		fPreferenceListener= new IPreferenceChangeListener() {
-			@Override
-			public void preferenceChange(PreferenceChangeEvent event) {
-				if (fPreferenceListenerEnabled) {
-					preferenceChanged(event);
-				}
+		fPreferenceListener= event -> {
+			if (fPreferenceListenerEnabled) {
+				preferenceChanged(event);
 			}
 		};
 		access.getInstanceScope().getNode(JavaUI.ID_PLUGIN).addPreferenceChangeListener(fPreferenceListener);
@@ -379,7 +376,7 @@ public abstract class ProfileConfigurationBlock {
 
 	/**
 	 * Notifies that a preference has been changed.
-	 * 
+	 *
 	 * @param event the preference change event
 	 */
 	protected void preferenceChanged(PreferenceChangeEvent event) {

@@ -16,14 +16,11 @@ package org.eclipse.jdt.internal.ui.javaeditor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
@@ -92,6 +89,7 @@ import org.eclipse.jdt.core.util.ClassFileBytesDisassembler;
 import org.eclipse.jdt.core.util.ClassFormatException;
 
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
+import org.eclipse.jdt.internal.corext.fix.ExternalNullAnnotationChangeProposals;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
@@ -168,19 +166,15 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 
 			fComposite= createComposite(parent);
 			fComposite.setLayout(new GridLayout());
-			fComposite.addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					JFaceResources.getFontRegistry().removeListener(SourceAttachmentForm.this);
-					fComposite= null;
-					fSeparatorColor.dispose();
-					fSeparatorColor= null;
-					fBannerLabels.clear();
-					fHeaderLabels.clear();
-					if (fFont != null) {
-						fFont.dispose();
-						fFont= null;
-					}
+			fComposite.addDisposeListener(e -> {
+				JFaceResources.getFontRegistry().removeListener(SourceAttachmentForm.this);
+				fComposite= null;
+				fSeparatorColor= null;
+				fBannerLabels.clear();
+				fHeaderLabels.clear();
+				if (fFont != null) {
+					fFont.dispose();
+					fFont= null;
 				}
 			});
 
@@ -258,7 +252,7 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 					return;
 				}
 				IStatus attributeStatus= initializer.getAttributeStatus(containerPath, jproject, IClasspathAttribute.SOURCE_ATTACHMENT_ENCODING);
-				canEditEncoding= !(attributeStatus.getCode() == ClasspathContainerInitializer.ATTRIBUTE_NOT_SUPPORTED || attributeStatus.getCode() == ClasspathContainerInitializer.ATTRIBUTE_READ_ONLY);
+				canEditEncoding= (attributeStatus.getCode() != ClasspathContainerInitializer.ATTRIBUTE_NOT_SUPPORTED) && (attributeStatus.getCode() != ClasspathContainerInitializer.ATTRIBUTE_READ_ONLY);
 				entry= JavaModelUtil.findEntryInContainer(container, root.getPath());
 				Assert.isNotNull(entry);
 			}
@@ -330,13 +324,11 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 		@Override
 		public void propertyChange(PropertyChangeEvent event) {
 
-			for (Iterator<Label> iterator = fBannerLabels.iterator(); iterator.hasNext();) {
-				Label label = iterator.next();
+			for (Label label : fBannerLabels) {
 				label.setFont(JFaceResources.getBannerFont());
 			}
 
-			for (Iterator<Label> iterator = fHeaderLabels.iterator(); iterator.hasNext();) {
-				Label label = iterator.next();
+			for (Label label : fHeaderLabels) {
 				label.setFont(JFaceResources.getHeaderFont());
 			}
 
@@ -884,7 +876,8 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 
 			IJavaProject javaProject= file.getJavaProject();
 			boolean useExternalAnnotations= javaProject != null
-					&& javaProject.getOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, true).equals(JavaCore.ENABLED);
+					&& javaProject.getOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, true).equals(JavaCore.ENABLED)
+					&& ExternalNullAnnotationChangeProposals.hasAnnotationPathInWorkspace(javaProject, file);
 			annotateAction.setEnabled(useExternalAnnotations);
 
 		}
@@ -897,8 +890,7 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 			if (isUsingSourceCopyAction) {
 				createNavigationActions();
 			} else {
-				for (int i= 0; i < ACTION_MAP.length; i++) {
-					IdMapEntry entry= ACTION_MAP[i];
+				for (IdMapEntry entry : ACTION_MAP) {
 					actionBars.setGlobalActionHandler(entry.getActionId(), null);
 					setAction(entry.getActionId(), null);
 				}
@@ -939,7 +931,7 @@ public class ClassFileEditor extends JavaEditor implements ClassFileDocumentProv
 					return false;
 				return super.requestWidgetToken(requester, priority);
 			}
-			
+
 			@Override
 			public boolean canDoOperation(int operation) {
 				if (operation == JavaSourceViewer.ANNOTATE_CLASS_FILE)

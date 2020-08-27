@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,6 +18,11 @@ package org.eclipse.jdt.ui.tests.quickfix;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
 
@@ -35,35 +40,22 @@ import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.correction.CUCorrectionProposal;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
-	private static final Class<UnresolvedMethodsQuickFixTest> THIS= UnresolvedMethodsQuickFixTest.class;
+
+	@Rule
+    public ProjectTestSetup projectSetup = new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 
-	public UnresolvedMethodsQuickFixTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
@@ -75,7 +67,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setValue(PreferenceConstants.CODEGEN_ADD_COMMENTS, false);
 
-		fJProject1= ProjectTestSetup.getProject();
+		fJProject1= projectSetup.getProject();
 
 		StubUtility.setCodeTemplate(CodeTemplateContextType.CATCHBLOCK_ID, "", null);
 		StubUtility.setCodeTemplate(CodeTemplateContextType.CONSTRUCTORSTUB_ID, "", null);
@@ -84,13 +76,12 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, projectSetup.getDefaultClasspath());
 	}
 
-
+	@Test
 	public void testMethodInSameType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -126,6 +117,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodInForInit() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -161,6 +153,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodInInfixExpression1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -194,6 +187,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodInInfixExpression2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -227,6 +221,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacing0EmptyLines() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -267,6 +262,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacing1EmptyLine() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -310,6 +306,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacing2EmptyLines() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -356,6 +353,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacingComment() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -403,6 +401,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacingJavadoc() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -452,6 +451,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodSpacingNonJavadoc() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -501,6 +501,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodInSameTypeUsingThis() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -536,6 +537,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testMethodInDifferentClass() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -598,6 +600,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testParameterWithTypeVariable() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -639,6 +642,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testParameterAnonymous() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -651,15 +655,15 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		ICompilationUnit cu1=pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-		
+
 		CompilationUnit astRoot= getASTRoot(cu1);
 		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu1, astRoot);
 		assertNumberOfProposals(proposals, 1);
 		assertCorrectLabels(proposals);
-		
+
 		CUCorrectionProposal proposal= (CUCorrectionProposal) proposals.get(0);
 		String preview1= getPreviewContent(proposal);
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -673,10 +677,11 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected1= buf.toString();
-		
+
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testMethodInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -737,6 +742,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testMethodAssignedToWildcard() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -770,6 +776,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testMethodAssignedToWildcard2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -803,6 +810,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testMethodAssignedFromWildcard1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -836,6 +844,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testMethodAssignedFromWildcard2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -887,6 +896,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testMethodInvokedOnWildcard() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -930,6 +940,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2 });
 	}
+	@Test
 	public void testMethodInvokedOnBoundedTypeVariable() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -971,6 +982,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2 });
 	}
+	@Test
 	public void testMethodInGenericTypeSameCU() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -1027,6 +1039,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testMethodInRawType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -1089,6 +1102,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testMethodInAnonymous1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1169,6 +1183,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testMethodInAnonymous2() throws Exception {
 		IPackageFragment pack0= fSourceFolder.createPackageFragment("other", false, null);
 
@@ -1215,6 +1230,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testMethodInAnonymous3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1294,12 +1310,13 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
-	
+
+	@Test
 	public void testMethodInAnonymous4() throws Exception {
 		// bug 266032
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -1312,15 +1329,15 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		ICompilationUnit cu1= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-		
+
 		CompilationUnit astRoot= getASTRoot(cu1);
 		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu1, astRoot);
 		assertNumberOfProposals(proposals, 2);
 		assertCorrectLabels(proposals);
-		
+
 		CUCorrectionProposal proposal= (CUCorrectionProposal) proposals.get(0);
 		String preview1= getPreviewContent(proposal);
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -1336,10 +1353,10 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected1= buf.toString();
-		
+
 		proposal= (CUCorrectionProposal) proposals.get(1);
 		String preview2= getPreviewContent(proposal);
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -1352,10 +1369,11 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected2= buf.toString();
-		
+
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testMethodInAnonymousGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1437,6 +1455,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testMethodInAnonymousCovering1() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -1538,6 +1557,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3, preview4 }, new String[] { expected1, expected2, expected3, expected4 });
 	}
 
+	@Test
 	public void testMethodInAnonymousCovering2() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -1639,6 +1659,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3, preview4 }, new String[] { expected1, expected2, expected3, expected4 });
 	}
 
+	@Test
 	public void testMethodInAnonymousCovering3() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -1730,6 +1751,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3, preview4 }, new String[] { expected1, expected2, expected3, expected4 });
 	}
 
+	@Test
 	public void testMethodInAnonymousCovering4() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -1808,6 +1830,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testMethodInDifferentInterface() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1856,6 +1879,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testMethodInArrayAccess() throws Exception {
 		// bug 148011
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("p", false, null);
@@ -1895,6 +1919,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchCast() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1960,6 +1985,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchCast2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2029,6 +2055,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchCastBoxing() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2090,6 +2117,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchChangeVarType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2166,6 +2194,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchChangeVarTypeInGeneric() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -2238,6 +2267,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testParameterMismatchKeepModifiers() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2289,6 +2319,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchChangeFieldType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2365,6 +2396,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchChangeFieldTypeInGeneric() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -2441,6 +2473,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchChangeMethodType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2517,6 +2550,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchChangeMethodTypeBug102142() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2573,6 +2607,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2}, new String[] { expected1, expected2});
 	}
 
+	@Test
 	public void testParameterMismatchChangeMethodTypeInGeneric() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2651,6 +2686,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchLessArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2716,6 +2752,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchLessArguments2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2784,6 +2821,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchLessArguments3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2866,6 +2904,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchLessArgumentsInGeneric() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2947,6 +2986,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3, preview4 }, new String[] { expected1, expected2, expected3, expected4 });
 	}
 
+	@Test
 	public void testCreateAbstractMethodInAbstractParent() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -3018,7 +3058,8 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 				"Create abstract method 'foo()' in type 'A'"
 		});
 	}
-	
+
+	@Test
 	public void testCreateAbstractMethodInAbstractParentWithAbstractClass() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -3105,6 +3146,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		});
 	}
 
+	@Test
 	public void testSuperConstructorLessArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3178,6 +3220,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testConstructorInvocationLessArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3251,6 +3294,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testConstructorInvocationLessArgumentsInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3326,6 +3370,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchMoreArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3393,6 +3438,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchMoreArguments2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3458,6 +3504,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchMoreArguments3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3548,10 +3595,11 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testParameterMismatchMoreArguments4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
-	
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -3561,15 +3609,15 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		ICompilationUnit cu1= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 		CompilationUnit astRoot= getASTRoot(cu1);
 		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu1, astRoot);
 		assertNumberOfProposals(proposals, 3);
 		assertCorrectLabels(proposals);
-	
+
 		CUCorrectionProposal proposal= (CUCorrectionProposal) proposals.get(0);
 		String preview1= getPreviewContent(proposal);
-	
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -3579,10 +3627,10 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected1= buf.toString();
-	
+
 		proposal= (CUCorrectionProposal) proposals.get(1);
 		String preview2= getPreviewContent(proposal);
-	
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -3595,10 +3643,10 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected2= buf.toString();
-	
+
 		proposal= (CUCorrectionProposal) proposals.get(2);
 		String preview3= getPreviewContent(proposal);
-	
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("public class E {\n");
@@ -3608,11 +3656,12 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected3= buf.toString();
-	
-	
+
+
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchMoreArgumentsInGeneric() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3673,6 +3722,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testSuperConstructorMoreArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3749,6 +3799,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testConstructorInvocationMoreArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3820,6 +3871,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testConstructorInvocationMoreArguments2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3906,6 +3958,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchSwap() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3966,6 +4019,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchSwapInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4034,6 +4088,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testParameterMismatchWithExtraDimensions() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4092,6 +4147,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testParameterMismatchWithVarArgs() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4139,6 +4195,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testMissingParameterWithVarArgs() throws Exception { // test for Bug 521070
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4168,6 +4225,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testMissingParameterWithoutVarArgs() throws Exception { // test for Bug 521070
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4199,6 +4257,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 
 
+	@Test
 	public void testParameterMismatchSwap2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4283,6 +4342,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testSuperConstructor() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4334,6 +4394,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testClassInstanceCreation() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4383,6 +4444,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testClassInstanceCreation2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4436,6 +4498,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testClassInstanceCreationInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4486,6 +4549,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testClassInstanceCreationMoreArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4550,6 +4614,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testClassInstanceCreationMoreArgumentsInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4616,6 +4681,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testClassInstanceCreationLessArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4680,6 +4746,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testClassInstanceCreationLessArgumentsInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4747,6 +4814,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testConstructorInvocation() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4782,6 +4850,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testConstructorInvocationInGenericType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4816,6 +4885,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testSuperMethodInvocation() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4852,6 +4922,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testSuperMethodMoreArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -4931,6 +5002,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2, preview3 }, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testSuperMethodLessArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -5008,6 +5080,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testMissingCastParents1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -5040,6 +5113,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testMissingCastParents2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -5072,6 +5146,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testMissingCastParents3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -5106,6 +5181,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview1, expected1);
 	}
 
+	@Test
 	public void testArrayAccess() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -5154,6 +5230,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testIncompleteThrowsStatement() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -5203,6 +5280,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testMissingAnnotationAttribute1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -5241,6 +5319,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testMissingAnnotationAttribute2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -5278,11 +5357,12 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 
 		assertExpectedExistInProposals(proposals, expected);
 	}
-	
+
+	@Test
 	public void testStaticImportFavorite1() throws Exception {
 		IPreferenceStore preferenceStore= PreferenceConstants.getPreferenceStore();
 		preferenceStore.setValue(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, "java.lang.Math.*");
-		try {		
+		try {
 			IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package pack;\n");
@@ -5293,12 +5373,12 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= getASTRoot(cu);
 			ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot);
-	
+
 			assertCorrectLabels(proposals);
-	
+
 			String[] expected= new String[1];
 			buf= new StringBuffer();
 			buf.append("package pack;\n");
@@ -5311,17 +5391,18 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			expected[0]= buf.toString();
-	
+
 			assertExpectedExistInProposals(proposals, expected);
 		} finally {
 			preferenceStore.setValue(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, "");
 		}
 	}
-	
+
+	@Test
 	public void testStaticImportFavorite2() throws Exception {
 		IPreferenceStore preferenceStore= PreferenceConstants.getPreferenceStore();
 		preferenceStore.setValue(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, "java.lang.Math.max");
-		try {		
+		try {
 			IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package pack;\n");
@@ -5332,12 +5413,12 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= getASTRoot(cu);
 			ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot);
-	
+
 			assertCorrectLabels(proposals);
-	
+
 			String[] expected= new String[1];
 			buf= new StringBuffer();
 			buf.append("package pack;\n");
@@ -5348,7 +5429,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			expected[0]= buf.toString();
-	
+
 			assertExpectedExistInProposals(proposals, expected);
 		} finally {
 			preferenceStore.setValue(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, "");
@@ -5363,6 +5444,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 	 * @throws Exception if anything goes wrong
 	 * @since 3.9
 	 */
+	@Test
 	public void testIndirectProtectedMethod() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		IPackageFragment pack2= fSourceFolder.createPackageFragment("test2", false, null);
@@ -5374,7 +5456,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		pack1.createCompilationUnit("A.java", buf.toString(), false, null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package test2;\n");
 		buf.append("import test1.A;\n");
@@ -5403,6 +5485,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testStaticMethodInInterface1() throws Exception {
 		StringBuffer buf= new StringBuffer();
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -5423,6 +5506,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertNumberOfProposals(proposals, 0);
 	}
 
+	@Test
 	public void testStaticMethodInInterface2() throws Exception {
 		StringBuffer buf= new StringBuffer();
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -5441,6 +5525,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertNumberOfProposals(proposals, 0);
 	}
 
+	@Test
 	public void testStaticMethodInInterface3() throws Exception {
 		StringBuffer buf= new StringBuffer();
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -5474,6 +5559,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { getPreviewContent(proposal) }, new String[] { buf.toString() });
 	}
 
+	@Test
 	public void testStaticMethodInInterface4() throws Exception {
 		StringBuffer buf= new StringBuffer();
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
@@ -5489,6 +5575,7 @@ public class UnresolvedMethodsQuickFixTest extends QuickFixTest {
 		assertNumberOfProposals(proposals, 0);
 	}
 
+	@Test
 	public void testAbstractMehodInInterface() throws Exception {
 		StringBuffer buf= new StringBuffer();
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);

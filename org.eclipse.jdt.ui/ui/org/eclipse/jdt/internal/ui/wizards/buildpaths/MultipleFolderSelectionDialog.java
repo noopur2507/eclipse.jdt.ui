@@ -14,8 +14,8 @@
 package org.eclipse.jdt.internal.ui.wizards.buildpaths;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -36,7 +36,6 @@ import org.eclipse.core.resources.IContainer;
 
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -84,9 +83,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 
 	public void setExisting(Object[] existing) {
 		fExisting= new HashSet<>();
-		for (int i= 0; i < existing.length; i++) {
-			fExisting.add(existing[i]);
-		}
+		fExisting.addAll(Arrays.asList(existing));
 	}
 
 	/**
@@ -129,8 +126,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 			}
 		} else {
 			ArrayList<Object> res= new ArrayList<>();
-			for (int i= 0; i < checked.length; i++) {
-				Object elem= checked[i];
+			for (Object elem : checked) {
 				if (!fExisting.contains(elem)) {
 					res.add(elem);
 				}
@@ -154,23 +150,20 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 	@Override
 	public void create() {
 
-		BusyIndicator.showWhile(null, new Runnable() {
-			@Override
-			public void run() {
-				access$superCreate();
+		BusyIndicator.showWhile(null, () -> {
+			access$superCreate();
 
-				fViewer.setCheckedElements(
-					getInitialElementSelections().toArray());
+			fViewer.setCheckedElements(
+				getInitialElementSelections().toArray());
 
-				fViewer.expandToLevel(2);
-				if (fExisting != null) {
-					for (Iterator<Object> iter= fExisting.iterator(); iter.hasNext();) {
-						fViewer.reveal(iter.next());
-					}
+			fViewer.expandToLevel(2);
+			if (fExisting != null) {
+				for (Object object : fExisting) {
+					fViewer.reveal(object);
 				}
-
-				updateOKStatus();
 			}
+
+			updateOKStatus();
 		});
 
 	}
@@ -186,17 +179,12 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 
 		fViewer.setContentProvider(fContentProvider);
 		fViewer.setLabelProvider(fLabelProvider);
-		fViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				updateOKStatus();
-			}
-		});
+		fViewer.addCheckStateListener(event -> updateOKStatus());
 
 		fViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
 		if (fFilters != null) {
-			for (int i = 0; i != fFilters.size(); i++)
-				fViewer.addFilter(fFilters.get(i));
+			for (ViewerFilter filter : fFilters)
+				fViewer.addFilter(filter);
 		}
 
 		fViewer.setInput(fInput);
@@ -254,12 +242,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 		if (fFocusElement != null) {
 			treeViewer.setSelection(new StructuredSelection(fFocusElement), true);
 		}
-		treeViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				forceExistingChecked(event);
-			}
-		});
+		treeViewer.addCheckStateListener(this::forceExistingChecked);
 
 		applyDialogFont(composite);
 		return composite;

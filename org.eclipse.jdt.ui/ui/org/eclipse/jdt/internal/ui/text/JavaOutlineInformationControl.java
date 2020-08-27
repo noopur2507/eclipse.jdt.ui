@@ -40,9 +40,9 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.bindings.keys.KeySequence;
 import org.eclipse.jface.bindings.keys.SWTKeySupport;
-import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
@@ -230,15 +230,15 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 
 		@Override
 		protected Object[] getFilteredChildren(Object parent) {
-			Object[] result = getRawChildren(parent);
+			Object[] result= getRawChildren(parent);
 			int unfilteredChildren= result.length;
-			ViewerFilter[] filters = getFilters();
+			ViewerFilter[] filters= getFilters();
 			if (filters != null) {
-				for (int i= 0; i < filters.length; i++) {
+				for (ViewerFilter filter : filters) {
 					if (parent instanceof TreePath) {
-						result = filters[i].filter(this, (TreePath) parent, result);
+						result= filter.filter(this, (TreePath) parent, result);
 					} else {
-						result = filters[i].filter(this, parent, result);
+						result= filter.filter(this, parent, result);
 					}
 				}
 			}
@@ -356,10 +356,9 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 					ITypeHierarchy th= getSuperTypeHierarchy(type);
 					if (th != null) {
 						List<Object> children= new ArrayList<>();
-						IType[] superClasses= th.getAllSupertypes(type);
 						children.addAll(Arrays.asList(super.getChildren(type)));
-						for (int i= 0, scLength= superClasses.length; i < scLength; i++)
-							children.addAll(Arrays.asList(super.getChildren(superClasses[i])));
+						for (IType superClass : th.getAllSupertypes(type))
+							children.addAll(Arrays.asList(super.getChildren(superClass)));
 						return children.toArray();
 					}
 				}
@@ -495,12 +494,7 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 
 		private void valueChanged(final boolean on, boolean store) {
 			setChecked(on);
-			BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), new Runnable() {
-				@Override
-				public void run() {
-					fOutlineViewer.refresh(false);
-				}
-			});
+			BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), () -> fOutlineViewer.refresh(false));
 
 			if (store)
 				getDialogSettings().put(STORE_LEXICAL_SORTING_CHECKED, on);
@@ -540,20 +534,17 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 		 */
 		@Override
 		public void run() {
-			BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), new Runnable() {
-				@Override
-				public void run() {
-					fInnerLabelProvider.setShowDefiningType(isChecked());
-					getDialogSettings().put(STORE_SORT_BY_DEFINING_TYPE_CHECKED, isChecked());
+			BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), () -> {
+				fInnerLabelProvider.setShowDefiningType(isChecked());
+				getDialogSettings().put(STORE_SORT_BY_DEFINING_TYPE_CHECKED, isChecked());
 
-					setMatcherString(fPattern, false);
-					fOutlineViewer.refresh(true);
+				setMatcherString(fPattern, false);
+				fOutlineViewer.refresh(true);
 
-					// reveal selection
-					Object selectedElement= getSelectedElement();
-					if (selectedElement != null)
-						fOutlineViewer.reveal(selectedElement);
-				}
+				// reveal selection
+				Object selectedElement= getSelectedElement();
+				if (selectedElement != null)
+					fOutlineViewer.reveal(selectedElement);
 			});
 		}
 	}
@@ -666,8 +657,8 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 					TriggerSequence[] sequences= getInvokingCommandKeySequences();
 					if (sequences == null)
 						return;
-					for (int i= 0; i < sequences.length; i++) {
-						if (sequences[i].equals(keySequence)) {
+					for (TriggerSequence sequence : sequences) {
+						if (sequence.equals(keySequence)) {
 							e.doit= false;
 							toggleShowInheritedMembers();
 							return;
@@ -750,9 +741,7 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 			IProgressMonitor monitor = getProgressMonitor();
 			try {
 				th= SuperTypeHierarchyCache.getTypeHierarchy(type, monitor);
-			} catch (JavaModelException e) {
-				return null;
-			} catch (OperationCanceledException e) {
+			} catch (JavaModelException | OperationCanceledException e) {
 				return null;
 			} finally {
 				monitor.done();

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -35,7 +35,7 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -48,9 +48,9 @@ public class CleanUpConstants {
 	 * <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.4
@@ -62,9 +62,9 @@ public class CleanUpConstants {
 	 * {@link #FORMAT_MULTI_LINE_COMMENT}<br> {@link #FORMAT_SINGLE_LINE_COMMENT} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -77,9 +77,9 @@ public class CleanUpConstants {
 	 * Format single line comments. Only has an effect if {@link #FORMAT_COMMENT} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -93,9 +93,9 @@ public class CleanUpConstants {
 	 * Format multi line comments. Only has an effect if {@link #FORMAT_COMMENT} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -109,9 +109,9 @@ public class CleanUpConstants {
 	 * Format javadoc comments. Only has an effect if {@link #FORMAT_COMMENT} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -125,9 +125,9 @@ public class CleanUpConstants {
 	 * Removes trailing whitespace in compilation units<br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -139,9 +139,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #FORMAT_REMOVE_TRAILING_WHITESPACES} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -154,9 +154,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #FORMAT_REMOVE_TRAILING_WHITESPACES} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -167,9 +167,9 @@ public class CleanUpConstants {
 	 * Correct indentation in compilation units on all lines <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.4
@@ -182,9 +182,9 @@ public class CleanUpConstants {
 	 * {@link #MEMBER_ACCESSES_NON_STATIC_FIELD_USE_THIS_IF_NECESSARY} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -195,18 +195,18 @@ public class CleanUpConstants {
 	 * Adds a 'this' qualifier to field accesses.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     int fField;
 	 *                     void foo() {fField= 10;} -&gt; void foo() {this.fField= 10;}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_NON_STATIC_FIELD_USE_THIS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -217,18 +217,18 @@ public class CleanUpConstants {
 	 * Removes 'this' qualifier to field accesses.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     int fField;
 	 *                     void foo() {this.fField= 10;} -&gt; void foo() {fField= 10;}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_NON_STATIC_FIELD_USE_THIS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -241,9 +241,9 @@ public class CleanUpConstants {
 	 * {@link #MEMBER_ACCESSES_NON_STATIC_METHOD_USE_THIS_IF_NECESSARY} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -254,18 +254,18 @@ public class CleanUpConstants {
 	 * Adds a 'this' qualifier to method accesses.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     int method(){};
 	 *                     void foo() {method()} -&gt; void foo() {this.method();}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_NON_STATIC_METHOD_USE_THIS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -276,18 +276,18 @@ public class CleanUpConstants {
 	 * Removes 'this' qualifier from field accesses.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     int fField;
 	 *                     void foo() {this.fField= 10;} -&gt; void foo() {fField= 10;}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_NON_STATIC_METHOD_USE_THIS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -302,9 +302,9 @@ public class CleanUpConstants {
 	 * {@link #MEMBER_ACCESSES_STATIC_QUALIFY_WITH_DECLARING_CLASS_SUBTYPE_ACCESS} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -315,21 +315,21 @@ public class CleanUpConstants {
 	 * Qualify static field accesses with declaring type.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   class E {
 	 *                     public static int i;
 	 *                     void foo() {i= 10;} -&gt; void foo() {E.i= 10;}
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * <br>
 	 * Only has an effect if {@link #MEMBER_ACCESSES_STATIC_QUALIFY_WITH_DECLARING_CLASS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -340,20 +340,20 @@ public class CleanUpConstants {
 	 * Qualifies static method accesses with declaring type.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   class E {
 	 *                     public static int m();
 	 *                     void foo() {m();} -&gt; void foo() {E.m();}
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_STATIC_QUALIFY_WITH_DECLARING_CLASS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -364,20 +364,20 @@ public class CleanUpConstants {
 	 * Changes indirect accesses to static members to direct ones.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   class E {public static int i;}
 	 *                   class ESub extends E {
 	 *                     void foo() {ESub.i= 10;} -&gt; void foo() {E.i= 10;}
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_STATIC_QUALIFY_WITH_DECLARING_CLASS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -388,20 +388,20 @@ public class CleanUpConstants {
 	 * Changes non static accesses to static members to static accesses.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   class E {
 	 *                     public static int i;
 	 *                     void foo() {(new E()).i= 10;} -&gt; void foo() {E.i= 10;}
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #MEMBER_ACCESSES_STATIC_QUALIFY_WITH_DECLARING_CLASS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -414,9 +414,9 @@ public class CleanUpConstants {
 	 * {@link #CONTROL_STATMENTS_USE_BLOCKS_NO_FOR_RETURN_AND_THROW} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -427,17 +427,17 @@ public class CleanUpConstants {
 	 * Adds block to control statement body if the body is not a block.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   	 if (b) foo(); -&gt; if (b) {foo();}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #CONTROL_STATEMENTS_USE_BLOCKS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -449,17 +449,17 @@ public class CleanUpConstants {
 	 * throw statement.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     if (b) {return;} -&gt; if (b) return;
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #CONTROL_STATEMENTS_USE_BLOCKS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -470,17 +470,17 @@ public class CleanUpConstants {
 	 * Remove unnecessary blocks in control statement bodies.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                     if (b) {foo();} -&gt; if (b) foo();
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #CONTROL_STATEMENTS_USE_BLOCKS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -488,18 +488,19 @@ public class CleanUpConstants {
 	public static final String CONTROL_STATMENTS_USE_BLOCKS_NEVER= "cleanup.never_use_blocks"; //$NON-NLS-1$
 
 	/**
-	 * Convert for loops to enhanced for loops.
+	 * Convert for loops to enhanced for loops.  For detailed setting use<br>
+	 * {@link #CONTROL_STATMENTS_CONVERT_FOR_LOOP_ONLY_IF_LOOP_VAR_USED}<br>
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   for (int i = 0; i &lt; array.length; i++) {} -&gt; for (int element : array) {}
 	 * </pre>
-	 * 
+	 *
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -507,14 +508,35 @@ public class CleanUpConstants {
 	public static final String CONTROL_STATMENTS_CONVERT_FOR_LOOP_TO_ENHANCED= "cleanup.convert_to_enhanced_for_loop"; //$NON-NLS-1$
 
 	/**
+	 * Convert a for loop to enhanced for loop only if the loop variable will be used.
+	 * <p>
+	 * Example:
+	 *
+	 * <pre>
+	 *                   for (int i = 0; i &lt; array.length; i++) {}; -&gt; will not be converted
+	 * </pre>
+	 * <br>
+	 * Only has an effect if {@link #CONTROL_STATMENTS_CONVERT_FOR_LOOP_TO_ENHANCED} is TRUE <br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 *
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.16
+	 */
+	public static String CONTROL_STATMENTS_CONVERT_FOR_LOOP_ONLY_IF_LOOP_VAR_USED= "cleanup.convert_to_enhanced_for_loop_if_loop_var_used"; //$NON-NLS-1$
+
+	/**
 	 * Controls the usage of parentheses in expressions. For detailed settings use<br>
 	 * {@link #EXPRESSIONS_USE_PARENTHESES_ALWAYS}<br> {@link #EXPRESSIONS_USE_PARENTHESES_NEVER}<br>
 	 * <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -525,19 +547,19 @@ public class CleanUpConstants {
 	 * Add paranoiac parentheses around conditional expressions.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   boolean b= i &gt; 10 &amp;&amp; i &lt; 100 || i &gt; 20;
 	 *                   -&gt;
 	 *                   boolean b= ((i &gt; 10) &amp;&amp; (i &lt; 100)) || (i &gt; 20);
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #EXPRESSIONS_USE_PARENTHESES} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -548,19 +570,19 @@ public class CleanUpConstants {
 	 * Remove unnecessary parenthesis around conditional expressions.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   boolean b= ((i &gt; 10) &amp;&amp; (i &lt; 100)) || (i &gt; 20);
 	 *                   -&gt;
 	 *                   boolean b= i &gt; 10 &amp;&amp; i &lt; 100 || i &gt; 20;
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #EXPRESSIONS_USE_PARENTHESES} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -568,15 +590,28 @@ public class CleanUpConstants {
 	public static final String EXPRESSIONS_USE_PARENTHESES_NEVER= "cleanup.never_use_parentheses_in_expressions"; //$NON-NLS-1$
 
 	/**
-	 * Controls the usage of 'final' modifier for variable declarations. For detailed settings use:<br>
+	 * Use lazy logical operator.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.15
+	 */
+	public static final String USE_LAZY_LOGICAL_OPERATOR= "cleanup.lazy_logical_operator"; //$NON-NLS-1$
+
+	/**
+	 * Controls the usage of 'final' modifier for variable declarations. For detailed settings
+	 * use:<br>
 	 * {@link #VARIABLE_DECLARATIONS_USE_FINAL_LOCAL_VARIABLES}<br>
 	 * {@link #VARIABLE_DECLARATIONS_USE_FINAL_PARAMETERS}<br>
 	 * {@link #VARIABLE_DECLARATIONS_USE_FINAL_PRIVATE_FIELDS} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -585,17 +620,17 @@ public class CleanUpConstants {
 
 	/**
 	 * Add a final modifier to private fields where possible i.e.:
-	 * 
+	 *
 	 * <pre>
 	 *                   private int field= 0; -&gt; private final int field= 0;
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #VARIABLE_DECLARATIONS_USE_FINAL} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -604,17 +639,17 @@ public class CleanUpConstants {
 
 	/**
 	 * Add a final modifier to method parameters where possible i.e.:
-	 * 
+	 *
 	 * <pre>
 	 *                   void foo(int i) {} -&gt; void foo(final int i) {}
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #VARIABLE_DECLARATIONS_USE_FINAL} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -623,17 +658,17 @@ public class CleanUpConstants {
 
 	/**
 	 * Add a final modifier to local variables where possible i.e.:
-	 * 
+	 *
 	 * <pre>
 	 *                   int i= 0; -&gt; final int i= 0;
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #VARIABLE_DECLARATIONS_USE_FINAL} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -641,11 +676,22 @@ public class CleanUpConstants {
 	public static final String VARIABLE_DECLARATIONS_USE_FINAL_LOCAL_VARIABLES= "cleanup.make_local_variable_final"; //$NON-NLS-1$
 
 	/**
-	 * Controls conversion between lambda expressions and anonymous class creations.
-	 * For detailed settings, use {@link #USE_LAMBDA} or {@link #USE_ANONYMOUS_CLASS_CREATION}
+	 * Replace type declaration by local variable type inference.
 	 * <p>
 	 * Possible values: {TRUE, FALSE}
-	 * 
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.15
+	 */
+	public static final String USE_VAR= "cleanup.use_var"; //$NON-NLS-1$
+
+	/**
+	 * Controls conversion between lambda expressions and anonymous class creations. For detailed
+	 * settings, use {@link #USE_LAMBDA} or {@link #USE_ANONYMOUS_CLASS_CREATION}
+	 * <p>
+	 * Possible values: {TRUE, FALSE}
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -658,7 +704,7 @@ public class CleanUpConstants {
 	 * Possible values: {TRUE, FALSE}
 	 * <p>
 	 * Only has an effect if {@link #CONVERT_FUNCTIONAL_INTERFACES} is TRUE.
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.10
@@ -671,7 +717,7 @@ public class CleanUpConstants {
 	 * Possible values: {TRUE, FALSE}
 	 * <p>
 	 * Only has an effect if {@link #CONVERT_FUNCTIONAL_INTERFACES} is TRUE.
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.10
@@ -679,16 +725,41 @@ public class CleanUpConstants {
 	public static final String USE_ANONYMOUS_CLASS_CREATION= "cleanup.use_anonymous_class_creation"; //$NON-NLS-1$
 
 	/**
+	 * Removes useless parenthesis, return statements and brackets from lambda expressions and
+	 * method references.
+	 * <p>
+	 * Possible values: {TRUE, FALSE}
+	 * <p>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.15
+	 */
+	public static final String SIMPLIFY_LAMBDA_EXPRESSION_AND_METHOD_REF= "cleanup.simplify_lambda_expression_and_method_ref"; //$NON-NLS-1$
+
+	/**
+	 * Precompiles the regular expressions.
+	 * <p>
+	 * Possible values: {TRUE, FALSE}
+	 * <p>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.17
+	 */
+	public static final String PRECOMPILE_REGEX= "cleanup.precompile_regex"; //$NON-NLS-1$
+
+	/**
 	 * Adds type parameters to raw type references.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   List l; -&gt; List&lt;Object&gt; l;
 	 * </pre>
-	 * 
+	 *
 	 * Possible values: {TRUE, FALSE}
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -699,9 +770,9 @@ public class CleanUpConstants {
 	 * Removes unused imports. <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -714,9 +785,9 @@ public class CleanUpConstants {
 	 * {@link #REMOVE_UNUSED_CODE_PRIVATE_METHODS}<br> {@link #REMOVE_UNUSED_CODE_PRIVATE_TYPES} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -728,9 +799,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #REMOVE_UNUSED_CODE_PRIVATE_MEMBERS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -742,9 +813,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #REMOVE_UNUSED_CODE_PRIVATE_MEMBERS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -756,9 +827,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #REMOVE_UNUSED_CODE_PRIVATE_MEMBERS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -770,9 +841,9 @@ public class CleanUpConstants {
 	 * Only has an effect if {@link #REMOVE_UNUSED_CODE_PRIVATE_MEMBERS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -783,9 +854,9 @@ public class CleanUpConstants {
 	 * Removes unused local variables. <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -796,9 +867,9 @@ public class CleanUpConstants {
 	 * Removes unused casts. <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -809,17 +880,17 @@ public class CleanUpConstants {
 	 * Remove unnecessary '$NON-NLS$' tags.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 * String s; //$NON-NLS-1$ -&gt; String s;
 	 * </pre>
-	 * 
+	 *
 	 * <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -862,6 +933,67 @@ public class CleanUpConstants {
 	 */
 	public static final String REMOVE_REDUNDANT_MODIFIERS= "cleanup.remove_redundant_modifiers"; //$NON-NLS-1$
 
+	/**
+	 * Uses Autoboxing.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.13
+	 */
+	public static final String USE_AUTOBOXING= "cleanup.use_autoboxing"; //$NON-NLS-1$
+
+	/**
+	 * Uses unboxing.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.13
+	 */
+	public static final String USE_UNBOXING= "cleanup.use_unboxing"; //$NON-NLS-1$
+
+	/**
+	 * Push down negation.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.13
+	 */
+	public static final String PUSH_DOWN_NEGATION= "cleanup.push_down_negation"; //$NON-NLS-1$
+
+	/**
+	 * Merge conditions of if/else if/else that have the same blocks.
+	 * <p>
+	 * Possible values: {TRUE, FALSE}
+	 * <p>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.16
+	 */
+	public static final String MERGE_CONDITIONAL_BLOCKS= "cleanup.merge_conditional_blocks"; //$NON-NLS-1$
+
+
+	/**
+	 * Use directly map method.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.14
+	 */
+	public static final String USE_DIRECTLY_MAP_METHOD= "cleanup.use_directly_map_method"; //$NON-NLS-1$
+
 
 	/**
 	 * Removes redundant semicolons.<br>
@@ -875,39 +1007,62 @@ public class CleanUpConstants {
 	 */
 	public static final String REMOVE_REDUNDANT_SEMICOLONS= "cleanup.remove_redundant_semicolons"; //$NON-NLS-1$
 
+	/**
+	 * Removes unnecessary array creation for varargs.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 3.19
+	 */
+	public static final String REMOVE_UNNECESSARY_ARRAY_CREATION= "cleanup.remove_unnecessary_array_creation"; //$NON-NLS-1$
+
+	/**
+	 * Reduces the code of the equals method implementation by using Objects.equals().
+	 * <p>
+	 * Possible values: {TRUE, FALSE}
+	 * <p>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.17
+	 */
+	public static final String USE_OBJECTS_EQUALS= "cleanup.objects_equals"; //$NON-NLS-1$
 
 	/**
 	 * Controls whether missing annotations should be added to the code. For detailed settings use:<br>
 	 * {@link #ADD_MISSING_ANNOTATIONS_DEPRECATED}<br> {@value #ADD_MISSING_ANNOTATIONS_OVERRIDE} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
 	 */
 	public static final String ADD_MISSING_ANNOTATIONS= "cleanup.add_missing_annotations"; //$NON-NLS-1$
-	
+
 	/**
 	 * Add '@Override' annotation in front of overriding methods.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   class E1 {void foo();}
 	 *                   class E2 extends E1 {
 	 *                   	 void foo(); -&gt;  @Override void foo();
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #ADD_MISSING_ANNOTATIONS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -918,21 +1073,21 @@ public class CleanUpConstants {
 	 * Add '@Override' annotation in front of methods that override or implement a superinterface method.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   interface I {void foo();}
 	 *                   class E implements I {
 	 *                   	 void foo(); -&gt;  @Override void foo();
 	 *                   }
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #ADD_MISSING_ANNOTATIONS} and {@link #ADD_MISSING_ANNOTATIONS_OVERRIDE} are TRUE and
 	 * the compiler compliance is 1.6 or higher.<br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.6
@@ -943,7 +1098,7 @@ public class CleanUpConstants {
 	 * Add '@Deprecated' annotation in front of deprecated members.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                         /**@deprecated* /
 	 *                        int i;
@@ -952,13 +1107,13 @@ public class CleanUpConstants {
 	 *                         &#064;Deprecated
 	 *                        int i;
 	 * </pre>
-	 * 
+	 *
 	 * Only has an effect if {@link #ADD_MISSING_ANNOTATIONS} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -971,9 +1126,9 @@ public class CleanUpConstants {
 	 * {@link #ADD_MISSING_SERIAL_VERSION_ID_GENERATED} <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -983,15 +1138,15 @@ public class CleanUpConstants {
 	/**
 	 * Adds a generated serial version id to subtypes of java.io.Serializable and
 	 * java.io.Externalizable
-	 * 
+	 *
 	 * public class E implements Serializable {} -> public class E implements Serializable { private
 	 * static final long serialVersionUID = 4381024239L; } <br>
 	 * Only has an effect if {@link #ADD_MISSING_SERIAL_VERSION_ID} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -1001,15 +1156,15 @@ public class CleanUpConstants {
 	/**
 	 * Adds a default serial version it to subtypes of java.io.Serializable and
 	 * java.io.Externalizable
-	 * 
+	 *
 	 * public class E implements Serializable {} -> public class E implements Serializable { private
 	 * static final long serialVersionUID = 1L; } <br>
 	 * Only has an effect if {@link #ADD_MISSING_SERIAL_VERSION_ID} is TRUE <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -1017,20 +1172,33 @@ public class CleanUpConstants {
 	public static final String ADD_MISSING_SERIAL_VERSION_ID_DEFAULT= "cleanup.add_default_serial_version_id"; //$NON-NLS-1$
 
 	/**
+	 * Controls whether long literal suffix should be rewritten in uppercase.<br>
+	 * <br>
+	 * Possible values: {TRUE, FALSE}<br>
+	 *
+	 * <br>
+	 *
+	 * @see CleanUpOptionsCore#TRUE
+	 * @see CleanUpOptionsCore#FALSE
+	 * @since 4.13
+	 */
+	public static final String NUMBER_SUFFIX= "cleanup.number_suffix"; //$NON-NLS-1$
+
+	/**
 	 * Add '$NON-NLS$' tags to non externalized strings.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 *                   	 String s= &quot;&quot;; -&gt; String s= &quot;&quot;; //$NON-NLS-1$
 	 * </pre>
-	 * 
+	 *
 	 * <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -1039,11 +1207,11 @@ public class CleanUpConstants {
 
 	/**
 	 * If true the imports are organized while cleaning up code.
-	 * 
+	 *
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.3
@@ -1054,9 +1222,9 @@ public class CleanUpConstants {
 	 * Should members be sorted? <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see #SORT_MEMBERS_ALL
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
@@ -1069,9 +1237,9 @@ public class CleanUpConstants {
 	 * This has only an effect if {@link #SORT_MEMBERS} is also enabled. <br>
 	 * <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see #SORT_MEMBERS
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
@@ -1083,9 +1251,9 @@ public class CleanUpConstants {
 	 * If enabled method stubs are added to all non abstract classes which require to implement some
 	 * methods. <br>
 	 * Possible values: {TRUE, FALSE}<br>
-	 * 
+	 *
 	 * <br>
-	 * 
+	 *
 	 * @see CleanUpOptionsCore#TRUE
 	 * @see CleanUpOptionsCore#FALSE
 	 * @since 3.4
@@ -1098,7 +1266,7 @@ public class CleanUpConstants {
 	 * Possible values: {<code><b>true</b></code>, <code><b>false</b></code>} <br>
 	 * Default value: <code><b>true</b></code><br>
 	 * <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public static final String SHOW_CLEAN_UP_WIZARD= "cleanup.showwizard"; //$NON-NLS-1$
@@ -1106,11 +1274,11 @@ public class CleanUpConstants {
 	/**
 	 * A key to a serialized string in the <code>InstanceScope</code> containing all the profiles.<br>
 	 * Following code snippet can load the profiles:
-	 * 
+	 *
 	 * <pre>
 	 * List profiles= new ProfileStore(CLEANUP_PROFILES, new CleanUpVersioner()).readProfiles(InstanceScope.INSTANCE);
 	 * </pre>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public static final String CLEANUP_PROFILES= "org.eclipse.jdt.ui.cleanupprofiles"; //$NON-NLS-1$
@@ -1120,7 +1288,7 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: String value<br>
 	 * Default value: {@link #DEFAULT_PROFILE} <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String CLEANUP_PROFILE= "cleanup_profile"; //$NON-NLS-1$$
@@ -1130,7 +1298,7 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: String value<br>
 	 * Default value: {@link #DEFAULT_SAVE_PARTICIPANT_PROFILE} <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public static final String CLEANUP_ON_SAVE_PROFILE= "cleanup.on_save_profile_id"; //$NON-NLS-1$
@@ -1140,7 +1308,7 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: Integer value<br>
 	 * Default value: CleanUpProfileVersioner#CURRENT_VERSION <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String CLEANUP_SETTINGS_VERSION_KEY= "cleanup_settings_version"; //$NON-NLS-1$
@@ -1148,7 +1316,7 @@ public class CleanUpConstants {
 	/**
 	 * Id of the 'Eclipse [built-in]' profile.<br>
 	 * <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String ECLIPSE_PROFILE= "org.eclipse.jdt.ui.default.eclipse_clean_up_profile"; //$NON-NLS-1$
@@ -1156,7 +1324,7 @@ public class CleanUpConstants {
 	/**
 	 * Id of the 'Save Participant [built-in]' profile.<br>
 	 * <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String SAVE_PARTICIPANT_PROFILE= "org.eclipse.jdt.ui.default.save_participant_clean_up_profile"; //$NON-NLS-1$
@@ -1168,7 +1336,7 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: String value<br>
 	 * Default value: {@link #ECLIPSE_PROFILE} <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String DEFAULT_PROFILE= ECLIPSE_PROFILE;
@@ -1178,9 +1346,10 @@ public class CleanUpConstants {
 	 * <br>
 	 * Possible values: String value<br>
 	 * Default value: {@link #SAVE_PARTICIPANT_PROFILE} <br>
-	 * 
+	 *
 	 * @since 3.3
 	 */
 	public final static String DEFAULT_SAVE_PARTICIPANT_PROFILE= SAVE_PARTICIPANT_PROFILE;
+
 
 }

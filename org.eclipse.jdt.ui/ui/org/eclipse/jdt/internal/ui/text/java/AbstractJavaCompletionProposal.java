@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2019 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -67,7 +67,6 @@ import org.eclipse.jface.text.ITextViewerExtension4;
 import org.eclipse.jface.text.ITextViewerExtension5;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.Region;
-import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.contentassist.BoldStylerProvider;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension2;
@@ -104,6 +103,7 @@ import org.eclipse.jdt.core.SourceRange;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.search.SearchPattern;
 
+import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
 import org.eclipse.jdt.internal.corext.javadoc.JavaDocLocations;
 import org.eclipse.jdt.internal.corext.util.Strings;
 
@@ -424,7 +424,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 			// PR 47097
 			if (isSmartTrigger) {
 				// avoid inserting redundant semicolon when smart insert is enabled.
-				if (!(trigger == ';' && (replacement.endsWith(";") || document.getChar(referenceOffset) == ';'))) { //$NON-NLS-1$
+				if ((trigger != ';') || (!replacement.endsWith(";") && (document.getChar(referenceOffset) != ';'))) { //$NON-NLS-1$
 					handleSmartTrigger(document, trigger, referenceOffset);
 				}
 			}
@@ -437,7 +437,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Creates the required type proposal.
-	 * 
+	 *
 	 * @param completionProposal the core completion proposal
 	 * @param invocationContext invocation context
 	 * @return the required type completion proposal
@@ -518,7 +518,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Tells whether the user toggled the insert mode by pressing the 'Ctrl' key.
-	 * 
+	 *
 	 * @return <code>true</code> if the insert mode is toggled, <code>false</code> otherwise
 	 * @since 3.5
 	 */
@@ -528,7 +528,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Returns <code>true</code> if the proposal is within javadoc, <code>false</code> otherwise.
-	 * 
+	 *
 	 * @return <code>true</code> if the proposal is within javadoc, <code>false</code> otherwise
 	 */
 	protected boolean isInJavadoc() {
@@ -600,8 +600,8 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 					if (buffer.length() > 0) {
 						ColorRegistry registry= JFaceResources.getColorRegistry();
-						RGB fgRGB= registry.getRGB("org.eclipse.jdt.ui.Javadoc.foregroundColor"); //$NON-NLS-1$ 
-						RGB bgRGB= registry.getRGB("org.eclipse.jdt.ui.Javadoc.backgroundColor"); //$NON-NLS-1$ 
+						RGB fgRGB= registry.getRGB("org.eclipse.jdt.ui.Javadoc.foregroundColor"); //$NON-NLS-1$
+						RGB bgRGB= registry.getRGB("org.eclipse.jdt.ui.Javadoc.backgroundColor"); //$NON-NLS-1$
 						HTMLPrinter.insertPageProlog(buffer, 0, fgRGB, bgRGB, getCSSStyles());
 						if (base != null) {
 							int endHeadIdx= buffer.indexOf("</head>"); //$NON-NLS-1$
@@ -621,7 +621,8 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	private void addConstantOrDefaultValue(StringBuilder buffer, IJavaElement element) throws JavaModelException {
 		int elementType= element.getElementType();
-		if (!(elementType == IJavaElement.FIELD || elementType == IJavaElement.METHOD)) {
+		if ((elementType != IJavaElement.FIELD)
+				&& (elementType != IJavaElement.METHOD)) {
 			return;
 		}
 		ITypeRoot typeRoot= null;
@@ -821,7 +822,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Checks whether the given offset is valid for this proposal.
-	 * 
+	 *
 	 * @param offset the caret offset
 	 * @return <code>true</code> if the offset is valid for this proposal
 	 * @since 3.5
@@ -866,6 +867,9 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 	public int getRelevance() {
 		if (fPatternMatchRule == SearchPattern.R_SUBSTRING_MATCH) {
 			return fRelevance - 500;
+		}
+		if (fPatternMatchRule == SearchPattern.R_SUBWORD_MATCH) {
+			return fRelevance - 1000;
 		}
 		return fRelevance;
 	}
@@ -918,7 +922,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Matches the given <code>pattern</code> in <code>string</code> and returns the match rule.
-	 * 
+	 *
 	 * @param pattern the pattern to match
 	 * @param string the string to look for the pattern
 	 * @return the match rule used to match the given <code>pattern</code> in <code>string</code>,
@@ -941,6 +945,8 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 			return SearchPattern.R_CAMELCASE_MATCH;
 		} else if (isSubstringMatching() && CharOperation.substringMatch(pattern.toCharArray(), string.toCharArray())) {
 			return SearchPattern.R_SUBSTRING_MATCH;
+		} else if (isSubwordMatching() && CharOperation.subWordMatch(pattern.toCharArray(), string.toCharArray())) {
+			return SearchPattern.R_SUBWORD_MATCH;
 		} else {
 			return -1;
 		}
@@ -1000,7 +1006,11 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 	 * @since 3.12
 	 */
 	protected boolean isSubstringMatching() {
-		String value= JavaCore.getOption(JavaCore.CODEASSIST_SUBSTRING_MATCH);
+		return JavaManipulationPlugin.CODEASSIST_SUBSTRING_MATCH_ENABLED;
+	}
+
+	private boolean isSubwordMatching() {
+		String value= JavaCore.getOption(JavaCore.CODEASSIST_SUBWORD_MATCH);
 		return JavaCore.ENABLED.equals(value);
 	}
 
@@ -1058,7 +1068,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Convert a document offset to the corresponding widget offset.
-	 * 
+	 *
 	 * @param viewer the text viewer
 	 * @param documentOffset the document offset
 	 * @return widget offset
@@ -1080,7 +1090,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Creates a style range for the text viewer.
-	 * 
+	 *
 	 * @param viewer the text viewer
 	 * @return the new style range for the text viewer or <code>null</code>
 	 * @since 3.6
@@ -1121,18 +1131,15 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 			StyleRange range= createStyleRange(viewer);
 			if (range == null)
 				return;
-			
+
 			fRememberedStyleRange= range;
 
 			if (viewer instanceof ITextViewerExtension4) {
 				if (fTextPresentationListener == null) {
-					fTextPresentationListener= new ITextPresentationListener() {
-						@Override
-						public void applyTextPresentation(TextPresentation textPresentation) {
-							fRememberedStyleRange= createStyleRange(viewer);
-							if (fRememberedStyleRange != null)
-								textPresentation.mergeStyleRange(fRememberedStyleRange);
-						}
+					fTextPresentationListener= textPresentation -> {
+						fRememberedStyleRange= createStyleRange(viewer);
+						if (fRememberedStyleRange != null)
+							textPresentation.mergeStyleRange(fRememberedStyleRange);
 					};
 					((ITextViewerExtension4)viewer).addTextPresentationListener(fTextPresentationListener);
 				}
@@ -1266,7 +1273,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 	/**
 	 * Computes the token at the given <code>offset</code> in <code>document</code> to emphasize the
 	 * ranges matching this token in proposal's display string.
-	 * 
+	 *
 	 * @param document the document where content assist is invoked
 	 * @param offset the offset in the document at current caret location
 	 * @return the token at the given <code>offset</code> in <code>document</code> to be used for
@@ -1317,7 +1324,8 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 			return false;
 
 		ProposalInfo proposalInfo= getProposalInfo();
-		if (!(proposalInfo instanceof MemberProposalInfo || proposalInfo instanceof AnonymousTypeProposalInfo))
+		if (!(proposalInfo instanceof MemberProposalInfo)
+				&& !(proposalInfo instanceof AnonymousTypeProposalInfo))
 			return false;
 
 		CompletionProposal proposal= ((MemberProposalInfo)proposalInfo).fProposal;

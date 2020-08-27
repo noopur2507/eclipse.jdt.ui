@@ -18,7 +18,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -248,9 +247,10 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 		if (fields == null || fields.length == 0)
 			return false;
 		int count= 0;
-		for (int index= 0; index < fields.length; index++) {
-			if (!JdtFlags.isEnum(fields[index]))
+		for (IField field : fields) {
+			if (!JdtFlags.isEnum(field)) {
 				count++;
+			}
 		}
 		if (count == 0)
 			MessageDialog.openInformation(getShell(), DIALOG_TITLE, ActionMessages.AddGetterSetterAction_not_applicable);
@@ -357,12 +357,12 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 
 			int selectedCount= 0;
 			int possibleDuplicateCount= 0;
-			for (int i= 0; i < selection.length; i++) {
+			for (Object element : selection) {
 				try {
-					if (selection[i] instanceof GetterSetterEntry) {
-						Object key= selection[i];
-						IField getsetField= ((GetterSetterEntry) selection[i]).field;
-						if (((GetterSetterEntry) selection[i]).isGetter) {
+					if (element instanceof GetterSetterEntry) {
+						Object key= element;
+						IField getsetField= ((GetterSetterEntry) element).field;
+						if (((GetterSetterEntry) element).isGetter) {
 							if (!map.add(GetterSetterUtil.getGetterName(getsetField, null)))
 								possibleDuplicateCount++;
 						} else {
@@ -391,7 +391,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 
 	/**
 	 * Creates a key used in hash maps for a method signature (gettersettername+arguments(fqn)).
-	 * 
+	 *
 	 * @param methodName the method name
 	 * @param field the filed
 	 * @return the signature
@@ -416,12 +416,9 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	// returns a list of fields with setter entries checked
 	private static IField[] getSetterFields(Object[] result, Set<IField> set) {
 		List<IField> list= new ArrayList<>(0);
-		Object each= null;
-		GetterSetterEntry entry= null;
-		for (int i= 0; i < result.length; i++) {
-			each= result[i];
+		for (Object each : result) {
 			if ((each instanceof GetterSetterEntry)) {
-				entry= (GetterSetterEntry) each;
+				GetterSetterEntry entry= (GetterSetterEntry) each;
 				if (!entry.isGetter) {
 					list.add(entry.field);
 				}
@@ -434,12 +431,9 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	// returns a list of fields with getter entries checked
 	private static IField[] getGetterFields(Object[] result, Set<IField> set) {
 		List<IField> list= new ArrayList<>(0);
-		Object each= null;
-		GetterSetterEntry entry= null;
-		for (int i= 0; i < result.length; i++) {
-			each= result[i];
+		for (Object each : result) {
 			if ((each instanceof GetterSetterEntry)) {
-				entry= (GetterSetterEntry) each;
+				GetterSetterEntry entry= (GetterSetterEntry) each;
 				if (entry.isGetter) {
 					list.add(entry.field);
 				}
@@ -452,13 +446,10 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	// returns a list of fields with only getter entries checked
 	private static IField[] getGetterOnlyFields(Object[] result, Set<IField> set) {
 		List<IField> list= new ArrayList<>(0);
-		Object each= null;
-		GetterSetterEntry entry= null;
 		boolean getterSet= false;
-		for (int i= 0; i < result.length; i++) {
-			each= result[i];
+		for (Object each : result) {
 			if ((each instanceof GetterSetterEntry)) {
-				entry= (GetterSetterEntry) each;
+				GetterSetterEntry entry= (GetterSetterEntry) each;
 				if (entry.isGetter) {
 					list.add(entry.field);
 					getterSet= true;
@@ -477,13 +468,10 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	// returns a list of fields with only setter entries checked
 	private static IField[] getSetterOnlyFields(Object[] result, Set<IField> set) {
 		List<IField> list= new ArrayList<>(0);
-		Object each= null;
-		GetterSetterEntry entry= null;
 		boolean getterSet= false;
-		for (int i= 0; i < result.length; i++) {
-			each= result[i];
+		for (Object each : result) {
 			if ((each instanceof GetterSetterEntry)) {
-				entry= (GetterSetterEntry) each;
+				GetterSetterEntry entry= (GetterSetterEntry) each;
 				if (entry.isGetter) {
 					getterSet= true;
 				}
@@ -501,13 +489,10 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	// returns a list of fields with both entries checked
 	private static IField[] getGetterSetterFields(Object[] result, Set<IField> set) {
 		List<IField> list= new ArrayList<>(0);
-		Object each= null;
-		GetterSetterEntry entry= null;
 		boolean getterSet= false;
-		for (int i= 0; i < result.length; i++) {
-			each= result[i];
+		for (Object each : result) {
 			if ((each instanceof GetterSetterEntry)) {
-				entry= (GetterSetterEntry) each;
+				GetterSetterEntry entry= (GetterSetterEntry) each;
 				if (entry.isGetter) {
 					getterSet= true;
 				}
@@ -524,8 +509,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 
 	private static List<IField> reorderFields(List<IField> collection, Set<IField> set) {
 		final List<IField> list= new ArrayList<>(collection.size());
-		for (final Iterator<IField> iterator= set.iterator(); iterator.hasNext();) {
-			final IField field= iterator.next();
+		for (IField field : set) {
 			if (collection.contains(field))
 				list.add(field);
 		}
@@ -635,19 +619,15 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	}
 
 	private IRequestQuery skipReplaceQuery() {
-		return new IRequestQuery() {
-
-			@Override
-			public int doQuery(IMember method) {
-				int[] returnCodes= { IRequestQuery.YES, IRequestQuery.NO, IRequestQuery.YES_ALL, IRequestQuery.CANCEL};
-				String skipLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_skip_label;
-				String replaceLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_replace_label;
-				String skipAllLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_skipAll_label;
-				String[] options= { skipLabel, replaceLabel, skipAllLabel, IDialogConstants.CANCEL_LABEL};
-				String methodName= JavaElementLabels.getElementLabel(method, JavaElementLabels.M_PARAMETER_TYPES);
-				String formattedMessage= Messages.format(ActionMessages.AddGetterSetterAction_SkipExistingDialog_message, BasicElementLabels.getJavaElementName(methodName));
-				return showQueryDialog(formattedMessage, options, returnCodes);
-			}
+		return method -> {
+			int[] returnCodes= { IRequestQuery.YES, IRequestQuery.NO, IRequestQuery.YES_ALL, IRequestQuery.CANCEL};
+			String skipLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_skip_label;
+			String replaceLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_replace_label;
+			String skipAllLabel= ActionMessages.AddGetterSetterAction_SkipExistingDialog_skipAll_label;
+			String[] options= { skipLabel, replaceLabel, skipAllLabel, IDialogConstants.CANCEL_LABEL};
+			String methodName= JavaElementLabels.getElementLabel(method, JavaElementLabels.M_PARAMETER_TYPES);
+			String formattedMessage= Messages.format(ActionMessages.AddGetterSetterAction_SkipExistingDialog_message, BasicElementLabels.getJavaElementName(methodName));
+			return showQueryDialog(formattedMessage, options, returnCodes);
 		};
 	}
 
@@ -658,14 +638,10 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 			return IRequestQuery.CANCEL;
 		}
 		final int[] result= { Window.CANCEL};
-		shell.getDisplay().syncExec(new Runnable() {
-
-			@Override
-			public void run() {
-				String title= ActionMessages.AddGetterSetterAction_QueryDialog_title;
-				MessageDialog dialog= new MessageDialog(shell, title, null, message, MessageDialog.QUESTION, buttonLabels, 0);
-				result[0]= dialog.open();
-			}
+		shell.getDisplay().syncExec(() -> {
+			String title= ActionMessages.AddGetterSetterAction_QueryDialog_title;
+			MessageDialog dialog= new MessageDialog(shell, title, null, message, MessageDialog.QUESTION, buttonLabels, 0);
+			result[0]= dialog.open();
 		});
 		int returnVal= result[0];
 		return returnVal < 0 ? IRequestQuery.CANCEL : returnCodes[returnVal];
@@ -768,10 +744,8 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 	 *             accessing its corresponding resource
 	 */
 	private Map<IField, GetterSetterEntry[]> createGetterSetterMapping(IType type) throws JavaModelException {
-		IField[] fields= type.getFields();
 		Map<IField, GetterSetterEntry[]> result= new LinkedHashMap<>();
-		for (int i= 0; i < fields.length; i++) {
-			IField field= fields[i];
+		for (IField field : type.getFields()) {
 			int flags= field.getFlags();
 			if (!Flags.isEnum(flags)) {
 				List<GetterSetterEntry> l= new ArrayList<>(2);
@@ -871,9 +845,8 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 				GetterSetterEntry getterSetterEntry= (GetterSetterEntry) element;
 				return getterSetterEntry.isGetter || !getterSetterEntry.isFinal;
 			} else if (element instanceof IField) {
-				Object[] children= fContentProvider.getChildren(element);
-				for (int i= 0; i < children.length; i++) {
-					GetterSetterEntry curr= (GetterSetterEntry) children[i];
+				for (Object child : fContentProvider.getChildren(element)) {
+					GetterSetterEntry curr= (GetterSetterEntry) child;
 					if (curr.isGetter || !curr.isFinal) {
 						return true;
 					}
@@ -941,7 +914,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 		private boolean allowSettersForFinals() {
 			return fAllowSettersForFinals;
 		}
-		
+
 		@Override
 		protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
 			if(id == IDialogConstants.OK_ID) {
@@ -950,7 +923,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 				return super.createButton(parent, id, label, defaultButton);
 			}
 		}
-		
+
 		public void allowSettersForFinals(boolean allowSettersForFinals) {
 			if (fAllowSettersForFinals != allowSettersForFinals) {
 				fAllowSettersForFinals= allowSettersForFinals;
@@ -962,10 +935,9 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 						newChecked.addAll(fPreviousSelectedFinals);
 					}
 					fPreviousSelectedFinals.clear();
-					Object[] checkedElements= treeViewer.getCheckedElements();
-					for (int i= 0; i < checkedElements.length; i++) {
-						if (checkedElements[i] instanceof GetterSetterEntry) {
-							GetterSetterEntry entry= (GetterSetterEntry) checkedElements[i];
+					for (Object checkedElement : treeViewer.getCheckedElements()) {
+						if (checkedElement instanceof GetterSetterEntry) {
+							GetterSetterEntry entry= (GetterSetterEntry) checkedElement;
 							if (allowSettersForFinals || entry.isGetter || !entry.isFinal) {
 								newChecked.add(entry);
 							} else {
@@ -1059,8 +1031,7 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 			label.setLayoutData(gd);
 
 			final Combo combo= new Combo(composite, SWT.READ_ONLY);
-			combo.setItems(new String[] { ActionMessages.GetterSetterTreeSelectionDialog_alpha_pair_sort,
-					ActionMessages.GetterSetterTreeSelectionDialog_alpha_method_sort});
+			combo.setItems(ActionMessages.GetterSetterTreeSelectionDialog_alpha_pair_sort, ActionMessages.GetterSetterTreeSelectionDialog_alpha_method_sort);
 			final int methodIndex= 1; // Hard-coded. Change this if the
 			// list gets more complicated.
 			// http://bugs.eclipse.org/bugs/show_bug.cgi?id=38400
@@ -1079,13 +1050,9 @@ public class AddGetterSetterAction extends SelectionDispatchAction {
 		}
 
 		private Object[] getGetterSetterElements(boolean isGetter) {
-			Object[] allFields= fContentProvider.getElements(null);
 			Set<GetterSetterEntry> result= new HashSet<>();
-			for (int i= 0; i < allFields.length; i++) {
-				IField field= (IField) allFields[i];
-				GetterSetterEntry[] entries= getEntries(field);
-				for (int j= 0; j < entries.length; j++) {
-					AddGetterSetterAction.GetterSetterEntry entry= entries[j];
+			for (Object allField : fContentProvider.getElements(null)) {
+				for (GetterSetterEntry entry : getEntries((IField) allField)) {
 					if (entry.isGetter == isGetter)
 						result.add(entry);
 				}

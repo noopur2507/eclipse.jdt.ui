@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.text.correction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -163,12 +162,7 @@ public class QuickTemplateProcessor implements IQuickAssistProcessor {
 	}
 
 	private void sort(ArrayList<IJavaCompletionProposal> proposals) {
-		Collections.sort(proposals, new Comparator<IJavaCompletionProposal>() {
-			@Override
-			public int compare(IJavaCompletionProposal p1, IJavaCompletionProposal p2) {
-				return Collator.getInstance().compare(p1.getDisplayString(), p2.getDisplayString());
-			}
-		});
+		Collections.sort(proposals, (p1, p2) -> Collator.getInstance().compare(p1.getDisplayString(), p2.getDisplayString()));
 	}
 
 	private IDocument getDocument(ICompilationUnit cu) throws JavaModelException {
@@ -182,7 +176,7 @@ public class QuickTemplateProcessor implements IQuickAssistProcessor {
 
 	private void collectSurroundTemplates(IDocument document, ICompilationUnit cu, int offset, int length, Collection<IJavaCompletionProposal> result, String contextId) throws BadLocationException, CoreException {
 		CompilationUnitContextType contextType= (CompilationUnitContextType) JavaPlugin.getDefault().getTemplateContextRegistry().getContextType(contextId);
-		CompilationUnitContext context= contextType.createContext(document, offset, length, cu);
+		CompilationUnitContext context= (CompilationUnitContext) contextType.createContext(document, offset, length, cu);
 		context.setVariable("selection", document.get(offset, length)); //$NON-NLS-1$
 		context.setForceEvaluation(true);
 
@@ -229,7 +223,8 @@ public class QuickTemplateProcessor implements IQuickAssistProcessor {
 			if (!template.matches("", contextId) || !lineSelectionMatcher.find() && !wordSelectionMatcher.find()) //$NON-NLS-1$
 				return false;
 		} else {
-			if (template.matches("", JavaDocContextType.ID) || !lineSelectionMatcher.find()) //$NON-NLS-1$
+			if (template.matches("", JavaDocContextType.ID) || !lineSelectionMatcher.find() //$NON-NLS-1$
+					|| template.matches("", JavaContextType.ID_EMPTY)) //$NON-NLS-1$
 				return false;
 		}
 		TemplateContextType contextType= JavaPlugin.getDefault().getTemplateContextRegistry().getContextType(template.getContextTypeId());

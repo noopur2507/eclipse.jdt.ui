@@ -16,12 +16,9 @@ package org.eclipse.jdt.internal.ui.refactoring.sef;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -136,12 +133,7 @@ public class SelfEncapsulateFieldInputPage extends UserInputWizardPage {
 		GridData gd= new GridData(GridData.FILL_HORIZONTAL);
 		gd.widthHint= convertWidthInCharsToPixels(25);
 		fGetterName.setLayoutData(gd);
-		fGetterName.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doGetterModified();
-			}
-		});
+		fGetterName.addModifyListener(e -> doGetterModified());
 		TextFieldNavigationHandler.install(fGetterName);
 
 
@@ -179,12 +171,7 @@ public class SelfEncapsulateFieldInputPage extends UserInputWizardPage {
 		gd= new GridData(GridData.FILL_HORIZONTAL);
 		gd.widthHint= convertWidthInCharsToPixels(25);
 		fSetterName.setLayoutData(gd);
-		fSetterName.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doSetterModified();
-			}
-		});
+		fSetterName.addModifyListener(e -> doSetterModified());
 		TextFieldNavigationHandler.install(fSetterName);
 
 		fSetterInfo= new Label(nameComposite, SWT.LEAD);
@@ -266,9 +253,8 @@ public class SelfEncapsulateFieldInputPage extends UserInputWizardPage {
 	}
 
 	private void updateEnablements() {
-		boolean enable=!(fRefactoring.isUsingLocalSetter()&&fRefactoring.isUsingLocalGetter());
-		for (Iterator<Control> iter= fEnablements.iterator(); iter.hasNext();) {
-			Control control= iter.next();
+		boolean enable= !fRefactoring.isUsingLocalSetter() || !fRefactoring.isUsingLocalGetter();
+		for (Control control : fEnablements) {
 			control.setEnabled(enable);
 		}
 	}
@@ -394,8 +380,8 @@ public class SelfEncapsulateFieldInputPage extends UserInputWizardPage {
 		combo.add(RefactoringMessages.SelfEncapsulateFieldInputPage_first_method);
 		try {
 			IMethod[] methods= field.getDeclaringType().getMethods();
-			for (int i= 0; i < methods.length; i++) {
-				combo.add(JavaElementLabels.getElementLabel(methods[i], JavaElementLabels.M_PARAMETER_TYPES));
+			for (IMethod method : methods) {
+				combo.add(JavaElementLabels.getElementLabel(method, JavaElementLabels.M_PARAMETER_TYPES));
 			}
 			if (methods.length > 0)
 				select= methods.length;

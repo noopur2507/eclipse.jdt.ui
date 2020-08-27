@@ -43,21 +43,16 @@ public class FilterUpdater implements IResourceChangeListener {
 		IResourceDelta delta= event.getDelta();
 		if (delta == null)
 			return;
-		IResourceDelta[] projDeltas = delta.getAffectedChildren(IResourceDelta.CHANGED);
-		for (int i= 0; i < projDeltas.length; i++) {
-			IResourceDelta pDelta= projDeltas[i];
-			if ((pDelta.getFlags() & IResourceDelta.DESCRIPTION) != 0) {
-				IProject project= (IProject) pDelta.getResource();
+		for (IResourceDelta deltachild : delta.getAffectedChildren(IResourceDelta.CHANGED)) {
+			if ((deltachild.getFlags() & IResourceDelta.DESCRIPTION) != 0) {
+				IProject project= (IProject) deltachild.getResource();
 				if (needsRefiltering(project)) {
 					final Control ctrl= fViewer.getControl();
 					if (ctrl != null && !ctrl.isDisposed()) {
 						// async is needed due to bug 33783
-						ctrl.getDisplay().asyncExec(new Runnable() {
-							@Override
-							public void run() {
-								if (!ctrl.isDisposed())
-									fViewer.refresh(false);
-							}
+						ctrl.getDisplay().asyncExec(() -> {
+							if (!ctrl.isDisposed())
+								fViewer.refresh(false);
 						});
 					}
 					return; // one refresh is good enough

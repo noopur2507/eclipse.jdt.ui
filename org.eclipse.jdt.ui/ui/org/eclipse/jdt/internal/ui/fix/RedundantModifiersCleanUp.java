@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
 
+import org.eclipse.text.edits.TextEditGroup;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -80,38 +82,36 @@ public class RedundantModifiersCleanUp extends AbstractMultiFix {
 		return new String[0];
 	}
 
-	@SuppressWarnings("nls")
 	@Override
 	public String getPreview() {
 		StringBuilder buf= new StringBuilder();
-		buf.append("\n");
 		if (isEnabled(CleanUpConstants.REMOVE_REDUNDANT_MODIFIERS)) {
-			buf.append("public interface IFoo {\n");
-			buf.append("  int MAGIC_NUMBER = 646;\n");
-			buf.append("  int foo ();\n");
-			buf.append("  int bar (int bazz);\n");
+			buf.append("public interface IFoo {\n"); //$NON-NLS-1$
+			buf.append("  int MAGIC_NUMBER = 646;\n"); //$NON-NLS-1$
+			buf.append("  int foo ();\n"); //$NON-NLS-1$
+			buf.append("  int bar (int bazz);\n"); //$NON-NLS-1$
 		} else {
-			buf.append("public abstract interface IFoo {\n");
-			buf.append("  public static final int MAGIC_NUMBER = 646;\n");
-			buf.append("  public abstract int foo ();\n");
-			buf.append("  public int bar (int bazz);\n");
+			buf.append("public abstract interface IFoo {\n"); //$NON-NLS-1$
+			buf.append("  public static final int MAGIC_NUMBER = 646;\n"); //$NON-NLS-1$
+			buf.append("  public abstract int foo ();\n"); //$NON-NLS-1$
+			buf.append("  public int bar (int bazz);\n"); //$NON-NLS-1$
 		}
-		buf.append("}\n");
-		buf.append("\n");
-		buf.append("public final class Sealed {\n");
+		buf.append("}\n"); //$NON-NLS-1$
+		buf.append("\n"); //$NON-NLS-1$
+		buf.append("public final class Sealed {\n"); //$NON-NLS-1$
 		if (isEnabled(CleanUpConstants.REMOVE_REDUNDANT_MODIFIERS)) {
-			buf.append("  public void foo () {};\n");
-			buf.append("  \n");
-			buf.append("  interface INested {\n");
-			buf.append("  }\n");
+			buf.append("  public void foo () {};\n"); //$NON-NLS-1$
+			buf.append("  \n"); //$NON-NLS-1$
+			buf.append("  interface INested {\n"); //$NON-NLS-1$
+			buf.append("  }\n"); //$NON-NLS-1$
 
 		} else {
-			buf.append("  public final void foo () {};\n");
-			buf.append("  \n");
-			buf.append("  abstract static interface INested {\n");
-			buf.append("  }\n");
+			buf.append("  public final void foo () {};\n"); //$NON-NLS-1$
+			buf.append("  \n"); //$NON-NLS-1$
+			buf.append("  abstract static interface INested {\n"); //$NON-NLS-1$
+			buf.append("  }\n"); //$NON-NLS-1$
 		}
-		buf.append("}\n");
+		buf.append("}\n"); //$NON-NLS-1$
 
 
 		return buf.toString();
@@ -127,7 +127,7 @@ public class RedundantModifiersCleanUp extends AbstractMultiFix {
 		unit.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(FieldDeclaration node) {
-				TypeDeclaration typeDecl= ASTNodes.getParent(node, TypeDeclaration.class);
+				TypeDeclaration typeDecl= node.getParent() instanceof TypeDeclaration ? (TypeDeclaration) node.getParent() : null;
 				if (typeDecl != null && typeDecl.isInterface()) {
 					final int excluded= Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
 					if ((node.getModifiers() & excluded) > 0) {
@@ -139,15 +139,22 @@ public class RedundantModifiersCleanUp extends AbstractMultiFix {
 
 			@Override
 			public boolean visit(MethodDeclaration node) {
-				TypeDeclaration typeDecl= ASTNodes.getParent(node, TypeDeclaration.class);
-				if (typeDecl != null && typeDecl.isInterface()) {
-					rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.ABSTRACT));
-					if (!AnonymousClassDeclaration.class.isInstance(node.getParent()) && !EnumDeclaration.class.isInstance(node.getParent())) {
-						rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.PUBLIC));
+				TypeDeclaration typeDecl= node.getParent() instanceof TypeDeclaration ? (TypeDeclaration) node.getParent() : null;
+
+				if (typeDecl != null) {
+					if (typeDecl.isInterface()) {
+						if (Modifier.isAbstract(node.getModifiers())) {
+							rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.ABSTRACT));
+						}
+
+						if (Modifier.isPublic(node.getModifiers()) && !AnonymousClassDeclaration.class.isInstance(node.getParent()) && !EnumDeclaration.class.isInstance(node.getParent())) {
+							rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.PUBLIC));
+						}
+					} else if (Modifier.isFinal(typeDecl.getModifiers()) && Modifier.isFinal(node.getModifiers()) && !node.isVarargs()) {
+						rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.FINAL));
 					}
-				} else if (typeDecl != null && Modifier.isFinal(typeDecl.getModifiers()) && Modifier.isFinal(node.getModifiers())) {
-					rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.FINAL));
 				}
+
 				return true;
 			}
 
@@ -164,10 +171,10 @@ public class RedundantModifiersCleanUp extends AbstractMultiFix {
 				}
 				return true;
 			}
-			
+
 			@Override
 			public boolean visit(EnumDeclaration node) {
-				TypeDeclaration typeDecl= ASTNodes.getParent(node, TypeDeclaration.class);
+				TypeDeclaration typeDecl= node.getParent() instanceof TypeDeclaration ? (TypeDeclaration) node.getParent() : null;
 				if (typeDecl != null && Modifier.isStatic(node.getModifiers())) {
 					rewriteOperations.add(new RemoveModifiersOperation(node, Modifier.STATIC));
 				}
@@ -205,7 +212,8 @@ public class RedundantModifiersCleanUp extends AbstractMultiFix {
 		@Override
 		public void rewriteAST(CompilationUnitRewrite cuRewrite, LinkedProposalModel linkedModel) throws CoreException {
 			ModifierRewrite rewrite= ModifierRewrite.create(cuRewrite.getASTRewrite(), node);
-			rewrite.setModifiers(Modifier.NONE, excludedModifiers, null);
+			TextEditGroup group= createTextEditGroup(MultiFixMessages.RedundantModifiersCleanup_description, cuRewrite);
+			rewrite.setModifiers(Modifier.NONE, excludedModifiers, group);
 		}
 	}
 }

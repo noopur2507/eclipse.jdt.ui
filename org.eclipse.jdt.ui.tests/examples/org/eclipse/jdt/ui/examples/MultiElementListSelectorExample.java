@@ -19,8 +19,6 @@ import java.util.Random;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
-import org.eclipse.core.runtime.IStatus;
-
 import org.eclipse.jface.viewers.ILabelProvider;
 
 import org.eclipse.ui.dialogs.ISelectionStatusValidator;
@@ -39,18 +37,15 @@ public class MultiElementListSelectorExample {
 	public static void main(String[] args) {
 
 
-		ISelectionStatusValidator validator= new ISelectionStatusValidator() {
-			@Override
-			public IStatus validate(Object[] selection) {
-				if (selection != null && selection.length == 1) {
-					return new StatusInfo();
-				} else {
-					StatusInfo status= new StatusInfo();
-					status.setError("Single selection");
-					return status;
-				}
-
+		ISelectionStatusValidator validator= selection -> {
+			if (selection != null && selection.length == 1) {
+				return new StatusInfo();
+			} else {
+				StatusInfo status= new StatusInfo();
+				status.setError("Single selection");
+				return status;
 			}
+
 		};
 
 
@@ -73,7 +68,7 @@ public class MultiElementListSelectorExample {
 				elements[i][k]= "elem-" + i + "-" + k;
 			}
 		}
-		
+
 		Display display= new Display();
 		MultiElementListSelectionDialog d= new MultiElementListSelectionDialog(new Shell(display), elementRenderer);
 		d.setTitle("Title");
@@ -86,8 +81,9 @@ public class MultiElementListSelectorExample {
 
 		Object[] res= d.getResult();
 		if (res != null) {
-			for (int i= 0; i < res.length; i++)
-				System.out.println(res[i]);
+			for (Object obj : res) {
+				System.out.println(obj);
+			}
 		}
 	}
 }

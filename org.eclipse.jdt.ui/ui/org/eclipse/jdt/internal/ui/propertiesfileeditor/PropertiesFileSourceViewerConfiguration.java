@@ -15,10 +15,9 @@
 package org.eclipse.jdt.internal.ui.propertiesfileeditor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -31,7 +30,6 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.text.DefaultInformationControl;
 import org.eclipse.jface.text.IAutoEditStrategy;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.ITextDoubleClickStrategy;
 import org.eclipse.jface.text.ITextHover;
@@ -206,12 +204,18 @@ public class PropertiesFileSourceViewerConfiguration extends TextSourceViewerCon
 	 */
 	@Override
 	public ITextDoubleClickStrategy getDoubleClickStrategy(ISourceViewer sourceViewer, String contentType) {
-		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
-			return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 0, 0, 0);
-		if (IPropertiesFilePartitions.COMMENT.equals(contentType))
-			return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 0, 0);
-		if (IPropertiesFilePartitions.PROPERTY_VALUE.equals(contentType))
-			return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 1, -1);
+		if (contentType != null) {
+			switch (contentType) {
+				case IDocument.DEFAULT_CONTENT_TYPE:
+					return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 0, 0, 0);
+				case IPropertiesFilePartitions.COMMENT:
+					return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 0, 0);
+				case IPropertiesFilePartitions.PROPERTY_VALUE:
+					return new PartitionDoubleClickSelector(getConfiguredDocumentPartitioning(sourceViewer), 1, -1);
+				default:
+					break;
+			}
+		}
 
 		return super.getDoubleClickStrategy(sourceViewer, contentType);
 	}
@@ -224,8 +228,7 @@ public class PropertiesFileSourceViewerConfiguration extends TextSourceViewerCon
 		int length= IPropertiesFilePartitions.PARTITIONS.length;
 		String[] contentTypes= new String[length + 1];
 		contentTypes[0]= IDocument.DEFAULT_CONTENT_TYPE;
-		for (int i= 0; i < length; i++)
-			contentTypes[i+1]= IPropertiesFilePartitions.PARTITIONS[i];
+		System.arraycopy(IPropertiesFilePartitions.PARTITIONS, 0, contentTypes, 1, length);
 
 		return contentTypes;
 	}
@@ -311,12 +314,7 @@ public class PropertiesFileSourceViewerConfiguration extends TextSourceViewerCon
 	 */
 	@Override
 	public IInformationControlCreator getInformationControlCreator(ISourceViewer sourceViewer) {
-		return new IInformationControlCreator() {
-			@Override
-			public IInformationControl createInformationControl(Shell parent) {
-				return new DefaultInformationControl(parent, JavaPlugin.getAdditionalInfoAffordanceString());
-			}
-		};
+		return parent -> new DefaultInformationControl(parent, JavaPlugin.getAdditionalInfoAffordanceString());
 	}
 
 	/*
@@ -360,9 +358,7 @@ public class PropertiesFileSourceViewerConfiguration extends TextSourceViewerCon
 				return autoEditStrategies;
 			}
 			List<IAutoEditStrategy> stratergies= new ArrayList<>();
-			for (int i= 0; i < autoEditStrategies.length; i++) {
-				stratergies.add(autoEditStrategies[i]);
-			}
+			stratergies.addAll(Arrays.asList(autoEditStrategies));
 			stratergies.add(new PropertiesFileAutoEditStrategy(((IFileEditorInput)fTextEditor.getEditorInput()).getFile(), sourceViewer));
 			return stratergies.toArray(new IAutoEditStrategy[stratergies.size()]);
 		} catch (CoreException e) {

@@ -156,13 +156,8 @@ public class JavaSearchResultPage extends AbstractTextSearchViewPage implements 
 
 	private int fCurrentGrouping;
 
-	private static final String[] SHOW_IN_TARGETS= new String[] { JavaUI.ID_PACKAGES , JavaPlugin.ID_RES_NAV };
-	public static final IShowInTargetList SHOW_IN_TARGET_LIST= new IShowInTargetList() {
-		@Override
-		public String[] getShowInTargetIds() {
-			return SHOW_IN_TARGETS;
-		}
-	};
+	private static final String[] SHOW_IN_TARGETS= new String[] { JavaUI.ID_PACKAGES  };
+	public static final IShowInTargetList SHOW_IN_TARGET_LIST= () -> SHOW_IN_TARGETS;
 
 	private JavaSearchEditorOpener fEditorOpener= new JavaSearchEditorOpener();
 
@@ -529,19 +524,18 @@ public class JavaSearchResultPage extends AbstractTextSearchViewPage implements 
 
 	private int getMatchCount(ITreeContentProvider cp, Object[] elements) {
 		int count= 0;
-		for (int j = 0; j < elements.length; j++) {
-			count+= getDisplayedMatchCount(elements[j]);
-			Object[] children = cp.getChildren(elements[j]);
+		for (Object element : elements) {
+			count+= getDisplayedMatchCount(element);
+			Object[] children = cp.getChildren(element);
 			count+= getMatchCount(cp, children);
 		}
 		return count;
 	}
 
 	private int getMatchCount(TableViewer viewer) {
-		Object[] elements= getRootElements(viewer);
 		int count= 0;
-		for (int i = 0; i < elements.length; i++) {
-			count+= getDisplayedMatchCount(elements[i]);
+		for (Object element : getRootElements(viewer)) {
+			count+= getDisplayedMatchCount(element);
 		}
 		return count;
 	}

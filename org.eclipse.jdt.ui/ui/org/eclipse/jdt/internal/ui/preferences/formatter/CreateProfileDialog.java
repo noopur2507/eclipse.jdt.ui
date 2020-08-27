@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -94,7 +92,7 @@ public class CreateProfileDialog extends StatusDialog {
 
 		final Composite composite= (Composite) super.createDialogArea(parent);
 		((GridLayout) composite.getLayout()).numColumns= numColumns;
-		
+
 		// Create "Profile name:" label
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
 		gd.horizontalSpan = numColumns;
@@ -108,12 +106,7 @@ public class CreateProfileDialog extends StatusDialog {
 		gd.horizontalSpan= numColumns;
 		fNameText= new Text(composite, SWT.SINGLE | SWT.BORDER);
 		fNameText.setLayoutData(gd);
-		fNameText.addModifyListener( new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doValidation();
-			}
-		});
+		fNameText.addModifyListener( e -> doValidation());
 
 		// Create "Initialize settings ..." label
 		gd = new GridData();

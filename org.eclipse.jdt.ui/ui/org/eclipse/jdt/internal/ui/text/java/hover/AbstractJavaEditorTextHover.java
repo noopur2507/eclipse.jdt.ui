@@ -14,12 +14,9 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.java.hover;
 
-import org.eclipse.swt.widgets.Shell;
-
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DefaultInformationControl;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHoverExtension;
@@ -113,7 +110,7 @@ public abstract class AbstractJavaEditorTextHover implements IJavaEditorTextHove
 		 */
 		if (hoverRegion.getLength() == 0)
 			return null;
-		
+
 		IDocument document= textViewer.getDocument();
 		if (document != null && isInheritDoc(document, hoverRegion))
 			return null;
@@ -131,7 +128,7 @@ public abstract class AbstractJavaEditorTextHover implements IJavaEditorTextHove
 
 	/**
 	 * Returns whether the word is "inheritDoc".
-	 * 
+	 *
 	 * @param document the document
 	 * @param wordRegion the word region
 	 * @return <code>true</code> iff the word is "inheritDoc"
@@ -152,27 +149,17 @@ public abstract class AbstractJavaEditorTextHover implements IJavaEditorTextHove
 	 */
 	@Override
 	public IInformationControlCreator getHoverControlCreator() {
-		return new IInformationControlCreator() {
-			@Override
-			public IInformationControl createInformationControl(Shell parent) {
-				return new DefaultInformationControl(parent, EditorsUI.getTooltipAffordanceString());
-			}
-		};
+		return parent -> new DefaultInformationControl(parent, EditorsUI.getTooltipAffordanceString());
 	}
 
 	/**
 	 * Delegate method for {@link JavaInformationProvider#getInformationPresenterControlCreator()}
-	 * 
+	 *
 	 * @return the information control creator or null if none is available
 	 * @since 3.4
 	 */
 	public IInformationControlCreator getInformationPresenterControlCreator() {
-		return new IInformationControlCreator() {
-			@Override
-			public IInformationControl createInformationControl(Shell shell) {
-				return new DefaultInformationControl(shell, true);
-			}
-		};
+		return shell -> new DefaultInformationControl(shell, true);
 	}
 
 	protected ITypeRoot getEditorInputJavaElement() {

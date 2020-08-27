@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,10 +14,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Hashtable;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -48,32 +52,23 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
+
 import org.eclipse.jdt.internal.ui.text.correction.AssistContext;
 
 public class AddImportTest extends CoreTests {
 
-	private static final Class<AddImportTest> THIS= AddImportTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 
-	public AddImportTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-
-	@Override
-	protected void setUp() throws Exception {
-		fJProject1= ProjectTestSetup.getProject();
+	@Before
+	public void setUp() throws Exception {
+		fJProject1= pts.getProject();
 		JavaProjectHelper.set15CompilerOptions(fJProject1);
 
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
@@ -81,12 +76,12 @@ public class AddImportTest extends CoreTests {
 		JavaCore.setOptions(options);
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, pts.getDefaultClasspath());
 	}
 
+	@Test
 	public void testAddImports1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -134,6 +129,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImports2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -168,7 +164,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
-
+	@Test
 	public void testAddImports3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -200,6 +196,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testRemoveImports1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -238,6 +235,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testRemoveImports2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -269,10 +267,10 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
-
+	@Test
 	public void testRemoveImports3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack= sourceFolder.createPackageFragment("pack", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack;\n");
@@ -282,7 +280,7 @@ public class AddImportTest extends CoreTests {
 		buf.append("    }\n");
 		buf.append("}\n");
 		pack.createCompilationUnit("A.java", buf.toString(), false, null);
-		
+
 		IPackageFragment test1= sourceFolder.createPackageFragment("test1", false, null);
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
@@ -297,22 +295,22 @@ public class AddImportTest extends CoreTests {
 		buf.append("public class T {\n");
 		buf.append("}\n");
 		ICompilationUnit cuT= test1.createCompilationUnit("T.java", buf.toString(), false, null);
-		
+
 		ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		parser.setSource(cuT);
 		parser.setResolveBindings(true);
 		CompilationUnit astRoot= (CompilationUnit) parser.createAST(null);
-		
+
 		ImportRewrite imports= newImportsRewrite(astRoot, new String[0], 99, 99, true);
 		imports.setUseContextToFilterImplicitImports(true);
-		
+
 		imports.removeImport("pack.A.Inner");
 		imports.removeImport("pack.A.NotThere");
 		imports.removeImport("pack.B.Inner");
 		imports.removeImport("pack.B.NotThere");
-		
+
 		apply(imports);
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("\n");
@@ -323,8 +321,8 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cuT.getSource(), buf.toString());
 	}
-	
-	
+
+	@Test
 	public void testAddImports_bug23078() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -356,6 +354,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImports_bug25113() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -391,6 +390,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImports_bug42637() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -422,6 +422,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddStaticImports1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -457,6 +458,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddStaticImports2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -494,6 +496,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testImportStructureWithSignatures() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -570,6 +573,7 @@ public class AddImportTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testAddTypesWithCaptures1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -607,6 +611,7 @@ public class AddImportTest extends CoreTests {
 		assertEquals("Class<? extends E>", ASTNodes.asString(resNode2));
 	}
 
+	@Test
 	public void testAddTypesWithCaptures2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -645,6 +650,7 @@ public class AddImportTest extends CoreTests {
 		assertEquals("E<?>", ASTNodes.asString(resNode2));
 	}
 
+	@Test
 	public void testAddTypesWithCaptures3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -684,6 +690,7 @@ public class AddImportTest extends CoreTests {
 	}
 
 
+	@Test
 	public void testImportStructureWithSignatures2() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -740,6 +747,7 @@ public class AddImportTest extends CoreTests {
 	}
 
 
+	@Test
 	public void testAddedRemovedImportsAPI() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -814,6 +822,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(imports.getRemovedStaticImports(), expectedRemovedStatic);
 	}
 
+	@Test
 	public void testAddImportAction1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -845,6 +854,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportAction2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -876,6 +886,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportAction3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -907,6 +918,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportAction4() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -938,9 +950,10 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportAction5() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -957,12 +970,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    Serializable s;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("ser=") - 2;
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -979,117 +992,121 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionBug_409594_test1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("p", false, null);
 		String input =
-				"package p;\n" + 
-				"\n" + 
-				"class A {\n" + 
-				"	static void foo() {\n" + 
-				"		A.bar();\n" + 
-				"	}\n" + 
-				"\n" + 
-				"	private static void bar() {\n" + 
-				"	}\n" + 
+				"package p;\n" +
+				"\n" +
+				"class A {\n" +
+				"	static void foo() {\n" +
+				"		A.bar();\n" +
+				"	}\n" +
+				"\n" +
+				"	private static void bar() {\n" +
+				"	}\n" +
 				"}";
 		ICompilationUnit cu= pack1.createCompilationUnit("A.java", input, false, null);
-		
+
 		int selOffset= input.indexOf("bar");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 3, null, true);
 		op.run(null);
-		
-		String expected = 
-				"package p;\n" + 
-				"\n" + 
-				"class A {\n" + 
-				"	static void foo() {\n" + 
-				"		bar();\n" + 
-				"	}\n" + 
-				"\n" + 
-				"	private static void bar() {\n" + 
-				"	}\n" + 
-				"}";
-		assertEqualString(cu.getSource(), expected);
-	}
-	
-	public void testAddImportActionBug_409594_test2() throws Exception {
-		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
-		IPackageFragment pack1= sourceFolder.createPackageFragment("p", false, null);
-		String input =
-				"package p;\n" + 
-				"\n" + 
-				"class A {\n" + 
-				"	static void foo() {\n" + 
-				"		A.bar();\n" + 
-				"	}\n" + 
-				"\n" + 
-				"	public static void bar() {\n" + 
-				"	}\n" + 
-				"}";
-		ICompilationUnit cu= pack1.createCompilationUnit("A.java", input, false, null);
-		
-		int selOffset= input.indexOf("bar");
-		
-		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 3, null, true);
-		op.run(null);
-		
-		String expected = 
-				"package p;\n" + 
-				"\n" + 
-				"class A {\n" + 
-				"	static void foo() {\n" + 
-				"		bar();\n" + 
-				"	}\n" + 
-				"\n" + 
-				"	public static void bar() {\n" + 
-				"	}\n" + 
-				"}";
-		assertEqualString(cu.getSource(), expected);
-	}
-	
-	public void testAddImportActionBug_409594_test3() throws Exception {
-		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
-		IPackageFragment pack1= sourceFolder.createPackageFragment("p", false, null);
-		String input =
-				"package p;\n" + 
-				"class SnippetX {\n" + 
-				"    private static class Test {\n" + 
-				"        class X {\n" + 
-				"            void foo() {\n" + 
-				"                Test.bar();\n" + 
-				"            }\n" + 
-				"        }\n" + 
-				"        public static void bar() {}\n" + 
-				"    }\n" + 
-				"}";
-		ICompilationUnit cu= pack1.createCompilationUnit("A.java", input, false, null);
-		
-		int selOffset= input.indexOf("bar");
-		
-		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 3, null, true);
-		op.run(null);
-		
-		String expected = 
-				"package p;\n" + 
-				"class SnippetX {\n" + 
-				"    private static class Test {\n" + 
-				"        class X {\n" + 
-				"            void foo() {\n" + 
-				"                bar();\n" + 
-				"            }\n" + 
-				"        }\n" + 
-				"        public static void bar() {}\n" + 
-				"    }\n" + 
+
+		String expected =
+				"package p;\n" +
+				"\n" +
+				"class A {\n" +
+				"	static void foo() {\n" +
+				"		bar();\n" +
+				"	}\n" +
+				"\n" +
+				"	private static void bar() {\n" +
+				"	}\n" +
 				"}";
 		assertEqualString(cu.getSource(), expected);
 	}
 
+	@Test
+	public void testAddImportActionBug_409594_test2() throws Exception {
+		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+
+		IPackageFragment pack1= sourceFolder.createPackageFragment("p", false, null);
+		String input =
+				"package p;\n" +
+				"\n" +
+				"class A {\n" +
+				"	static void foo() {\n" +
+				"		A.bar();\n" +
+				"	}\n" +
+				"\n" +
+				"	public static void bar() {\n" +
+				"	}\n" +
+				"}";
+		ICompilationUnit cu= pack1.createCompilationUnit("A.java", input, false, null);
+
+		int selOffset= input.indexOf("bar");
+
+		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 3, null, true);
+		op.run(null);
+
+		String expected =
+				"package p;\n" +
+				"\n" +
+				"class A {\n" +
+				"	static void foo() {\n" +
+				"		bar();\n" +
+				"	}\n" +
+				"\n" +
+				"	public static void bar() {\n" +
+				"	}\n" +
+				"}";
+		assertEqualString(cu.getSource(), expected);
+	}
+
+	@Test
+	public void testAddImportActionBug_409594_test3() throws Exception {
+		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
+
+		IPackageFragment pack1= sourceFolder.createPackageFragment("p", false, null);
+		String input =
+				"package p;\n" +
+				"class SnippetX {\n" +
+				"    private static class Test {\n" +
+				"        class X {\n" +
+				"            void foo() {\n" +
+				"                Test.bar();\n" +
+				"            }\n" +
+				"        }\n" +
+				"        public static void bar() {}\n" +
+				"    }\n" +
+				"}";
+		ICompilationUnit cu= pack1.createCompilationUnit("A.java", input, false, null);
+
+		int selOffset= input.indexOf("bar");
+
+		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 3, null, true);
+		op.run(null);
+
+		String expected =
+				"package p;\n" +
+				"class SnippetX {\n" +
+				"    private static class Test {\n" +
+				"        class X {\n" +
+				"            void foo() {\n" +
+				"                bar();\n" +
+				"            }\n" +
+				"        }\n" +
+				"        public static void bar() {}\n" +
+				"    }\n" +
+				"}";
+		assertEqualString(cu.getSource(), expected);
+	}
+
+	@Test
 	public void testAddImportActionBug_409594_test4() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1129,7 +1146,8 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionBug_409594_test5() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1155,7 +1173,8 @@ public class AddImportTest extends CoreTests {
 
 		assertEqualString(cu.getSource(), cu.getSource());
 	}
-	
+
+	@Test
 	public void testAddImportActionBug_409594_test6() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1199,7 +1218,8 @@ public class AddImportTest extends CoreTests {
 						"";
 		assertEqualString(cuB.getSource(), expected);
 	}
-	
+
+	@Test
 	public void testAddImportAction_bug107206() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1230,6 +1250,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportActionStatic1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1262,6 +1283,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportActionStaticWith14() throws Exception {
 		JavaProjectHelper.set14CompilerOptions(fJProject1);
 
@@ -1294,9 +1316,10 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportActionNestedType1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1305,12 +1328,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.lang.Thread.State s;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-				
+
 		int selOffset= buf.indexOf("Thread");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1319,10 +1342,11 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionNestedType2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1331,12 +1355,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.lang.Thread.State s;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("State");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1347,10 +1371,11 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionParameterizedType1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1359,12 +1384,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.util.Map<String, Integer> m;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-				
+
 		int selOffset= buf.indexOf("Map");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1376,9 +1401,10 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportActionParameterizedType2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1387,12 +1413,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.util.Map.Entry e;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-				
+
 		int selOffset= buf.indexOf("Entry");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1403,10 +1429,11 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionParameterizedType3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1415,12 +1442,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.util.Map.Entry<String, Object> e;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-				
+
 		int selOffset= buf.indexOf("Map");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1431,10 +1458,11 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionParameterizedType4() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1443,12 +1471,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    java.util.Map.Entry<String, Object> e;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("Entry");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1459,10 +1487,11 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		assertEqualString(cu.getSource(), buf.toString());
 	}
-	
+
+	@Test
 	public void testAddImportActionParameterizedType5() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack2= sourceFolder.createPackageFragment("pack2", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack2;\n");
@@ -1474,7 +1503,7 @@ public class AddImportTest extends CoreTests {
 		buf.append("    }\n");
 		buf.append("}\n");
 		pack2.createCompilationUnit("Outer.java", buf.toString(), false, null);
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1483,12 +1512,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    pack2.Outer.Middle<String>.Inner<Integer> i;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("Middle");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1501,9 +1530,10 @@ public class AddImportTest extends CoreTests {
 	}
 
 	// Don't touch nested type if outer is parameterized.
+	@Test
 	public void testAddImportActionParameterizedType6() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack2= sourceFolder.createPackageFragment("pack2", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack2;\n");
@@ -1515,7 +1545,7 @@ public class AddImportTest extends CoreTests {
 		buf.append("    }\n");
 		buf.append("}\n");
 		pack2.createCompilationUnit("Outer.java", buf.toString(), false, null);
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1524,12 +1554,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("    pack2.Outer.Middle<String>.Inner<Integer> i;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("Inner");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1539,9 +1569,10 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportActionAnnotatedType1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1554,12 +1585,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		buf.append("@Target(ElementType.TYPE_USE) @interface A {}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("Format");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1575,9 +1606,10 @@ public class AddImportTest extends CoreTests {
 	}
 
 	// Don't touch nested type if outer is annotated.
+	@Test
 	public void testAddImportActionAnnotatedType2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package pack1;\n");
@@ -1590,12 +1622,12 @@ public class AddImportTest extends CoreTests {
 		buf.append("}\n");
 		buf.append("@Target(ElementType.TYPE_USE) @interface A {}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("C.java", buf.toString(), false, null);
-		
+
 		int selOffset= buf.indexOf("Field");
-		
+
 		AddImportsOperation op= new AddImportsOperation(cu, selOffset, 0, null, true);
 		op.run(null);
-		
+
 		buf= new StringBuffer();
 		buf.append("package pack1;\n");
 		buf.append("\n");
@@ -1609,6 +1641,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualString(cu.getSource(), buf.toString());
 	}
 
+	@Test
 	public void testAddImportContextSensitive01() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1624,6 +1657,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[] {"java.lang.Math.PI"});
 	}
 
+	@Test
 	public void testAddImportContextSensitive02() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1640,6 +1674,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[0]);
 	}
 
+	@Test
 	public void testAddImportContextSensitive03() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1655,6 +1690,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[] {"java.lang.Math.PI"});
 	}
 
+	@Test
 	public void testAddImportContextSensitive04() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1671,6 +1707,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[0]);
 	}
 
+	@Test
 	public void testAddImportContextSensitive05() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1690,6 +1727,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[] {"pack2.E1.E11.E12"});
 	}
 
+	@Test
 	public void testAddImportContextSensitive06() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1709,6 +1747,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[0]);
 	}
 
+	@Test
 	public void testAddImportContextSensitive07() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1730,6 +1769,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[0]);
 	}
 
+	@Test
 	public void testAddImportContextSensitive08() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1753,6 +1793,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[0]);
 	}
 
+	@Test
 	public void testAddImportContextSensitive09() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1778,6 +1819,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[] {"pack1.E1.E2.E22"});
 	}
 
+	@Test
 	public void testAddImportContextSensitive_Bug139000() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -1798,6 +1840,7 @@ public class AddImportTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(addedImports, new String[] {"pack1.E1.E2.E3"});
 	}
 
+	@Test
 	public void testAddImportContextSensitive10() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 

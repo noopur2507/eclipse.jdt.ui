@@ -19,7 +19,6 @@ import java.util.Map;
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
 import org.eclipse.core.resources.IFile;
@@ -215,14 +214,11 @@ abstract class JavaHistoryActionImpl /* extends Action implements IActionDelegat
 			JavaPlugin.log(e);
 		}
 
-		IRunnableWithProgress r= new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor pm) throws InvocationTargetException {
-				try {
-					textFileBuffer.commit(pm, false);
-				} catch (CoreException ex) {
-					throw new InvocationTargetException(ex);
-				}
+		IRunnableWithProgress r= pm -> {
+			try {
+				textFileBuffer.commit(pm, false);
+			} catch (CoreException ex) {
+				throw new InvocationTargetException(ex);
 			}
 		};
 
@@ -247,14 +243,10 @@ abstract class JavaHistoryActionImpl /* extends Action implements IActionDelegat
 
 	final JavaEditor getEditor(IFile file) {
 		FileEditorInput fei= new FileEditorInput(file);
-		IWorkbench workbench= JavaPlugin.getDefault().getWorkbench();
-		IWorkbenchWindow[] windows= workbench.getWorkbenchWindows();
-		for (int i= 0; i < windows.length; i++) {
-			IWorkbenchPage[] pages= windows[i].getPages();
-			for (int x= 0; x < pages.length; x++) {
-				IEditorPart[] editors= pages[x].getDirtyEditors();
-				for (int z= 0; z < editors.length; z++) {
-					IEditorPart ep= editors[z];
+		IWorkbench workbench= PlatformUI.getWorkbench();
+		for (IWorkbenchWindow window : workbench.getWorkbenchWindows()) {
+			for (IWorkbenchPage page : window.getPages()) {
+				for (IEditorPart ep : page.getDirtyEditors()) {
 					if (ep instanceof JavaEditor) {
 						JavaEditor je= (JavaEditor) ep;
 						if (fei.equals(je.getEditorInput()))

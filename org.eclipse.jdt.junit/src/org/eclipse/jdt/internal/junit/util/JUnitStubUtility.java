@@ -92,8 +92,7 @@ public class JUnitStubUtility {
 			try {
 				edit.apply(doc);
 				return doc.get();
-			} catch (MalformedTreeException e) {
-			} catch (BadLocationException e) {
+			} catch (MalformedTreeException | BadLocationException e) {
 			}
 		}
 		return sourceString;
@@ -277,7 +276,7 @@ public class JUnitStubUtility {
 	 * enclosing type separator in the qualified type name. Type erasure is performed on a parameterized
 	 * type, arrays use the square brackets and a type parameter is resolved while creating the return
 	 * value.
-	 * 
+	 *
 	 * @param method the method whose parameter types are required
 	 * @param useSimpleNames <code>true</code> if the last segment of the type name should be used
 	 *            instead of the fully qualified type name
@@ -330,7 +329,7 @@ public class JUnitStubUtility {
 			if (useSimpleNames) {
 				stream= stream.map(paramTypeName -> paramTypeName.substring(paramTypeName.lastIndexOf('.') + 1));
 			}
-			paramTypes= stream.collect(Collectors.joining(", ", "(", ")")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$	
+			paramTypes= stream.collect(Collectors.joining(", ", "(", ")")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		}
 
 		return paramTypes;
@@ -407,6 +406,9 @@ public class JUnitStubUtility {
 			result[i]= curr.getQualifiedName();
 		}
 		return result;
+	}
+
+	private JUnitStubUtility() {
 	}
 
 

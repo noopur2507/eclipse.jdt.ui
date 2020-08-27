@@ -34,9 +34,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.core.runtime.IStatus;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ViewerFilter;
@@ -90,7 +88,7 @@ public class CheckedTableSelectionDialog extends SelectionStatusDialog {
 	 * @param selection the initial selection.
 	 */
 	public void setInitialSelection(Object selection) {
-		setInitialSelections(new Object[] {selection});
+		setInitialSelections(selection);
 	}
 
 	/**
@@ -159,12 +157,7 @@ public class CheckedTableSelectionDialog extends SelectionStatusDialog {
 	@Override
 	public int open() {
 		fIsEmpty= evaluateIfTableEmpty(fInput);
-		BusyIndicator.showWhile(null, new Runnable() {
-			@Override
-			public void run() {
-				access$superOpen();
-			}
-		});
+		BusyIndicator.showWhile(null, this::access$superOpen);
 		return getReturnCode();
 	}
 
@@ -234,16 +227,11 @@ public class CheckedTableSelectionDialog extends SelectionStatusDialog {
 
 		fViewer.setContentProvider(fContentProvider);
 		fViewer.setLabelProvider(fLabelProvider);
-		fViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				updateOKStatus();
-			}
-		});
+		fViewer.addCheckStateListener(event -> updateOKStatus());
 
 		if (fFilters != null) {
-			for (int i= 0; i != fFilters.size(); i++)
-				fViewer.addFilter(fFilters.get(i));
+			for (ViewerFilter filter : fFilters)
+				fViewer.addFilter(filter);
 		}
 
 		fViewer.setInput(fInput);
@@ -292,8 +280,7 @@ public class CheckedTableSelectionDialog extends SelectionStatusDialog {
 		Object[] elements= fContentProvider.getElements(input);
 		if (elements.length > 0) {
 			if (fFilters != null) {
-				for (int i= 0; i < fFilters.size(); i++) {
-					ViewerFilter curr= fFilters.get(i);
+				for (ViewerFilter curr : fFilters) {
 					elements= curr.filter(fViewer, input, elements);
 				}
 			}

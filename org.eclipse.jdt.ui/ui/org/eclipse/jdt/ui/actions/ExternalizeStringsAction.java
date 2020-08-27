@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -44,10 +43,8 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITextSelection;
@@ -66,6 +63,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.InvalidInputException;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.nls.NLSElement;
 import org.eclipse.jdt.internal.corext.refactoring.nls.NLSLine;
@@ -85,7 +83,6 @@ import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
 import org.eclipse.jdt.internal.ui.refactoring.nls.ExternalizeWizard;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 
 /**
@@ -207,14 +204,11 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 	}
 
 	private IRunnableWithProgress createRunnable(final IStructuredSelection selection) {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor pm) throws InvocationTargetException {
-				try {
-					fElements= doRun(selection, pm);
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
-				}
+		return pm -> {
+			try {
+				fElements= doRun(selection, pm);
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
 			}
 		};
 	}
@@ -228,8 +222,7 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 
 		try{
 			List<NonNLSElement> result= new ArrayList<>();
-			for (Iterator<?> iter= elements.iterator(); iter.hasNext();) {
-				Object obj= iter.next();
+			for (Object obj : elements) {
 				result.addAll(analyze(obj, pm));
 			}
 			return result.toArray(new NonNLSElement[result.size()]);
@@ -286,9 +279,8 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 			List<NonNLSElement> result= new ArrayList<>();
 
 			IWorkingSet workingSet= (IWorkingSet) obj;
-			IAdaptable[] elements= workingSet.getElements();
-			for (int i= 0; i < elements.length; i++) {
-				result.addAll(analyze(elements[i], new NullProgressMonitor()));
+			for (IAdaptable element : workingSet.getElements()) {
+				result.addAll(analyze(element, new NullProgressMonitor()));
 			}
 			pm.worked(1);
 			return result;
@@ -308,9 +300,10 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 
 	private boolean noStrings() {
 		if (fElements != null) {
-			for (int i= 0; i < fElements.length; i++) {
-				if (fElements[i].count != 0)
+			for (NonNLSElement fElement : fElements) {
+				if (fElement.count != 0) {
 					return false;
+				}
 			}
 		}
 		return true;
@@ -330,9 +323,9 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 			pm.setTaskName(pack.getElementName());
 
 			List<NonNLSElement> l= new ArrayList<>(cus.length);
-			for (int i= 0; i < cus.length; i++){
-				pm.subTask(BasicElementLabels.getFileName(cus[i]));
-				NonNLSElement element= analyze(cus[i]);
+			for (ICompilationUnit cu : cus) {
+				pm.subTask(BasicElementLabels.getFileName(cu));
+				NonNLSElement element= analyze(cu);
 				if (element != null)
 					l.add(element);
 				pm.worked(1);
@@ -354,8 +347,7 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 			pm.beginTask("", children.length); //$NON-NLS-1$
 			pm.setTaskName(JavaElementLabels.getElementLabel(sourceFolder, JavaElementLabels.ALL_DEFAULT));
 			List<NonNLSElement> result= new ArrayList<>();
-			for (int i= 0; i < children.length; i++) {
-				IJavaElement iJavaElement= children[i];
+			for (IJavaElement iJavaElement : children) {
 				if (iJavaElement.getElementType() == IJavaElement.PACKAGE_FRAGMENT){
 					IPackageFragment pack= (IPackageFragment)iJavaElement;
 					if (! pack.isReadOnly())
@@ -379,11 +371,12 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 			IPackageFragment[] packs= project.getPackageFragments();
 			pm.beginTask("", packs.length); //$NON-NLS-1$
 			List<NonNLSElement> result= new ArrayList<>();
-			for (int i= 0; i < packs.length; i++) {
-				if (! packs[i].isReadOnly())
-					result.addAll(analyze(packs[i], new SubProgressMonitor(pm, 1)));
-				else
+			for (IPackageFragment pack : packs) {
+				if (!pack.isReadOnly()) {
+					result.addAll(analyze(pack, new SubProgressMonitor(pm, 1)));
+				} else {
 					pm.worked(1);
+				}
 			}
 			return result;
 		} finally{
@@ -394,8 +387,9 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 	private int countStrings() {
 		int found= 0;
 		if (fElements != null) {
-			for (int i= 0; i < fElements.length; i++)
-				found+= fElements[i].count;
+			for (NonNLSElement fElement : fElements) {
+				found+= fElement.count;
+			}
 		}
 		return found;
 	}
@@ -410,16 +404,12 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 
 	private int countNonExternalizedStrings(ICompilationUnit cu) throws CoreException {
 		try{
-			NLSLine[] lines= NLSScanner.scan(cu);
 			int result= 0;
-			for (int i= 0; i < lines.length; i++) {
-				result += countNonExternalizedStrings(lines[i]);
+			for (NLSLine line : NLSScanner.scan(cu)) {
+				result+= countNonExternalizedStrings(line);
 			}
 			return result;
-		} catch (InvalidInputException e) {
-			throw new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IStatus.ERROR,
-					Messages.format(ActionMessages.FindStringsToExternalizeAction_error_cannotBeParsed, BasicElementLabels.getFileName(cu)), e));
-		} catch (BadLocationException e) {
+		} catch (InvalidInputException | BadLocationException e) {
 			throw new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IStatus.ERROR, Messages.format(ActionMessages.FindStringsToExternalizeAction_error_cannotBeParsed,
 					BasicElementLabels.getFileName(cu)), e));
 		}
@@ -427,10 +417,10 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 
 	private int countNonExternalizedStrings(NLSLine line){
 		int result= 0;
-		NLSElement[] elements= line.getElements();
-		for (int i= 0; i < elements.length; i++){
-			if (! elements[i].hasTag())
+		for (NLSElement element : line.getElements()) {
+			if (!element.hasTag()) {
 				result++;
+			}
 		}
 		return result;
 	}
@@ -476,12 +466,9 @@ public class ExternalizeStringsAction extends SelectionDispatchAction {
 		@Override
 		protected Control createDialogArea(Composite parent) {
 			Composite result= (Composite)super.createDialogArea(parent);
-			getTableViewer().addSelectionChangedListener(new ISelectionChangedListener(){
-				@Override
-				public void selectionChanged(SelectionChangedEvent event){
-					if (fOpenButton != null){
-						fOpenButton.setEnabled(! getTableViewer().getSelection().isEmpty());
-					}
+			getTableViewer().addSelectionChangedListener(event -> {
+				if (fOpenButton != null){
+					fOpenButton.setEnabled(! getTableViewer().getSelection().isEmpty());
 				}
 			});
 			getTableViewer().getTable().addSelectionListener(new SelectionAdapter(){

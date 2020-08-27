@@ -98,14 +98,11 @@ public class CoreUtility {
 		} else {
 			final Object[] ret = new Object[1];
 			final CoreException[] exc = new CoreException[1];
-			BusyIndicator.showWhile(null, new Runnable() {
-				@Override
-				public void run() {
-					try {
-						ret[0] = element.createExecutableExtension(classAttribute);
-					} catch (CoreException e) {
-						exc[0] = e;
-					}
+			BusyIndicator.showWhile(null, () -> {
+				try {
+					ret[0] = element.createExecutableExtension(classAttribute);
+				} catch (CoreException e) {
+					exc[0] = e;
 				}
 			});
 			if (exc[0] != null)
@@ -145,16 +142,14 @@ public class CoreUtility {
 				if (monitor.isCanceled()) {
 					return Status.CANCEL_STATUS;
 				}
-		        Job[] buildJobs = Job.getJobManager().find(ResourcesPlugin.FAMILY_MANUAL_BUILD);
-		        for (int i= 0; i < buildJobs.length; i++) {
-		        	Job curr= buildJobs[i];
+		        for (Job curr : Job.getJobManager().find(ResourcesPlugin.FAMILY_MANUAL_BUILD)) {
 		        	if (curr != this && curr instanceof BuildJob) {
 		        		BuildJob job= (BuildJob) curr;
 		        		if (job.isCoveredBy(this)) {
 		        			curr.cancel(); // cancel all other build jobs of our kind
 		        		}
 		        	}
-				}
+		        }
 			}
 			try {
 				if (fProject != null) {
@@ -193,7 +188,7 @@ public class CoreUtility {
 	/**
 	 * Sets whether building automatically is enabled in the workspace or not and returns the old
 	 * value.
-	 * 
+	 *
 	 * @param state <code>true</code> if automatically building is enabled, <code>false</code>
 	 *            otherwise
 	 * @return the old state
@@ -209,5 +204,8 @@ public class CoreUtility {
         }
         return isAutoBuilding;
     }
+
+	private CoreUtility() {
+	}
 
 }

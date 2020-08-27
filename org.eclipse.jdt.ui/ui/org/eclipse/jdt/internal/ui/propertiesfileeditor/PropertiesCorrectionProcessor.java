@@ -44,7 +44,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
 /**
  * The properties file correction processor. Clients can set pre-computed proposals, and if set the
  * processor returns only these pre-computed proposals.
- * 
+ *
  * @since 3.7
  */
 public class PropertiesCorrectionProcessor implements org.eclipse.jface.text.quickassist.IQuickAssistProcessor {
@@ -81,21 +81,14 @@ public class PropertiesCorrectionProcessor implements org.eclipse.jface.text.qui
 				List<ICompletionProposal> proposals= new ArrayList<>();
 				ICompletionProposal[] spellingProposals= fSpellingCorrectionProcessor.computeQuickAssistProposals(quickAssistContext);
 				if (spellingProposals.length > 1) {
-					for (int i= 0; i < spellingProposals.length; i++) {
-						proposals.add(spellingProposals[i]);
-					}
+					proposals.addAll(Arrays.asList(spellingProposals));
 				}
 				ICompletionProposal[] assists= PropertiesQuickAssistProcessor.collectAssists(createAssistContext(context));
 				if (assists != null) {
-					for (int i= 0; i < assists.length; i++) {
-						proposals.add(assists[i]);
-					}
+					proposals.addAll(Arrays.asList(assists));
 				}
 				res= proposals.toArray(new ICompletionProposal[proposals.size()]);
-			} catch (BadLocationException e) {
-				fErrorMessage= PropertiesFileEditorMessages.PropertiesCorrectionProcessor_error_quickassist_message;
-				JavaPlugin.log(e);
-			} catch (BadPartitioningException e) {
+			} catch (BadLocationException | BadPartitioningException e) {
 				fErrorMessage= PropertiesFileEditorMessages.PropertiesCorrectionProcessor_error_quickassist_message;
 				JavaPlugin.log(e);
 			}
@@ -137,7 +130,7 @@ public class PropertiesCorrectionProcessor implements org.eclipse.jface.text.qui
 
 	/**
 	 * Sets the pre-computed proposals.
-	 * 
+	 *
 	 * @param preComputedProposals the pre-computed proposals
 	 */
 	public void setProposals(ICompletionProposal[] preComputedProposals) {

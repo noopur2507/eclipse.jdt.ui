@@ -16,13 +16,10 @@ package org.eclipse.jdt.internal.ui.refactoring;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -38,7 +35,6 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.core.runtime.IStatus;
 
 import org.eclipse.jface.dialogs.IDialogSettings;
-import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -51,10 +47,8 @@ import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
@@ -72,6 +66,7 @@ import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.ParameterInfo;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ChangeSignatureProcessor;
 import org.eclipse.jdt.internal.corext.refactoring.structure.IntroduceParameterObjectProcessor;
@@ -83,7 +78,6 @@ import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public class IntroduceParameterObjectWizard extends RefactoringWizard {
 
@@ -121,8 +115,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 					IntroduceParameterObjectProcessor refactoring= (IntroduceParameterObjectProcessor) inputElement;
 					List<ParameterInfo> parameterInfos= refactoring.getParameterInfos();
 					List<ParameterInfo> result= new ArrayList<>(parameterInfos.size());
-					for (Iterator<ParameterInfo> iter= parameterInfos.iterator(); iter.hasNext();) {
-						ParameterInfo pi= iter.next();
+					for (ParameterInfo pi : parameterInfos) {
 						if (!pi.isAdded())
 							result.add(pi);
 					}
@@ -230,15 +223,10 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 			l.setText(RefactoringMessages.IntroduceParameterObjectWizard_parameterfield_label);
 			final Text text= new Text(group, SWT.BORDER);
 			text.setText(fProcessor.getParameterName());
-			text.addModifyListener(new ModifyListener() {
-
-				@Override
-				public void modifyText(ModifyEvent e) {
-					fProcessor.setParameterName(text.getText());
-					updateSignaturePreview();
-					validateRefactoring();
-				}
-
+			text.addModifyListener(e -> {
+				fProcessor.setParameterName(text.getText());
+				updateSignaturePreview();
+				validateRefactoring();
 			});
 			text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		}
@@ -252,9 +240,9 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 			IJavaProject project= fProcessor.getMethod().getJavaProject();
 			String sourceLevel= project.getOption(JavaCore.COMPILER_SOURCE, true);
 			String compliance= project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
-			List<ParameterInfo> parameterInfos= fProcessor.getParameterInfos();
-			for (Iterator<ParameterInfo> iter= parameterInfos.iterator(); iter.hasNext();) {
-				ParameterInfo pi= iter.next();
+			String previewEnabled= project.getOption(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, true);
+
+			for (ParameterInfo pi : fProcessor.getParameterInfos()) {
 				if (names.contains(pi.getNewName())) {
 					setErrorMessage(Messages.format(RefactoringMessages.IntroduceParameterObjectWizard_parametername_check_notunique, BasicElementLabels.getJavaElementName(pi.getNewName())));
 					setPageComplete(false);
@@ -272,7 +260,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 				setPageComplete(false);
 				return;
 			}
-			IStatus validateJavaTypeName= JavaConventions.validateJavaTypeName(fProcessor.getClassName(), sourceLevel, compliance);
+			IStatus validateJavaTypeName= JavaConventions.validateJavaTypeName(fProcessor.getClassName(), sourceLevel, compliance, previewEnabled);
 			if (isErrorMessage(validateJavaTypeName))
 				return;
 			if (fProcessor.getClassName().indexOf('.') != -1) {
@@ -440,8 +428,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 			table.setLayoutData(gridData);
 			tv.setInput(fProcessor);
 			List<ParameterInfo> parameterInfos= fProcessor.getParameterInfos();
-			for (Iterator<ParameterInfo> iter= parameterInfos.iterator(); iter.hasNext();) {
-				ParameterInfo pi= iter.next();
+			for (ParameterInfo pi : parameterInfos) {
 				tv.setChecked(pi, pi.isCreateField());
 			}
 			tv.refresh(true);
@@ -487,16 +474,11 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 						ParameterInfo selected= (ParameterInfo) ss.getFirstElement();
 						String message= RefactoringMessages.IntroduceParameterObjectWizard_fieldname_message;
 						String title= RefactoringMessages.IntroduceParameterObjectWizard_fieldname_title;
-						InputDialog inputDialog= new InputDialog(getShell(), title, message, selected.getNewName(), new IInputValidator() {
-
-							@Override
-							public String isValid(String newText) {
-								IStatus status= JavaConventionsUtil.validateIdentifier(newText, fProcessor.getCompilationUnit());
-								if (!status.isOK())
-									return status.getMessage();
-								return null;
-							}
-
+						InputDialog inputDialog= new InputDialog(getShell(), title, message, selected.getNewName(), newText -> {
+							IStatus status= JavaConventionsUtil.validateIdentifier(newText, fProcessor.getCompilationUnit());
+							if (!status.isOK())
+								return status.getMessage();
+							return null;
 						});
 						if (inputDialog.open() == Window.OK) {
 							selected.setNewName(inputDialog.getValue());
@@ -528,8 +510,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 				public void widgetSelected(SelectionEvent e) {
 					int[] indices= tv.getTable().getSelectionIndices();
 					Arrays.sort(indices);
-					for (int i= 0; i <indices.length; i++) {
-						int idx= indices[i];
+					for (int idx : indices) {
 						ParameterInfo pi= (ParameterInfo) tv.getElementAt(idx);
 						fProcessor.moveFieldUp(pi);
 					}
@@ -560,12 +541,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 				}
 
 			});
-			tv.addSelectionChangedListener(new ISelectionChangedListener() {
-				@Override
-				public void selectionChanged(SelectionChangedEvent event) {
-					updateButtons(tv, upButton, downButton, editButton);
-				}
-			});
+			tv.addSelectionChangedListener(event -> updateButtons(tv, upButton, downButton, editButton));
 		}
 
 		private void addSpacer(Composite parent) {
@@ -605,10 +581,10 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 					pi.setNewName(string);
 				}
 			});
-			
+
 			TableColumn columnName= viewerColumn.getColumn();
 			columnName.setText(RefactoringMessages.IntroduceParameterObjectWizard_name_column);
-			
+
 			TableColumnLayout layout= new TableColumnLayout();
 			layout.setColumnData(columnType, new ColumnWeightData(50, convertWidthInCharsToPixels(20), true));
 			layout.setColumnData(columnName, new ColumnWeightData(50, convertWidthInCharsToPixels(20), true));
@@ -667,15 +643,10 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 			text.setText(fProcessor.getClassName());
 			text.selectAll();
 			text.setFocus();
-			text.addModifyListener(new ModifyListener() {
-
-				@Override
-				public void modifyText(ModifyEvent e) {
-					fProcessor.setClassName(text.getText());
-					updateSignaturePreview();
-					validateRefactoring();
-				}
-
+			text.addModifyListener(e -> {
+				fProcessor.setClassName(text.getText());
+				updateSignaturePreview();
+				validateRefactoring();
 			});
 			text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		}
@@ -721,7 +692,7 @@ public class IntroduceParameterObjectWizard extends RefactoringWizard {
 		protected boolean getBooleanSetting(String key, boolean defaultValue) {
 			String update= getRefactoringSettings().get(key);
 			if (update != null)
-				return Boolean.valueOf(update).booleanValue();
+				return Boolean.parseBoolean(update);
 			else
 				return defaultValue;
 		}

@@ -22,7 +22,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 
@@ -30,8 +29,6 @@ import org.eclipse.core.resources.IFile;
 
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
-
-import org.eclipse.jface.operation.IRunnableWithProgress;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -141,11 +138,15 @@ public class JUnitQuickFixProcessor implements IQuickFixProcessor {
 			String qualifiedName1= null;
 
 			String s= unit.getBuffer().getText(location.getOffset(), location.getLength());
-			if (s.equals("TestCase") || s.equals("TestSuite")) { //$NON-NLS-1$ //$NON-NLS-2$
+			switch (s) {
+			case "TestCase": //$NON-NLS-1$
+			case "TestSuite": //$NON-NLS-1$
 				qualifiedName= "junit.framework." + s; //$NON-NLS-1$
-			} else if (s.equals("RunWith")) { //$NON-NLS-1$
+				break;
+			case "RunWith": //$NON-NLS-1$
 				qualifiedName= "org.junit.runner.RunWith"; //$NON-NLS-1$
-			} else if (s.equals("Test")) { //$NON-NLS-1$
+				break;
+			case "Test": //$NON-NLS-1$
 				ASTNode node= location.getCoveredNode(context.getASTRoot());
 				if (node != null && node.getLocationInParent() == MarkerAnnotation.TYPE_NAME_PROPERTY) {
 					qualifiedName= "org.junit.Test"; //$NON-NLS-1$
@@ -153,16 +154,24 @@ public class JUnitQuickFixProcessor implements IQuickFixProcessor {
 				} else {
 					qualifiedName= "junit.framework.Test"; //$NON-NLS-1$
 				}
-			} else if (s.equals("TestFactory")) { //$NON-NLS-1$
+				break;
+			case "TestFactory": //$NON-NLS-1$
 				qualifiedName= "org.junit.jupiter.api.TestFactory"; //$NON-NLS-1$
-			} else if (s.equals("Testable")) { //$NON-NLS-1$
-				qualifiedName= "org.junit.platform.commons.annotation.Testable"; //$NON-NLS-1$				
-			} else if (s.equals("TestTemplate")) { //$NON-NLS-1$
+				break;
+			case "Testable": //$NON-NLS-1$
+				qualifiedName= "org.junit.platform.commons.annotation.Testable"; //$NON-NLS-1$
+				break;
+			case "TestTemplate": //$NON-NLS-1$
 				qualifiedName= "org.junit.jupiter.api.TestTemplate"; //$NON-NLS-1$
-			} else if (s.equals("ParameterizedTest")) { //$NON-NLS-1$
+				break;
+			case "ParameterizedTest": //$NON-NLS-1$
 				qualifiedName= "org.junit.jupiter.params.ParameterizedTest"; //$NON-NLS-1$
-			} else if (s.equals("RepeatedTest")) { //$NON-NLS-1$
+				break;
+			case "RepeatedTest": //$NON-NLS-1$
 				qualifiedName= "org.junit.jupiter.api.RepeatedTest"; //$NON-NLS-1$
+				break;
+			default:
+				break;
 			}
 			IJavaProject javaProject= unit.getJavaProject();
 			if (!(foundInProjectClasspath(javaProject, qualifiedName) && foundInProjectClasspath(javaProject, qualifiedName1))) {
@@ -256,21 +265,18 @@ public class JUnitQuickFixProcessor implements IQuickFixProcessor {
 		@Override
 		public void apply(IDocument document) {
 			try {
-				PlatformUI.getWorkbench().getActiveWorkbenchWindow().run(false, true, new IRunnableWithProgress() {
-					@Override
-					public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-						try {
-							Change change= createChange();
-							change.initializeValidationData(new NullProgressMonitor());
-							PerformChangeOperation op= new PerformChangeOperation(change);
-							op.setUndoManager(RefactoringCore.getUndoManager(), getDisplayString());
-							op.setSchedulingRule(fJavaProject.getProject().getWorkspace().getRoot());
-							op.run(monitor);
-						} catch (CoreException e) {
-							throw new InvocationTargetException(e);
-						} catch (OperationCanceledException e) {
-							throw new InterruptedException();
-						}
+				PlatformUI.getWorkbench().getActiveWorkbenchWindow().run(false, true, monitor -> {
+					try {
+						Change change= createChange();
+						change.initializeValidationData(new NullProgressMonitor());
+						PerformChangeOperation op= new PerformChangeOperation(change);
+						op.setUndoManager(RefactoringCore.getUndoManager(), getDisplayString());
+						op.setSchedulingRule(fJavaProject.getProject().getWorkspace().getRoot());
+						op.run(monitor);
+					} catch (CoreException e1) {
+						throw new InvocationTargetException(e1);
+					} catch (OperationCanceledException e1) {
+						throw new InterruptedException();
 					}
 				});
 			} catch (InvocationTargetException e) {
@@ -335,9 +341,7 @@ public class JUnitQuickFixProcessor implements IQuickFixProcessor {
 				rewrite.addStaticImport("org.junit.Assert", fMethodName, true); //$NON-NLS-1$
 				TextEdit edit= rewrite.rewriteImports(null);
 				edit.apply(document);
-			} catch (MalformedTreeException e) {
-			} catch (CoreException e) {
-			} catch (BadLocationException e) {
+			} catch (BadLocationException | MalformedTreeException | CoreException e) {
 			}
 		}
 

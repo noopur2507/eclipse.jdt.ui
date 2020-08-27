@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -68,14 +68,18 @@ public class MultiFixMessages extends NLS {
 	public static String CodeStyleMultiFix_ChangeIndirectAccessToStaticToDirect;
 	public static String CodeStyleMultiFix_ConvertSingleStatementInControlBodeyToBlock_description;
 	public static String CodeStyleCleanUp_addDefaultSerialVersionId_description;
+
+	public static String CodeStyleCleanUp_numberSuffix_description;
 	public static String CodeStyleCleanUp_QualifyNonStaticMethod_description;
 	public static String CodeStyleCleanUp_QualifyStaticMethod_description;
+	public static String CodeStyleCleanUp_LazyLogical_description;
 	public static String CodeStyleCleanUp_removeFieldThis_description;
 	public static String CodeStyleCleanUp_removeMethodThis_description;
 
 	public static String Java50MultiFix_AddMissingDeprecated_description;
 	public static String Java50MultiFix_AddMissingOverride_description;
 	public static String Java50MultiFix_AddMissingOverride_description2;
+	public static String Java50CleanUp_ConvertLoopOnlyIfLoopVarUsed_description;
 	public static String Java50CleanUp_ConvertToEnhancedForLoop_description;
 	public static String Java50CleanUp_AddTypeParameters_description;
 
@@ -100,8 +104,12 @@ public class MultiFixMessages extends NLS {
 
 	public static String CodeFormatCleanUp_description;
 	public static String CodeFormatFix_description;
+
+	public static String VarCleanUp_description;
 	public static String LambdaExpressionsCleanUp_use_lambda_where_possible;
 	public static String LambdaExpressionsCleanUp_use_anonymous;
+	public static String LambdaExpressionAndMethodRefCleanUp_description;
+	public static String PatternCleanup_description;
 
 	public static String NullAnnotationsCleanUp_add_nullable_annotation;
 	public static String NullAnnotationsCleanUp_add_nonnull_annotation;
@@ -112,7 +120,15 @@ public class MultiFixMessages extends NLS {
 	public static String TypeParametersCleanUp_RemoveUnnecessaryTypeArguments_description;
 
 	public static String RedundantModifiersCleanup_description;
+	public static String AutoboxingCleanup_description;
+	public static String UnboxingCleanup_description;
+	public static String PushDownNegationCleanup_description;
+	public static String MergeConditionalBlocksCleanup_description;
+
+	public static String UseDirectlyMapMethodCleanup_description;
 	public static String RedundantSemicolonsCleanup_description;
+	public static String UnnecessaryArrayCreationCleanup_description;
+	public static String ObjectsEqualsCleanup_description;
 
 	static {
 		// initialize resource bundle

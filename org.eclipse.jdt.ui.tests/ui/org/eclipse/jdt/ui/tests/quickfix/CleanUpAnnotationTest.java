@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2011 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,7 +13,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Hashtable;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.core.runtime.CoreException;
 
@@ -28,7 +35,9 @@ import org.eclipse.debug.core.model.IBreakpoint;
 
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -36,25 +45,22 @@ import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
 import org.eclipse.jdt.internal.corext.fix.CleanUpConstants;
 
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class CleanUpAnnotationTest extends CleanUpTestCase {
 
-	private static final Class<CleanUpAnnotationTest> THIS= CleanUpAnnotationTest.class;
+	@Rule
+    public ProjectTestSetup projectSetup = new ProjectTestSetup();
 
-	public CleanUpAnnotationTest(String name) {
-		super(name);
+	@Override
+	protected IJavaProject getProject() {
+		return projectSetup.getProject();
 	}
 
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
+	@Override
+	protected IClasspathEntry[] getDefaultClasspath() throws CoreException {
+		return projectSetup.getDefaultClasspath();
 	}
 
 	private void assertMarker(long markerId, ICompilationUnit unit, int expectedLineNumber, int expectedCharStart, int expectedCharEnd) throws CoreException {
@@ -87,6 +93,7 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		return marker;
 	}
 
+	@Test
 	public void testSortMembersTask() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -125,6 +132,7 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		assertTrue(status.hasWarning());
 	}
 
+	@Test
 	public void testSortMembersBookmarks() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -163,6 +171,7 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		assertTrue(status.hasWarning());
 	}
 
+	@Test
 	public void testSortMembersBreakpoints() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -201,6 +210,7 @@ public class CleanUpAnnotationTest extends CleanUpTestCase {
 		assertTrue(status.hasWarning());
 	}
 
+	@Test
 	public void testSortMembersProblemMarker() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();

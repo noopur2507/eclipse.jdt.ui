@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 IBM Corporation and others.
+ * Copyright (c) 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,9 +13,16 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
 import org.eclipse.core.runtime.CoreException;
+
+import org.eclipse.jface.preference.IPreferenceStore;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -31,33 +38,33 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
+import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementLinks;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 
 /**
  * This test suite is copied and adjusted from {@link JavaElementLabelsTest}
  */
 public class BindingLabelsTest extends AbstractBindingLabelsTest {
 
-	private static final Class<BindingLabelsTest> THIS= BindingLabelsTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
+	@Before
+	public void setUp() throws Exception {
+		fJProject1= pts.getProject();
 
-	public BindingLabelsTest(String name) {
-		super(name);
+		IPreferenceStore store= PreferenceConstants.getPreferenceStore();
+		store.setValue(PreferenceConstants.APPEARANCE_COMPRESS_PACKAGE_NAMES, false);
 	}
 
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, pts.getDefaultClasspath());
 	}
 
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
+	@Test
 	public void testTypeLabelOuter() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -89,6 +96,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelInner() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -127,6 +135,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelLocal() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -163,6 +172,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeParameterLabelType() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -212,8 +222,8 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		lab= JavaElementLabels.getTextLabel(e, JavaElementLabels.ALL_POST_QUALIFIED);
 		assertEqualString(lab, "E - java.util.ArrayList");
  */
-		
-		
+
+
 		lab= getBindingLabel(typeParams, 0);
 		assertEqualString(lab, "TypeParams");
 		lab= getBindingLabel(typeParams, JavaElementLabels.ALL_DEFAULT);
@@ -224,6 +234,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeParameterLabelMethod() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -262,6 +273,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		assertLinkMatch(lab, "NoBound - {{org.test.X}}.{{org.test.X|method}}({{org.test.X.method(...)|Element}}, NoBound)");
 	}
 
+	@Test
 	public void testTypeLabelAnonymous() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -298,6 +310,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelAnonymousInAnonymous() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -344,6 +357,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelAnonymousInFieldInitializer() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -378,6 +392,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelAnonymousInInitializer() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -414,6 +429,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testTypeLabelWildcards() throws Exception {
 
 			IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -443,6 +459,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 
 		}
 
+	@Test
 	public void testPackageLabels() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -451,11 +468,11 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		IPackageFragment packOrg= sourceFolder.createPackageFragment("org", false, null);
 //		IPackageFragment packOrgTest= sourceFolder.createPackageFragment("org.test", false, null);
 		IPackageFragment packOrgTestLongname= sourceFolder.createPackageFragment("org.test.longname", false, null);
-		
+
 		// to obtain an IPackageBinding go via imported types to their #package:
 		packOrg.createCompilationUnit("T1.java", "package org;\npublic class T1 {}\n", false, null);
 		packOrgTestLongname.createCompilationUnit("T2.java", "package org.test.longname;\npublic class T2 {}\n", false, null);
-		
+
 		StringBuilder buf= new StringBuilder();
 		buf.append("import org.T1;\n");
 		buf.append("import org.test.longname.T2;\n");
@@ -472,7 +489,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		parser.setResolveBindings(true);
 		parser.setProject(fJProject1);
 		IBinding[] bindings= parser.createBindings(new IJavaElement[]{main, t1, t2}, null);
-		
+
 		String lab= JavaElementLinks.getBindingLabel(((ITypeBinding)bindings[0]).getPackage(), main.getAncestor(IJavaElement.PACKAGE_FRAGMENT), JavaElementLabels.ALL_DEFAULT, true);
 		assertEqualString(lab, "(default package)");
 		lab= JavaElementLinks.getBindingLabel(((ITypeBinding)bindings[1]).getPackage(), t1.getAncestor(IJavaElement.PACKAGE_FRAGMENT), JavaElementLabels.ALL_DEFAULT, true);
@@ -523,23 +540,23 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 
 
 			store.setValue(PreferenceConstants.APPEARANCE_ABBREVIATE_PACKAGE_NAMES, true);
-			
+
 			assertExpectedLabel(packOrgTestLongname, "org.te*.longname", JavaElementLabels.P_COMPRESSED);
-			
+
 			store.setValue(PreferenceConstants.APPEARANCE_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW, "#com=@C\norg=@O");
-			
+
 			assertExpectedLabel(packDefault, "(default package)", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrg, "@O", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrgTest, "@O.test", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrgTestLongname, "@O.te*.longname", JavaElementLabels.P_COMPRESSED);
-			
+
 			store.setValue(PreferenceConstants.APPEARANCE_PKG_NAME_ABBREVIATION_PATTERN_FOR_PKG_VIEW, "org=@O\n\norg.test=@OT\n");
-			
+
 			assertExpectedLabel(packDefault, "(default package)", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrg, "@O", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrgTest, "@OT", JavaElementLabels.P_COMPRESSED);
 			assertExpectedLabel(packOrgTestLongname, "@OT.longname", JavaElementLabels.P_COMPRESSED);
-			
+
 		} finally {
 			store.setToDefault(PreferenceConstants.APPEARANCE_PKG_NAME_PATTERN_FOR_PKG_VIEW);
 			store.setValue(PreferenceConstants.APPEARANCE_COMPRESS_PACKAGE_NAMES, false);
@@ -549,10 +566,11 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
  */
 	}
 
+	@Test
 	public void testMethodLabelVarargsDeclaration() throws Exception {
-		
+
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");
@@ -564,7 +582,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		ICompilationUnit cu= pack1.createCompilationUnit("Varargs.java", content, false, null);
 
 		IJavaElement elem= cu.getElementAt(content.indexOf("foo"));
-		
+
 		String lab= getBindingLabel(elem, JavaElementLabels.ALL_DEFAULT);
 		assertLinkMatch(lab, "foo(int, {{java.lang|String}}...)");
 
@@ -573,17 +591,18 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "foo(int, {{java.lang|String}}...)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_NAMES | JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "foo(int i, {{java.lang|String}}... varargs)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.USE_RESOLVED);
 		assertLinkMatch(lab, "foo(int, {{java.lang|String}}...)");
 	}
 
+	@Test
 	public void testMethodLabelVarargsReference0() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");
@@ -595,40 +614,43 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		buf.append("}\n");
 		String content= buf.toString();
 		ICompilationUnit cu= pack1.createCompilationUnit("Varargs.java", content, false, null);
-		
+
 		IJavaElement elem= cu.codeSelect(content.indexOf("asList"), 0)[0];
-		
+
 		String lab= getBindingLabel(elem, JavaElementLabels.ALL_DEFAULT);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}...) <{{java.util.Arrays.asList(...)|T}}>");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_NAMES);
 		assertEqualString(lab, "asList(arg0)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}...)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_NAMES | JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}... arg0)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.ALL_DEFAULT | JavaElementLabels.USE_RESOLVED);
 		assertLinkMatch(lab, "asList({{java.lang|Object}}...) <{{java.lang|Object}}>");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.USE_RESOLVED);
 		assertLinkMatch(lab, "asList({{java.lang|Object}}...)");
 	}
 
+	@Test
 	public void testMethodLabelVarargsReference1() throws Exception {
 		assertMethodLabelVarargsReference("1");
 	}
-	
+
+	@Test
 	public void testMethodLabelVarargsReference2() throws Exception {
 		assertMethodLabelVarargsReference("1, 2");
 	}
-	
+
+	@Test
 	public void testMethodLabelVarargsReference3() throws Exception {
 		assertMethodLabelVarargsReference("1, 2, Integer.valueOf(3)");
 	}
-	
+
 	private void assertMethodLabelVarargsReference(String args) throws CoreException, JavaModelException {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -645,7 +667,7 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		ICompilationUnit cu= pack1.createCompilationUnit("Varargs.java", content, false, null);
 
 		IJavaElement elem= cu.codeSelect(content.indexOf("asList"), 0)[0];
-		
+
 		String lab= getBindingLabel(elem, JavaElementLabels.ALL_DEFAULT);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}...) <{{java.util.Arrays.asList(...)|T}}>");
 
@@ -654,18 +676,18 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}...)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_NAMES | JavaElementLabels.M_PARAMETER_TYPES);
 		assertLinkMatch(lab, "asList({{java.util.Arrays.asList(...)|T}}... arg0)");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.ALL_DEFAULT | JavaElementLabels.USE_RESOLVED);
 		assertLinkMatch(lab, "asList({{java.lang|Integer}}...) <{{java.lang|Integer}}>");
-		
+
 		lab= getBindingLabel(elem, JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.USE_RESOLVED);
 		assertLinkMatch(lab, "asList({{java.lang|Integer}}...)");
 	}
-	
-	
+
+	@Test
 	public void testMethodLabelAnnotatedParameters() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
@@ -703,11 +725,12 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		lab= getBindingLabel(foo2, JavaElementLabels.ALL_DEFAULT | JavaElementLabels.ALL_FULLY_QUALIFIED | JavaElementLabels.M_PARAMETER_ANNOTATIONS);
 		assertLinkMatch(lab, "{{org.test.Annotations}}.foo2(@{{Ann}}({{value}}=\"\", {{cl}}={{Annotations}}.class, {{ints}}={1, 2, -19}, {{ch}}='\\u0000', {{sh}}=32767, {{r}}=@{{Retention}}({{value}}={{RetentionPolicy}}.{{SOURCE}})) {{String}})");
 	}
-	
+
 	// disabled, because we cannot retrieve a binding for the selected element: local variable inside instance initializer
+	@Test
 	public void testLocalClassInInitializer() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");
@@ -734,16 +757,17 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		IJavaElement foo2= cu.codeSelect(content.indexOf("toStringL"), 9)[0];
 		lab= getBindingLabel(foo2, JavaElementLabels.ALL_DEFAULT | JavaElementLabels.ALL_POST_QUALIFIED | JavaElementLabels.F_PRE_TYPE_SIGNATURE);
 		assertLinkMatch(lab, "{{org.test.LambdaTests.{...}|Local}} toStringL - {{org}}.{{test}}.{{LambdaTests}}.{...}");
-		
+
 // can't select the constructor, only the type (label computation works fine once we find the binding)
 //		IJavaElement ctor= cu.codeSelect(content.indexOf("Local()"), 0)[0];
 //		lab= getBindingLabel(ctor, JavaElementLabels.ALL_DEFAULT | JavaElementLabels.ALL_FULLY_QUALIFIED);
 //		assertLinkMatch(lab, "{{org.test.LambdaTests}}.{...}.{{org.test.LambdaTests.{...}.|Local}}.Local()");
 	}
 
+	@Test
 	public void testLocalClassInStaticInitializer() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");
@@ -772,9 +796,10 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		assertLinkMatch(lab, "{{org.test.LambdaTests.{...}|Local}} toStringL - {{org}}.{{test}}.{{LambdaTests}}.{...}");
 	}
 
+	@Test
 	public void testRecursiveType() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");
@@ -796,9 +821,10 @@ public class BindingLabelsTest extends AbstractBindingLabelsTest {
 		assertLinkMatch(lab, "V extends {{java.lang|Comparable}}<? super V> - {{org.test.TypeTest}}.{{org.test.TypeTest|compare}}(V)");
 	}
 
+	@Test
 	public void testMultipleTypeVariables() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
-		
+
 		IPackageFragment pack1= sourceFolder.createPackageFragment("org.test", false, null);
 		StringBuilder buf= new StringBuilder();
 		buf.append("package org.test;\n");

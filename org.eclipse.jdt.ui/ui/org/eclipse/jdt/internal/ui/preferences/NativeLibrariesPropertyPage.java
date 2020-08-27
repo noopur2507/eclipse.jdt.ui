@@ -28,7 +28,6 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
 import org.eclipse.core.resources.IFile;
@@ -138,7 +137,7 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 	protected Control createContents(Composite parent) {
 		if (!fIsValidElement || fIsReadOnly) {
 			Composite inner= new Composite(parent, SWT.NONE);
-			
+
 			if (fIsReadOnly) {
 				GridLayout layout= new GridLayout();
 				layout.marginWidth= 0;
@@ -146,7 +145,7 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 
 				Label label= new Label(inner, SWT.WRAP);
 				label.setText(PreferencesMessages.NativeLibrariesPropertyPage_location_path);
-				
+
 				Text location= new Text(inner, SWT.READ_ONLY | SWT.WRAP);
 				SWTUtil.fixReadonlyTextBackground(location);
 				GridData gd= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
@@ -177,10 +176,9 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 	}
 
 	private static String getNativeLibrariesPath(IClasspathEntry entry) {
-		IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			if (extraAttributes[i].getName().equals(JavaRuntime.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY)) {
-				return extraAttributes[i].getValue();
+		for (IClasspathAttribute extraAttribute : entry.getExtraAttributes()) {
+			if (extraAttribute.getName().equals(JavaRuntime.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY)) {
+				return extraAttribute.getValue();
 			}
 		}
 		return null;
@@ -233,21 +231,18 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 	}
 
 	private static IRunnableWithProgress getRunnable(final Shell shell, final IJavaElement elem, final String nativeLibraryPath, final IClasspathEntry entry, final IPath containerPath, final boolean isReferencedEntry) {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException {
-				try {
-					IJavaProject project= elem.getJavaProject();
-					if (elem instanceof IPackageFragmentRoot) {
-						CPListElement cpElem= CPListElement.createFromExisting(entry, project);
-						cpElem.setAttribute(CPListElement.NATIVE_LIB_PATH, nativeLibraryPath);
-						IClasspathEntry newEntry= cpElem.getClasspathEntry();
-						String[] changedAttributes= { CPListElement.NATIVE_LIB_PATH };
-						BuildPathSupport.modifyClasspathEntry(shell, newEntry, changedAttributes, project, containerPath, isReferencedEntry,  monitor);
-					}
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
+		return monitor -> {
+			try {
+				IJavaProject project= elem.getJavaProject();
+				if (elem instanceof IPackageFragmentRoot) {
+					CPListElement cpElem= CPListElement.createFromExisting(entry, project);
+					cpElem.setAttribute(CPListElement.NATIVE_LIB_PATH, nativeLibraryPath);
+					IClasspathEntry newEntry= cpElem.getClasspathEntry();
+					String[] changedAttributes= { CPListElement.NATIVE_LIB_PATH };
+					BuildPathSupport.modifyClasspathEntry(shell, newEntry, changedAttributes, project, containerPath, isReferencedEntry,  monitor);
 				}
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
 			}
 		};
 	}

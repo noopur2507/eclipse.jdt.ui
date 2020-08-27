@@ -42,16 +42,10 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
@@ -119,7 +113,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Sort working sets button.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private Button fSortWorkingSet;
@@ -134,14 +128,14 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Value of sorted state of working sets.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private boolean fIsSortingEnabled;
 
 	/**
 	 * The working set comparator.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private WorkingSetComparator fComparator;
@@ -151,9 +145,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 		setTitle(WorkingSetMessages.WorkingSetConfigurationDialog_title);
 		setMessage(WorkingSetMessages.WorkingSetConfigurationDialog_message);
 		fAllWorkingSets= new ArrayList<>(allWorkingSets.length);
-		for (int i= 0; i < allWorkingSets.length; i++) {
-			fAllWorkingSets.add(allWorkingSets[i]);
-		}
+		fAllWorkingSets.addAll(Arrays.asList(allWorkingSets));
 		fIsSortingEnabled= isSortingEnabled;
 	}
 
@@ -214,12 +206,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	private void createTableViewer(Composite parent) {
 		fTableViewer= CheckboxTableViewer.newCheckList(parent, SWT.BORDER | SWT.MULTI);
-		fTableViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				updateButtonAvailability();
-			}
-		});
+		fTableViewer.addCheckStateListener(event -> updateButtonAvailability());
 		GridData data= new GridData(GridData.FILL_BOTH);
 		data.heightHint= convertHeightInCharsToPixels(20);
 		data.widthHint= convertWidthInCharsToPixels(50);
@@ -227,18 +214,10 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 		fTableViewer.setLabelProvider(new WorkingSetLabelProvider());
 		fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
-		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				handleSelectionChanged();
-			}
-		});
-		fTableViewer.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				if (fEditButton.isEnabled())
-					editSelectedWorkingSet();
-			}
+		fTableViewer.addSelectionChangedListener(event -> handleSelectionChanged());
+		fTableViewer.addDoubleClickListener(event -> {
+			if (fEditButton.isEnabled())
+				editSelectedWorkingSet();
 		});
 	}
 
@@ -330,7 +309,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 		 * A check box that has persistence to sort the working sets alphabetically in the
 		 * WorkingSetConfigurationDialog. It restores the unsorted order of the working sets when
 		 * unchecked.
-		 * 
+		 *
 		 * @since 3.5
 		 */
 		fSortWorkingSet= new Button(parent, SWT.CHECK);
@@ -464,9 +443,8 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 				if (fAddedWorkingSets.contains(workingSet)) {
 					fAddedWorkingSets.remove(workingSet);
 				} else {
-					IWorkingSet[] recentWorkingSets= manager.getRecentWorkingSets();
-					for (int i= 0; i < recentWorkingSets.length; i++) {
-						if (workingSet.equals(recentWorkingSets[i])) {
+					for (IWorkingSet recentWorkingSet : manager.getRecentWorkingSets()) {
+						if (workingSet.equals(recentWorkingSet)) {
 							fRemovedMRUWorkingSets.add(workingSet);
 							break;
 						}
@@ -640,18 +618,18 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns the list of newly added working sets through this dialog.
-	 * 
+	 *
 	 * @return the list of newly added working sets
 	 * @since 3.5
 	 */
 	public List<IWorkingSet> getNewlyAddedWorkingSets() {
 		return fAddedWorkingSets;
-		
+
 	}
 
 	/**
 	 * Returns whether sorting is enabled for working sets.
-	 * 
+	 *
 	 * @return <code>true</code> if sorting is enabled, <code>false</code> otherwise
 	 * @since 3.5
 	 */
@@ -661,7 +639,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns the working set comparator.
-	 * 
+	 *
 	 * @return the working set comparator
 	 * @since 3.5
 	 */
@@ -674,7 +652,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns all the working sets.
-	 * 
+	 *
 	 * @return all the working sets
 	 * @since 3.7
 	 */

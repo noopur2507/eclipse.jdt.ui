@@ -124,8 +124,8 @@ public abstract class BuildpathModifierAction extends Action implements ISelecti
 	}
 
 	protected void informListeners(BuildpathDelta delta) {
-		for (Iterator<IBuildpathModifierListener> iterator= fListeners.iterator(); iterator.hasNext();) {
-	        iterator.next().buildpathChanged(delta);
+		for (IBuildpathModifierListener iBuildpathModifierListener : fListeners) {
+	        iBuildpathModifierListener.buildpathChanged(delta);
         }
 	}
 
@@ -163,16 +163,15 @@ public abstract class BuildpathModifierAction extends Action implements ISelecti
 
 		// get all the view and editor parts
 		List<IWorkbenchPart> parts= new ArrayList<>();
-		IWorkbenchPartReference refs[]= page.getViewReferences();
-		for (int i= 0; i < refs.length; i++) {
-			IWorkbenchPart part= refs[i].getPart(false);
+		for (IWorkbenchPartReference ref : page.getViewReferences()) {
+			IWorkbenchPart part= ref.getPart(false);
 			if (part != null)
 				parts.add(part);
 		}
-		refs= page.getEditorReferences();
-		for (int i= 0; i < refs.length; i++) {
-			if (refs[i].getPart(false) != null)
-				parts.add(refs[i].getPart(false));
+		for (IWorkbenchPartReference ref : page.getEditorReferences()) {
+			if (ref.getPart(false) != null) {
+				parts.add(ref.getPart(false));
+			}
 		}
 
 		Iterator<IWorkbenchPart> itr= parts.iterator();
@@ -189,12 +188,7 @@ public abstract class BuildpathModifierAction extends Action implements ISelecti
 			if (target != null) {
 				// select and reveal resource
 				final ISetSelectionTarget finalTarget= target;
-				page.getWorkbenchWindow().getShell().getDisplay().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						finalTarget.selectReveal(selection);
-					}
-				});
+				page.getWorkbenchWindow().getShell().getDisplay().asyncExec(() -> finalTarget.selectReveal(selection));
 			}
 		}
 	}

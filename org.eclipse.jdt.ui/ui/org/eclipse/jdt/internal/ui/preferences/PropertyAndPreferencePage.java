@@ -51,7 +51,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.dialogs.StatusUtil;
 import org.eclipse.jdt.internal.ui.wizards.IStatusChangeListener;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogField;
@@ -107,15 +106,12 @@ public abstract class PropertyAndPreferencePage extends PreferencePage implement
 			composite.setLayout(layout);
 			composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-			IDialogFieldListener listener= new IDialogFieldListener() {
-				@Override
-				public void dialogFieldChanged(DialogField field) {
-					boolean enabled= ((SelectionButtonDialogField) field).isSelected();
-					enableProjectSpecificSettings(enabled);
+			IDialogFieldListener listener= field -> {
+				boolean enabled= ((SelectionButtonDialogField) field).isSelected();
+				enableProjectSpecificSettings(enabled);
 
-					if (enabled && getData() != null) {
-						applyData(getData());
-					}
+				if (enabled && getData() != null) {
+					applyData(getData());
 				}
 			};
 
@@ -215,9 +211,7 @@ public abstract class PropertyAndPreferencePage extends PreferencePage implement
 		} else {
 			HashSet<IJavaProject> projectsWithSpecifics= new HashSet<>();
 			try {
-				IJavaProject[] projects= JavaCore.create(ResourcesPlugin.getWorkspace().getRoot()).getJavaProjects();
-				for (int i= 0; i < projects.length; i++) {
-					IJavaProject curr= projects[i];
+				for (IJavaProject curr : JavaCore.create(ResourcesPlugin.getWorkspace().getRoot()).getJavaProjects()) {
 					if (hasProjectSpecificOptions(curr.getProject())) {
 						projectsWithSpecifics.add(curr);
 					}
@@ -275,12 +269,7 @@ public abstract class PropertyAndPreferencePage extends PreferencePage implement
 	 * @return The new listener
 	 */
 	protected IStatusChangeListener getNewStatusChangedListener() {
-		return new IStatusChangeListener() {
-			@Override
-			public void statusChanged(IStatus status) {
-				setPreferenceContentStatus(status);
-			}
-		};
+		return this::setPreferenceContentStatus;
 	}
 
 	protected IStatus getPreferenceContentStatus() {

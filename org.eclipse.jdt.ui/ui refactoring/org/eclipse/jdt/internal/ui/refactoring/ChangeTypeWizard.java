@@ -30,7 +30,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -39,7 +38,6 @@ import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.wizard.IWizardPage;
 
@@ -167,8 +165,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 		@Override
 		public void dispose() {
-			for (Iterator<Image> iter= fGrayImages.values().iterator(); iter.hasNext();) {
-				Image image= iter.next();
+			for (Image image : fGrayImages.values()) {
 				image.dispose();
 			}
 			fGrayImages.clear();
@@ -194,19 +191,16 @@ public class ChangeTypeWizard extends RefactoringWizard {
 			private Collection<ITypeBinding> fValidTypes;
 			@Override
 			public void run() {
-				IRunnableWithProgress runnable= new IRunnableWithProgress() {
-					@Override
-					public void run(IProgressMonitor pm) {
-						pm.beginTask(RefactoringMessages.ChangeTypeWizard_analyzing, 1000);
-						ChangeTypeRefactoring ct= (ChangeTypeRefactoring)ChangeTypeWizard.this.getRefactoring();
-						fInvalidTypes = new HashSet<>();
-						fInvalidTypes.addAll(fCT.getAllSuperTypes(ct.getOriginalType()));
-						fValidTypes= ct.computeValidTypes(new SubProgressMonitor(pm, 950));
-						fInvalidTypes.add(ct.getOriginalType());
-						fInvalidTypes.removeAll(fValidTypes);
-						pm.worked(50);
-						pm.done();
-					}
+				IRunnableWithProgress runnable= pm -> {
+					pm.beginTask(RefactoringMessages.ChangeTypeWizard_analyzing, 1000);
+					ChangeTypeRefactoring ct= (ChangeTypeRefactoring)ChangeTypeWizard.this.getRefactoring();
+					fInvalidTypes = new HashSet<>();
+					fInvalidTypes.addAll(fCT.getAllSuperTypes(ct.getOriginalType()));
+					fValidTypes= ct.computeValidTypes(new SubProgressMonitor(pm, 950));
+					fInvalidTypes.add(ct.getOriginalType());
+					fInvalidTypes.removeAll(fValidTypes);
+					pm.worked(50);
+					pm.done();
 				};
 				boolean internalError= false;
 				try {
@@ -223,7 +217,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 				if (internalError) {
 					setPageComplete(false);
-				} else if (fValidTypes == null || fValidTypes.size() == 0){
+				} else if (fValidTypes == null || fValidTypes.isEmpty()){
 					ChangeTypeInputPage.this.setErrorMessage(RefactoringMessages.ChangeTypeWizard_declCannotBeChanged);
 					setPageComplete(false);
 				} else {
@@ -239,8 +233,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 			// first, find a most general valid type (there may be more than one)
 			ITypeBinding type= types.iterator().next();
-			for (Iterator<ITypeBinding> it= types.iterator(); it.hasNext(); ){
-				ITypeBinding other= it.next();
+			for (ITypeBinding other : types) {
 				if (getGeneralizeTypeRefactoring().isSubTypeOf(type, other)){
 					type= other;
 				}
@@ -251,11 +244,13 @@ public class ChangeTypeWizard extends RefactoringWizard {
 		}
 
 		private TreeItem findItem(TreeItem[] items, ITypeBinding type){
-			for (int i=0; i < items.length; i++){
-				if (items[i].getData().equals(type)) return items[i];
+			for (TreeItem item : items) {
+				if (item.getData().equals(type)) {
+					return item;
+				}
 			}
-			for (int i=0; i < items.length; i++){
-				TreeItem item= findItem(items[i].getItems(), type);
+			for (TreeItem ti : items) {
+				TreeItem item= findItem(ti.getItems(), type);
 				if (item != null) return item;
 			}
 			return null;
@@ -286,7 +281,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 		 */
 		private void addTreeComponent(Composite parent) {
 			fTreeViewer= new TreeViewer(parent, SWT.SINGLE | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-			
+
 			GridData gd= new GridData(GridData.FILL_BOTH);
 			gd.grabExcessHorizontalSpace= true;
 			gd.grabExcessVerticalSpace= true;
@@ -298,12 +293,9 @@ public class ChangeTypeWizard extends RefactoringWizard {
 			fTreeViewer.setContentProvider(new ChangeTypeContentProvider(((ChangeTypeRefactoring)getRefactoring())));
 			fLabelProvider= new ChangeTypeLabelProvider();
 			fTreeViewer.setLabelProvider(fLabelProvider);
-			ISelectionChangedListener listener= new ISelectionChangedListener(){
-				@Override
-				public void selectionChanged(SelectionChangedEvent event) {
-					IStructuredSelection selection= (IStructuredSelection)event.getSelection();
-					typeSelected((ITypeBinding)selection.getFirstElement());
-				}
+			ISelectionChangedListener listener= event -> {
+				IStructuredSelection selection= (IStructuredSelection)event.getSelection();
+				typeSelected((ITypeBinding)selection.getFirstElement());
 			};
 			fTreeViewer.addSelectionChangedListener(listener);
 			fTreeViewer.setInput(new ChangeTypeContentProvider.RootType(getGeneralizeTypeRefactoring().getOriginalType()));

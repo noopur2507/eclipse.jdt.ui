@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,7 +13,11 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.search;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -33,19 +37,15 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 
 import org.eclipse.jdt.internal.ui.search.JavaSearchScopeFactory;
 
-public class WorkspaceScopeTest extends TestCase {
+public class WorkspaceScopeTest {
 	private IJavaProject fProject1;
 	private IJavaProject fProject2;
 	private IJavaProject fProject3;
 	private IJavaProject fProject4;
 	private ICompilationUnit fCompilationUnit;
 
-	public WorkspaceScopeTest(String name) {
-		super(name);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fProject1= createStandardProject("Test", "test"); //$NON-NLS-1$ //$NON-NLS-2$
 		IPackageFragment pkg= fProject1.findPackageFragment(new Path("/Test/src/test")); //$NON-NLS-1$
 		fCompilationUnit= pkg.createCompilationUnit("Test.java", getSource(), true, null); //$NON-NLS-1$
@@ -91,6 +91,7 @@ public class WorkspaceScopeTest extends TestCase {
 
 	}
 
+	@Test
 	public void testPrivateScope() throws JavaModelException {
 		IType type= fCompilationUnit.findPrimaryType();
 		type.getMethod("privateMethod", new String[0]); //$NON-NLS-1$
@@ -98,11 +99,9 @@ public class WorkspaceScopeTest extends TestCase {
 
 		assertTrue(scope.encloses(fCompilationUnit));
 
-		IPackageFragmentRoot[] roots= fProject1.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			IJavaElement[] fragments= roots[i].getChildren();
-			for (int j= 0; j < fragments.length; j++) {
-				assertFalse(scope.encloses(fragments[j]));
+		for (IPackageFragmentRoot root : fProject1.getAllPackageFragmentRoots()) {
+			for (IJavaElement fragment : root.getChildren()) {
+				assertFalse(scope.encloses(fragment));
 			}
 		}
 
@@ -114,6 +113,7 @@ public class WorkspaceScopeTest extends TestCase {
 		return JavaSearchScopeFactory.getInstance().createWorkspaceScope(includeJRE);
 	}
 
+	@Test
 	public void testDefaultScope() throws JavaModelException {
 		IType type= fCompilationUnit.findPrimaryType();
 		type.getMethod("defaultMethod", new String[0]); //$NON-NLS-1$
@@ -121,12 +121,11 @@ public class WorkspaceScopeTest extends TestCase {
 
 		assertTrue(scope.encloses(fCompilationUnit.getParent()));
 
-		IPackageFragmentRoot[] roots= fProject1.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			IJavaElement[] fragments= roots[i].getChildren();
-			for (int j= 0; j < fragments.length; j++) {
-				if (!fragments[j].equals(fCompilationUnit.getParent()))
-					assertFalse(scope.encloses(fragments[j]));
+		for (IPackageFragmentRoot root : fProject1.getAllPackageFragmentRoots()) {
+			for (IJavaElement fragment : root.getChildren()) {
+				if (!fragment.equals(fCompilationUnit.getParent())) {
+					assertFalse(scope.encloses(fragment));
+				}
 			}
 		}
 
@@ -134,7 +133,7 @@ public class WorkspaceScopeTest extends TestCase {
 		checkNoRoots(scope, fProject3);
 	}
 
-
+	@Test
 	public void testPublicMethod() throws JavaModelException {
 		IType type= fCompilationUnit.findPrimaryType();
 		type.getMethod("publicMethod", new String[0]); //$NON-NLS-1$
@@ -144,6 +143,7 @@ public class WorkspaceScopeTest extends TestCase {
 		checkNoRoots(scope, fProject3);
 	}
 
+	@Test
 	public void testProtectedMethod() throws JavaModelException {
 		IType type= fCompilationUnit.findPrimaryType();
 		type.getMethod("protectedMethod", new String[0]); //$NON-NLS-1$
@@ -154,41 +154,38 @@ public class WorkspaceScopeTest extends TestCase {
 	}
 
 	private void checkNoJreRoots(IJavaSearchScope scope, IJavaProject project) throws JavaModelException {
-		IPackageFragmentRoot[] roots= project.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			if(scope.encloses(roots[i])) {
-				assertFalse(roots[i].isExternal());
+		for (IPackageFragmentRoot root : project.getAllPackageFragmentRoots()) {
+			if (scope.encloses(root)) {
+				assertFalse(root.isExternal());
 			} else {
-				assertTrue(roots[i].isExternal());
+				assertTrue(root.isExternal());
 			}
 		}
 	}
 
 	private void checkJreRoots(IJavaSearchScope scope, IJavaProject project) throws JavaModelException {
-		IPackageFragmentRoot[] roots= project.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			if(scope.encloses(roots[i])) {
-				assertTrue(roots[i].isExternal());
+		for (IPackageFragmentRoot root : project.getAllPackageFragmentRoots()) {
+			if (scope.encloses(root)) {
+				assertTrue(root.isExternal());
 			} else {
-				assertFalse(roots[i].isExternal());
+				assertFalse(root.isExternal());
 			}
 		}
 	}
 
 	private void checkNoRoots(IJavaSearchScope scope, IJavaProject project) throws JavaModelException {
-		IPackageFragmentRoot[] roots= project.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			assertFalse(scope.encloses(roots[i]));
+		for (IPackageFragmentRoot root : project.getAllPackageFragmentRoots()) {
+			assertFalse(scope.encloses(root));
 		}
 	}
 
 	private void checkAllRoots(IJavaSearchScope scope, IJavaProject project) throws JavaModelException {
-		IPackageFragmentRoot[] roots= project.getAllPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			assertTrue(scope.encloses(roots[i]));
+		for (IPackageFragmentRoot root : project.getAllPackageFragmentRoots()) {
+			assertTrue(scope.encloses(root));
 		}
 	}
 
+	@Test
 	public void testJREProtected() throws JavaModelException {
 		IType object= fProject1.findType("java.lang.Object"); //$NON-NLS-1$
 		object.getMethod("clone", new String [0]); //$NON-NLS-1$

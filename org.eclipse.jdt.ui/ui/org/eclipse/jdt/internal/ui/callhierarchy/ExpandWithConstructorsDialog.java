@@ -18,19 +18,16 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
-import org.eclipse.core.runtime.IStatus;
-
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.TrayDialog;
 
 import org.eclipse.ui.PlatformUI;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
-import org.eclipse.jdt.internal.ui.wizards.IStatusChangeListener;
 
 /**
  * Configuration dialog for default "Expand with Constructors" behavior.
- * 
+ *
  * @since 3.5
  */
 class ExpandWithConstructorsDialog extends TrayDialog {
@@ -41,7 +38,7 @@ class ExpandWithConstructorsDialog extends TrayDialog {
 	protected ExpandWithConstructorsDialog(Shell parentShell) {
 		super(parentShell);
 	}
-	
+
 	/*
 	 * @see org.eclipse.jface.dialogs.Dialog#isResizable()
 	 */
@@ -49,7 +46,7 @@ class ExpandWithConstructorsDialog extends TrayDialog {
 	protected boolean isResizable() {
 		return true;
 	}
-	
+
 	/*
 	 * @see org.eclipse.jface.dialogs.StatusDialog#configureShell(org.eclipse.swt.widgets.Shell)
 	 */
@@ -65,12 +62,9 @@ class ExpandWithConstructorsDialog extends TrayDialog {
 	 */
 	@Override
 	protected Control createDialogArea(Composite composite) {
-		fConfigurationBlock= new ExpandWithConstructorsConfigurationBlock(new IStatusChangeListener() {
-			@Override
-			public void statusChanged(IStatus status) {
-				//Do nothing
+		fConfigurationBlock= new ExpandWithConstructorsConfigurationBlock(status -> {
+			//Do nothing
 
-			}
 		}, null);
 		GridData data= new GridData(GridData.FILL, GridData.FILL, true, true);
 		fConfigurationBlockControl= fConfigurationBlock.createContents(composite);

@@ -38,8 +38,6 @@ import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField;
 
@@ -63,12 +61,7 @@ public class ClasspathContainerDefaultPage extends NewElementWizardPage implemen
 
 		fEntryField= new StringDialogField();
 		fEntryField.setLabelText(NewWizardMessages.ClasspathContainerDefaultPage_path_label);
-		fEntryField.setDialogFieldListener(new IDialogFieldListener() {
-			@Override
-			public void dialogFieldChanged(DialogField field) {
-				validatePath();
-			}
-		});
+		fEntryField.setDialogFieldListener(field -> validatePath());
 		validatePath();
 	}
 
@@ -119,8 +112,7 @@ public class ClasspathContainerDefaultPage extends NewElementWizardPage implemen
 
 	@Override
 	public void initialize(IJavaProject project, IClasspathEntry[] currentEntries) {
-		for (int i= 0; i < currentEntries.length; i++) {
-			IClasspathEntry curr= currentEntries[i];
+		for (IClasspathEntry curr : currentEntries) {
 			if (curr.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
 				fUsedPaths.add(curr.getPath());
 			}

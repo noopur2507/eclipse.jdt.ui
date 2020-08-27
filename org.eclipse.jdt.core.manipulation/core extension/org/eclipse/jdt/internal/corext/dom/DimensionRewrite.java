@@ -39,7 +39,7 @@ public class DimensionRewrite {
 	/**
 	 * Creates a {@link ASTRewrite#createCopyTarget(ASTNode) copy} of <code>type</code>
 	 * and adds <code>extraDimensions</code> to it.
-	 * 
+	 *
 	 * @param type the type to copy
 	 * @param extraDimensions the dimensions to add
 	 * @param rewrite the ASTRewrite with which to create new nodes
@@ -50,7 +50,7 @@ public class DimensionRewrite {
 		if (extraDimensions.isEmpty()) {
 			return (Type) rewrite.createCopyTarget(type);
 		}
-		
+
 		ArrayType result;
 		if (type instanceof ArrayType) {
 			ArrayType arrayType= (ArrayType) type;
@@ -68,23 +68,23 @@ public class DimensionRewrite {
 
 	/**
 	 * Returns {@link ASTRewrite#createCopyTarget(ASTNode) copies} of the given <code>dimensions</code>.
-	 * 
+	 *
 	 * @param dimensions the dimensions to copy
 	 * @param rewrite the ASTRewrite with which to create new nodes
-	 * 
+	 *
 	 * @return list of copy targets
 	 */
 	public static List<Dimension> copyDimensions(List<Dimension> dimensions, ASTRewrite rewrite) {
 		ArrayList<Dimension> result= new ArrayList<>();
-		for (int i= 0; i < dimensions.size(); i++) {
-			result.add((Dimension) rewrite.createCopyTarget(dimensions.get(i)));
+		for (Dimension dimension : dimensions) {
+			result.add((Dimension) rewrite.createCopyTarget(dimension));
 		}
 		return result;
 	}
 
 	/**
 	 * Removes all children in <code>node</code>'s <code>childListProperty</code>.
-	 * 
+	 *
 	 * @param node ASTNode
 	 * @param childListProperty child list property
 	 * @param rewrite rewrite that removes the nodes
@@ -97,6 +97,9 @@ public class DimensionRewrite {
 		for (ASTNode child : children) {
 			listRewrite.remove(child, editGroup);
 		}
+	}
+
+	private DimensionRewrite() {
 	}
 
 }

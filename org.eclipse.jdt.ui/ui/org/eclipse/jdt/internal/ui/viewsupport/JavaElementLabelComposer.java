@@ -17,7 +17,6 @@ package org.eclipse.jdt.internal.ui.viewsupport;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.jar.Attributes.Name;
 
 import org.eclipse.core.runtime.IPath;
@@ -369,15 +368,15 @@ public class JavaElementLabelComposer extends JavaElementLabelComposerCore {
 
 		if (fgPkgNameAbbreviation != null && fgPkgNameAbbreviation.length != 0) {
 
-			for (int i= 0; i < fgPkgNameAbbreviation.length; i++) {
-				PackageNameAbbreviation abbr= fgPkgNameAbbreviation[i];
-
+			for (PackageNameAbbreviation abbr : fgPkgNameAbbreviation) {
 				String abbrPrefix= abbr.getPackagePrefix();
 				if (pkgName.startsWith(abbrPrefix)) {
 					int abbrPrefixLength= abbrPrefix.length();
 					int pkgLength= pkgName.length();
-					if (!(pkgLength == abbrPrefixLength || pkgName.charAt(abbrPrefixLength) == '.'))
+					if ((pkgLength != abbrPrefixLength)
+							&& (pkgName.charAt(abbrPrefixLength) != '.')) {
 						continue;
+					}
 
 					fBuffer.append(abbr.getAbbreviation());
 
@@ -547,38 +546,24 @@ public class JavaElementLabelComposer extends JavaElementLabelComposerCore {
 	}
 
 	public static PackageNameAbbreviation[] parseAbbreviationPattern(String pattern) {
-		String[] parts= pattern.split("\\s*(?:\r\n?|\n)\\s*"); //$NON-NLS-1$
-
 		ArrayList<PackageNameAbbreviation> result= new ArrayList<>();
 
-		for (int i= 0; i < parts.length; i++) {
-			String part= parts[i].trim();
-
+		for (String p : pattern.split("\\s*(?:\r\n?|\n)\\s*")) { //$NON-NLS-1$
+			String part= p.trim();
 			if (part.length() == 0)
 				continue;
-
 			String[] parts2= part.split("\\s*=\\s*", 2); //$NON-NLS-1$
-
 			if (parts2.length != 2)
 				return null;
-
 			String prefix= parts2[0].trim();
 			String abbr= parts2[1].trim();
-
 			if (prefix.startsWith("#")) //$NON-NLS-1$
 				continue;
-
 			PackageNameAbbreviation pkgAbbr= new PackageNameAbbreviation(prefix, abbr);
-
 			result.add(pkgAbbr);
 		}
 
-		Collections.sort(result, new Comparator<PackageNameAbbreviation>() {
-			@Override
-			public int compare(PackageNameAbbreviation a1, PackageNameAbbreviation a2) {
-				return a2.getPackagePrefix().length() - a1.getPackagePrefix().length();
-			}
-		});
+		Collections.sort(result, (a1, a2) -> a2.getPackagePrefix().length() - a1.getPackagePrefix().length());
 
 		return result.toArray(new PackageNameAbbreviation[0]);
 	}

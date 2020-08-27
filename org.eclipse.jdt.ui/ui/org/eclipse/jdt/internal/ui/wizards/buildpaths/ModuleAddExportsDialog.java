@@ -55,12 +55,7 @@ public class ModuleAddExportsDialog extends StatusDialog {
 	public ModuleAddExportsDialog(Shell parent, IJavaElement[] sourceJavaElements, Collection<String> possibleTargetModules, ModuleAddExpose value) {
 		super(parent);
 
-		IStatusChangeListener listener= new IStatusChangeListener() {
-			@Override
-			public void statusChanged(IStatus status) {
-				updateStatus(status);
-			}
-		};
+		IStatusChangeListener listener= this::updateStatus;
 		fAddExportsBlock= new ModuleAddExportsBlock(listener, sourceJavaElements, possibleTargetModules, value);
 
 		setTitle(NewWizardMessages.AddExportsDialog_title);
@@ -86,7 +81,7 @@ public class ModuleAddExportsDialog extends StatusDialog {
 	@Override
 	public void create() {
 		super.create();
-		updateButtonsEnableState(ModuleDialog.newSilentError()); // silently disable OK button until user input is given 
+		updateButtonsEnableState(ModuleDialog.newSilentError()); // silently disable OK button until user input is given
 	}
 
 	@Override

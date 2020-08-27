@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <!--
-     Copyright (c) 2000, 2006 IBM Corporation and others.
+     Copyright (c) 2000, 2020 IBM Corporation and others.
 
      This program and the accompanying materials
      are made available under the terms of the Eclipse Public License 2.0
@@ -312,14 +312,21 @@
 		<proposalCategory
 			icon="$nl$/icons/full/elcl16/swtassist_co.png"/>
 	</extension>
-
 	<!-- java completions -->
+	<extension
+		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
+		id="javaPostfixProposalCategory"
+		name="%JavaPostfixProposalCategory">
+		<proposalCategory
+			icon="icons/full/elcl16/templateprop_co.png"/>
+	</extension>
 	<extension
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="JavaTypeCompletionProposalComputer">
 		<javaCompletionProposalComputer
 			class="org.eclipse.jdt.internal.ui.text.java.JavaTypeCompletionProposalComputer"
-			categoryId="org.eclipse.jdt.ui.javaTypeProposalCategory">
+			categoryId="org.eclipse.jdt.ui.javaTypeProposalCategory"
+			requiresUIThread="false">
 			<partition type="__dftl_partition_content_type"/>
 			<partition type="__java_string"/>
 		</javaCompletionProposalComputer>
@@ -330,7 +337,8 @@
 		<javaCompletionProposalComputer
 			class="org.eclipse.jdt.internal.ui.text.java.JavaNoTypeCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaNoTypeProposalCategory"
-			needsSortingAfterFiltering="true">
+			needsSortingAfterFiltering="true"
+			requiresUIThread="false">
 			<partition type="__dftl_partition_content_type"/>
 			<partition type="__java_string"/>
 		</javaCompletionProposalComputer>
@@ -341,7 +349,8 @@
 		<javaCompletionProposalComputer
 			class="org.eclipse.jdt.internal.ui.text.java.JavaAllCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaAllProposalCategory"
-			needsSortingAfterFiltering="true">
+			needsSortingAfterFiltering="true"
+			requiresUIThread="false">
 			<partition type="__dftl_partition_content_type"/>
 			<partition type="__java_string"/>
 		</javaCompletionProposalComputer>
@@ -349,17 +358,9 @@
 	<!-- javadoc completions -->
 	<extension
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
-		id="LegacyJavadocCompletionProposalComputer_no">
-		<javaCompletionProposalComputer
-			class="org.eclipse.jdt.internal.ui.text.javadoc.LegacyJavadocCompletionProposalComputer"
-			categoryId="org.eclipse.jdt.ui.javaNoTypeProposalCategory">
-			<partition type="__java_javadoc"/>
-		</javaCompletionProposalComputer>
-	</extension>
-	<extension
-		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="JavadocCompletionProposalComputer_no">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.javadoc.JavadocCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaNoTypeProposalCategory">
 			<partition type="__java_javadoc"/>
@@ -369,6 +370,7 @@
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="JavadocHTMLCompletionProposalComputer_no">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.javadoc.HTMLTagCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaNoTypeProposalCategory">
 			<partition type="__java_javadoc"/>
@@ -376,17 +378,9 @@
 	</extension>
 	<extension
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
-		id="LegacyJavadocCompletionProposalComputer_all">
-		<javaCompletionProposalComputer
-			class="org.eclipse.jdt.internal.ui.text.javadoc.LegacyJavadocCompletionProposalComputer"
-			categoryId="org.eclipse.jdt.ui.javaAllProposalCategory">
-			<partition type="__java_javadoc"/>
-		</javaCompletionProposalComputer>
-	</extension>
-	<extension
-		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="JavadocCompletionProposalComputer_all">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.javadoc.JavadocCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaAllProposalCategory">
 			<partition type="__java_javadoc"/>
@@ -396,6 +390,7 @@
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="JavadocHTMLCompletionProposalComputer_all">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.javadoc.HTMLTagCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.javaAllProposalCategory">
 			<partition type="__java_javadoc"/>
@@ -406,6 +401,7 @@
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="TemplateProposalComputer">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.java.TemplateCompletionProposalComputer"
 			categoryId="org.eclipse.jdt.ui.templateProposalCategory"
 			needsSortingAfterFiltering="true">
@@ -419,6 +415,7 @@
          id="swtBuilderCompletionProposalComputer">
       <javaCompletionProposalComputer
             class="org.eclipse.jdt.internal.ui.text.java.SWTTemplateCompletionProposalComputer"
+			requiresUIThread="false"
 			categoryId="org.eclipse.jdt.ui.swtProposalCategory"
 			needsSortingAfterFiltering="true">
 			<partition type="__dftl_partition_content_type"/>
@@ -426,9 +423,21 @@
     </extension>
 	<!-- hippie word completions -->
 	<extension
+         point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
+         id="postfixCompletion">
+      <javaCompletionProposalComputer
+            class="org.eclipse.jdt.internal.ui.text.java.PostfixCompletionProposalComputer"
+            categoryId="org.eclipse.jdt.ui.javaPostfixProposalCategory"
+            requiresUIThread="false">
+            <partition type="__dftl_partition_content_type"/>
+			<partition type="__java_string"/>
+      </javaCompletionProposalComputer>
+	</extension>
+	<extension
 		point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
 		id="HippieCompletionProposalComputer">
 		<javaCompletionProposalComputer
+			requiresUIThread="false"
 			class="org.eclipse.jdt.internal.ui.text.java.HippieProposalComputer"
 			categoryId="org.eclipse.jdt.ui.textProposalCategory">
 			<partition type="__java_singleline_comment"/>
@@ -460,11 +469,13 @@
 		<proposalSorter
 			id="org.eclipse.jdt.ui.RelevanceSorter"
 			name="%RelevanceSorter.name"
-			class="org.eclipse.jdt.internal.ui.text.java.RelevanceSorter"/>
+			class="org.eclipse.jdt.internal.ui.text.java.RelevanceSorter"
+			requiresUIThread="false"/>
 		<proposalSorter
 			id="org.eclipse.jdt.ui.AlphabeticSorter"
 			name="%AlphabeticSorter.name"
-			class="org.eclipse.jdt.internal.ui.text.java.AlphabeticSorter"/>
+			class="org.eclipse.jdt.internal.ui.text.java.AlphabeticSorter"
+			requiresUIThread="false"/>
 	</extension>
 
 	<!-- commands to surface java elements given handle id encoded parameter -->
@@ -600,21 +611,18 @@
       <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaPerspective">
          <showInPart id="org.eclipse.jdt.ui.PackageExplorer"/>
          <showInPart id="org.eclipse.team.ui.GenericHistoryView"/>
-         <showInPart id="org.eclipse.ui.views.ResourceNavigator"/>
          <showInPart id="org.eclipse.ui.navigator.ProjectExplorer"/>
       </perspectiveExtension>
 
       <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaBrowsingPerspective">
          <showInPart id="org.eclipse.jdt.ui.PackageExplorer"/>
          <showInPart id="org.eclipse.team.ui.GenericHistoryView"/>
-         <showInPart id="org.eclipse.ui.views.ResourceNavigator"/>
          <showInPart id="org.eclipse.ui.navigator.ProjectExplorer"/>
       </perspectiveExtension>
 
       <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaHierarchyPerspective">
          <showInPart id="org.eclipse.jdt.ui.PackageExplorer"/>
          <showInPart id="org.eclipse.team.ui.GenericHistoryView"/>
-         <showInPart id="org.eclipse.ui.views.ResourceNavigator"/>
          <showInPart id="org.eclipse.ui.navigator.ProjectExplorer"/>
       </perspectiveExtension>
    </extension>
@@ -726,6 +734,19 @@
          </class>
          <description>
             %NewEnumType.description
+         </description>
+         <keywordReference id="org.eclipse.jdt.ui.wizards.java"/>
+      </wizard>
+      <wizard
+            name="%NewRecordType.label"
+            icon="$nl$/icons/full/etool16/newrecord_wiz.png"
+            category="org.eclipse.jdt.ui.java"
+            id="org.eclipse.jdt.ui.wizards.NewRecordCreationWizard">
+         <class class="org.eclipse.jdt.internal.ui.wizards.NewRecordCreationWizard">
+            <parameter name="javatype" value="true"/>
+         </class>
+         <description>
+            %NewRecordType.description
          </description>
          <keywordReference id="org.eclipse.jdt.ui.wizards.java"/>
       </wizard>
@@ -2989,6 +3010,13 @@
                id="org.eclipse.jdt.ui.actions.AddBlockComment">
          </action>
          <action
+               definitionId="org.eclipse.jdt.ui.edit.text.java.add.textblock"
+               label="%AddTextBlockAction.label"
+               retarget="true"
+               menubarPath="org.eclipse.jdt.ui.source.menu/editGroup"
+               id="org.eclipse.jdt.ui.actions.AddTextBlock">
+         </action>
+         <action
                definitionId="org.eclipse.jdt.ui.edit.text.java.toggle.comment"
                label="%ToggleCommentAction.label"
                retarget="true"
@@ -3697,6 +3725,12 @@
             id="org.eclipse.jdt.ui.edit.text.java.surround.with.try.multicatch">
       </command>
       <command
+            name="%ActionDefinition.surroundWith.tryWithResources.name"
+            description="%ActionDefinition.surroundWith.tryWithResources.description"
+            categoryId="org.eclipse.jdt.ui.category.source"
+            id="org.eclipse.jdt.ui.edit.text.java.surround.with.try.with.resources">
+      </command>
+      <command
             name="%ActionDefinition.cleanUp.name"
             description="%ActionDefinition.cleanUp.description"
             categoryId="org.eclipse.jdt.ui.category.source"
@@ -3731,6 +3765,12 @@
             description="%ActionDefinition.removeBlockComment.description"
             categoryId="org.eclipse.jdt.ui.category.source"
             id="org.eclipse.jdt.ui.edit.text.java.remove.block.comment">
+      </command>
+      <command
+            name="%ActionDefinition.addTextBlock.name"
+            description="%ActionDefinition.addTextBlock.description"
+            categoryId="org.eclipse.jdt.ui.category.source"
+            id="org.eclipse.jdt.ui.edit.text.java.add.textblock">
       </command>
       <command
             name="%ActionDefinition.indent.name"
@@ -4365,6 +4405,13 @@
 	        categoryId="org.eclipse.jdt.ui.category.source"
 	        id="org.eclipse.jdt.ui.edit.text.java.annotate.classFile">
 	  </command>
+      <command
+            name="%ActionDefinition.toggleCodeMining.name"
+            description="%ActionDefinition.toggleCodeMining.description"
+            categoryId="org.eclipse.search.ui.category.search"
+            defaultHandler="org.eclipse.jdt.internal.ui.javaeditor.ToggleCodeMiningHandler"
+            id="org.eclipse.jdt.ui.edit.text.java.toggle.codemining">
+      </command>
    </extension>
 
    <extension
@@ -4524,6 +4571,11 @@
             commandId="org.eclipse.jdt.ui.edit.text.java.add.block.comment"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <!-- Command+Shift+/ opens the Help > Search menu on carbon, see: https://bugs.eclipse.org/bugs/show_bug.cgi?id=113981 -->
+      <key
+            sequence="M1+M2+'"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
+            commandId="org.eclipse.jdt.ui.edit.text.java.add.textblock"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
             sequence="M1+M2+/"
@@ -5522,6 +5574,12 @@
             registryId="org.eclipse.jdt.ui.CompilationUnitEditor">
       </contextType>
       <contextType
+            name="%templates.java.empty.contextType.name"
+            class="org.eclipse.jdt.internal.corext.template.java.JavaContextType"
+            id="java-empty"
+            registryId="org.eclipse.jdt.ui.CompilationUnitEditor">
+      </contextType>
+      <contextType
             name="%templates.java.module.contextType.name"
             class="org.eclipse.jdt.internal.corext.template.java.JavaContextType"
             id="module"
@@ -5562,6 +5620,12 @@
             class="org.eclipse.jdt.internal.corext.template.java.SWTContextType"
             id="swt-members"
             registryId="org.eclipse.jdt.ui.CompilationUnitEditor">
+      </contextType>      
+      <contextType
+            name="%templates.postfix.members.contextType.name"
+            class="org.eclipse.jdt.internal.corext.template.java.JavaPostfixContextType"
+            id="postfix"
+            registryId="org.eclipse.jdt.ui.CompilationUnitEditor">
       </contextType>
       <include
       		file="templates/default-templates.xml"
@@ -5573,6 +5637,10 @@
       </include>
       <include
             file="templates/default-swttemplates.xml"
+            translations="$nl$/templates/default-templates.properties">
+      </include>
+      <include
+            file="templates/default-postfixtemplates.xml"
             translations="$nl$/templates/default-templates.properties">
       </include>
       <resolver
@@ -5641,6 +5709,32 @@
             description="%templates.java.resolvers.ExceptionVariableName.description"
             name="%templates.java.resolvers.ExceptionVariableName.name"
             type="exception_variable_name">
+      </resolver>
+      <resolver
+            class="org.eclipse.jdt.internal.corext.template.java.ActualTypeResolver"
+            contextTypeId="java"
+            description="%templates.java.resolvers.ActualType.description"
+            name="%templates.java.resolvers.ActualType.name"
+            type="newActualType"/>
+      <resolver
+            class="org.eclipse.jdt.internal.corext.template.java.NewFieldResolver"
+            contextTypeId="java"
+            description="%templates.java.resolvers.NewField.description"
+            name="%templates.java.resolvers.NewField.name"
+            type="newField"/>
+      <resolver
+            class="org.eclipse.jdt.internal.corext.template.java.JavaContextResolver"
+            contextTypeId="java"
+            description="%templates.java.resolvers.JavaContext.description"
+            name="%templates.java.resolvers.JavaContext.name"
+            type="package_declaration">
+      </resolver>
+      <resolver
+            class="org.eclipse.jdt.internal.corext.template.java.JavaContextResolver"
+            contextTypeId="java"
+            description="%templates.java.resolvers.JavaContext.description"
+            name="%templates.java.resolvers.JavaContext.name"
+            type="class_name">
       </resolver>
    </extension>
    <extension
@@ -6201,6 +6295,21 @@
 				  menuGroupId="org.eclipse.jdt.ui.java"
 		          type="new"
 		          wizardId="org.eclipse.jdt.ui.wizards.NewEnumCreationWizard">
+				<enablement>
+					<or>
+						<instanceof value="org.eclipse.jdt.core.IPackageFragment"/>
+						<instanceof value="org.eclipse.jdt.core.IPackageFragmentRoot"/>
+						<instanceof value="org.eclipse.jdt.core.ICompilationUnit"/>
+						<adapt type="org.eclipse.core.resources.IProject">
+							<test property="org.eclipse.core.resources.projectNature" value="org.eclipse.jdt.core.javanature"/>
+						</adapt>
+					</or>
+				 </enablement>
+		    </commonWizard>
+		    <commonWizard
+		          menuGroupId="org.eclipse.jdt.ui.java"
+		          type="new"
+		          wizardId="org.eclipse.jdt.ui.wizards.NewRecordCreationWizard">
 				<enablement>
 					<or>
 						<instanceof value="org.eclipse.jdt.core.IPackageFragment"/>
@@ -6867,6 +6976,11 @@
             cleanUpKind="cleanUp">
       </cleanUpConfigurationUI>
       <cleanUpConfigurationUI
+            class="org.eclipse.jdt.internal.ui.preferences.cleanup.OptimizationTabPage"
+            name="%CleanUpTabPage.Optimization.name"
+            cleanUpKind="cleanUp">
+      </cleanUpConfigurationUI>
+      <cleanUpConfigurationUI
             class="org.eclipse.jdt.internal.ui.preferences.cleanup.MemberAccessesTabPage"
             name="%CleanUpTabPage.MemberAccesses.name"
             cleanUpKind="cleanUp">
@@ -6890,6 +7004,11 @@
       <cleanUpConfigurationUI
             class="org.eclipse.jdt.internal.ui.preferences.cleanup.CodeStyleTabPage"
             name="%CleanUpTabPage.CodeStyle.name"
+            cleanUpKind="saveAction">
+      </cleanUpConfigurationUI>
+      <cleanUpConfigurationUI
+            class="org.eclipse.jdt.internal.ui.preferences.cleanup.OptimizationTabPage"
+            name="%CleanUpTabPage.Optimization.name"
             cleanUpKind="saveAction">
       </cleanUpConfigurationUI>
       <cleanUpConfigurationUI
@@ -6942,9 +7061,14 @@
             runAfter="org.eclipse.jdt.ui.cleanup.loop">
       </cleanUp>
       <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.VarCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.var"
+            runAfter="org.eclipse.jdt.ui.cleanup.variables">
+      </cleanUp>
+      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.LambdaExpressionsCleanUp"
             id="org.eclipse.jdt.ui.cleanup.lambda"
-            runAfter="org.eclipse.jdt.ui.cleanup.variables">
+            runAfter="org.eclipse.jdt.ui.cleanup.var">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.ExpressionsCleanUp"
@@ -6952,9 +7076,29 @@
             runAfter="org.eclipse.jdt.ui.cleanup.lambda">
       </cleanUp>
       <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.LambdaExpressionAndMethodRefCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref"
+            runAfter="org.eclipse.jdt.ui.cleanup.expressions">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.NumberSuffixCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.number_suffix"
+            runAfter="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.LazyLogicalCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.lazy_logical"
+            runAfter="org.eclipse.jdt.ui.cleanup.number_suffix">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.PatternCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.precompile_regex"
+            runAfter="org.eclipse.jdt.ui.cleanup.lazy_logical">
+      </cleanUp>
+      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.UnusedCodeCleanUp"
             id="org.eclipse.jdt.ui.cleanup.unused_code"
-            runAfter="org.eclipse.jdt.ui.cleanup.expressions">
+            runAfter="org.eclipse.jdt.ui.cleanup.precompile_regex">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.Java50CleanUp"
@@ -6982,9 +7126,19 @@
             runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_modifiers">
       </cleanUp>
       <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.UnnecessaryArrayCreationCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.unnecessary_array_creation"
+            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_semicolons">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.ObjectsEqualsCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.objects_equals"
+            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_array_creation">
+      </cleanUp>
+      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.StringCleanUp"
             id="org.eclipse.jdt.ui.cleanup.strings"
-            runAfter="org.eclipse.jdt.ui.cleanup.unnecessary_semicolons">
+            runAfter="org.eclipse.jdt.ui.cleanup.objects_equals">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.UnimplementedCodeCleanUp"
@@ -7010,6 +7164,31 @@
             class="org.eclipse.jdt.internal.ui.fix.TypeParametersCleanUp"
             id="org.eclipse.jdt.ui.cleanup.type_parameters"
             runAfter="org.eclipse.jdt.ui.cleanup.strings">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.AutoboxingCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.autoboxing"
+            runAfter="org.eclipse.jdt.ui.cleanup.type_parameters">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.UnboxingCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.unboxing"
+            runAfter="org.eclipse.jdt.ui.cleanup.autoboxing">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.PushDownNegationCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.push_down_negation"
+            runAfter="org.eclipse.jdt.ui.cleanup.unboxing">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.MergeConditionalBlocksCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.merge_conditional_blocks"
+            runAfter="org.eclipse.jdt.ui.cleanup.push_down_negation">
+      </cleanUp>
+      <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.MapMethodCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.use_directly_map_method"
+            runAfter="org.eclipse.jdt.ui.cleanup.merge_conditional_blocks">
       </cleanUp>
    </extension>
 
@@ -7170,6 +7349,31 @@
       	</action>
       </objectContribution>
   </extension>
+  <extension
+        point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true"
+            id="org.eclipse.jdt.ui.enable.preview.features">
+       	 <visibility>
+        	<and>
+            <objectState
+	            name="projectNature"
+	            value="org.eclipse.jdt.core.javanature"/>
+	        <objectState
+	        	name="open"
+	        	value="true"/>
+            </and>
+       	 </visibility>
+         <action
+            label="%enable.preview.features.label"
+            class="org.eclipse.jdt.internal.ui.actions.EnablePreviewFeaturesAction"
+            menubarPath="org.eclipse.ui.projectConfigure/additions"
+            enablesFor="1"
+            id="org.eclipse.jdt.ui.enable.preview.features.action">
+      	</action>
+      </objectContribution>
+  </extension>
 
   <extension
         point="org.eclipse.core.expressions.propertyTesters">
@@ -7236,7 +7440,6 @@
         </enabledWhen>
       </codeMiningProvider>
    </extension>
-<!-- disabled due bug 547833
   <extension
         id="javaChainProposalCategory"
         name="%ChainProposalCategory"
@@ -7250,8 +7453,8 @@
            activate="true"
            categoryId="org.eclipse.jdt.ui.javaChainProposalCategory"
            class="org.eclipse.jdt.internal.ui.text.java.ChainCompletionProposalComputer"
-           needsSortingAfterFiltering="false">
+           needsSortingAfterFiltering="false"
+           requiresUIThread="false">
      </javaCompletionProposalComputer>
   </extension>
--->
 </plugin>

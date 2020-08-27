@@ -733,6 +733,17 @@ public class FormatterModifyDialog extends ModifyDialog {
 	private void createIndentationTree() {
 		final Section globalSection= fTree.addSection(null, FormatterMessages.FormatterModifyDialog_indentation_tree_indentation, "section-indentation"); //$NON-NLS-1$
 		createGeneralIndentationPrefs(globalSection);
+		fTree.addComboPref(globalSection, FormatterMessages.FormatterModifyDialog_indentation_pref_text_block_indentation, DefaultCodeFormatterConstants.FORMATTER_TEXT_BLOCK_INDENTATION,
+				new String[] {
+						String.valueOf(DefaultCodeFormatterConstants.INDENT_PRESERVE),
+						String.valueOf(DefaultCodeFormatterConstants.INDENT_BY_ONE),
+						String.valueOf(DefaultCodeFormatterConstants.INDENT_DEFAULT),
+						String.valueOf(DefaultCodeFormatterConstants.INDENT_ON_COLUMN) },
+				new String[] {
+						FormatterMessages.FormatterModifyDialog_indentation_val_indentation_preserve,
+						FormatterMessages.FormatterModifyDialog_lineWrap_val_indentation_by_one,
+						FormatterMessages.FormatterModifyDialog_indentation_val_indentation_default,
+						FormatterMessages.FormatterModifyDialog_lineWrap_val_indentation_on_column });
 		fTree.addGap(globalSection);
 
 		fTree.builder(FormatterMessages.FormatterModifyDialog_indentation_tree_indented_elements, null, s -> CheckboxPreference.addModifyAll(s, fImages))
@@ -740,6 +751,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_declarations_within_enum_decl, DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_ENUM_DECLARATION_HEADER)
 				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_declarations_within_enum_const, DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_ENUM_CONSTANT_HEADER)
 				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_declarations_within_annot_decl, DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_ANNOTATION_DECLARATION_HEADER)
+				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_declarations_within_record_decl, DefaultCodeFormatterConstants.FORMATTER_INDENT_BODY_DECLARATIONS_COMPARE_TO_RECORD_HEADER)
 				.gap()
 				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_statements_compare_to_body, DefaultCodeFormatterConstants.FORMATTER_INDENT_STATEMENTS_COMPARE_TO_BODY)
 				.pref(FormatterMessages.FormatterModifyDialog_indentation_pref_indent_statements_compare_to_block, DefaultCodeFormatterConstants.FORMATTER_INDENT_STATEMENTS_COMPARE_TO_BLOCK)
@@ -839,7 +851,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 
 	private void createAlignOnColumnPrefs(Section parentSection) {
 		class CheckboxSpinnerPreference extends Preference<Button> {
-			
+
 			Spinner fSpinner;
 
 			CheckboxSpinnerPreference(Button checkbox, Spinner spinner, String label, String key) {
@@ -904,7 +916,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 				DefaultCodeFormatterConstants.FORMATTER_ALIGN_VARIABLE_DECLARATIONS_ON_COLUMNS, CheckboxPreference.FALSE_TRUE);
 		final CheckboxPreference alignAssignmentsPref= fTree.addCheckbox(alignSection, FormatterMessages.FormatterModifyDialog_indentation_pref_align_assignment_statements_on_columns,
 				DefaultCodeFormatterConstants.FORMATTER_ALIGN_ASSIGNMENT_STATEMENTS_ON_COLUMNS, CheckboxPreference.FALSE_TRUE);
-		
+
 		fTree.addGap(alignSection);
 		final CheckboxPreference useSpacesPref= fTree.addCheckbox(alignSection, FormatterMessages.FormatterModifyDialog_indentation_pref_align_with_spaces,
 				DefaultCodeFormatterConstants.FORMATTER_ALIGN_WITH_SPACES, CheckboxPreference.FALSE_TRUE);
@@ -971,6 +983,8 @@ public class FormatterModifyDialog extends ModifyDialog {
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_method_declaration, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_METHOD_DECLARATION)
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_enum_declaration, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_ENUM_DECLARATION)
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_enumconst_declaration, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_ENUM_CONSTANT)
+				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_record_declaration, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_RECORD_DECLARATION)
+				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_record_constructor, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_RECORD_CONSTRUCTOR)
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_annotation_type_declaration, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_ANNOTATION_TYPE_DECLARATION)
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_blocks, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_BLOCK)
 				.pref(FormatterMessages.FormatterModifyDialog_braces_pref_blocks_in_case, DefaultCodeFormatterConstants.FORMATTER_BRACE_POSITION_FOR_BLOCK_IN_CASE)
@@ -989,6 +1003,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_method_declaration, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_METHOD_DECLARATION)
 				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_method_invocation, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_METHOD_INVOCATION)
 				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_enum_constant_declaration, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_ENUM_CONSTANT_DECLARATION)
+				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_record_declaration, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_RECORD_DECLARATION)
 				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_annotation, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_ANNOTATION)
 				.pref(FormatterMessages.FormatterModifyDialog_parentheses_pref_lambda_declaration, DefaultCodeFormatterConstants.FORMATTER_PARENTHESES_POSITIONS_IN_LAMBDA_DECLARATION)
 				.gap()
@@ -1076,6 +1091,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace_decl, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_ENUM_DECLARATION)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_comma_decl, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COMMA_IN_ENUM_DECLARATIONS)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_comma_decl, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COMMA_IN_ENUM_DECLARATIONS)
+								.gap()
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren_const_arg, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_ENUM_CONSTANT)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren_const_arg, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_ENUM_CONSTANT)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_between_empty_parens_const_arg, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BETWEEN_EMPTY_PARENS_IN_ENUM_CONSTANT)
@@ -1089,6 +1105,15 @@ public class FormatterModifyDialog extends ModifyDialog {
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_ANNOTATION_TYPE_DECLARATION)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren_annot_type, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_ANNOTATION_TYPE_MEMBER_DECLARATION)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_between_empty_parens_annot_type, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BETWEEN_EMPTY_PARENS_IN_ANNOTATION_TYPE_MEMBER_DECLARATION))
+						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_records, "-records", modAll) //$NON-NLS-1$
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_PAREN_IN_RECORD_DECLARATION)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_opening_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_OPENING_PAREN_IN_RECORD_DECLARATION)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_comma_in_record_components, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_COMMA_IN_RECORD_COMPONENTS)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_comma_in_record_components, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_COMMA_IN_RECORD_COMPONENTS)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_closing_paren, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_CLOSING_PAREN_IN_RECORD_DECLARATION)
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace_decl, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_RECORD_DECLARATION)
+								.gap()
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_opening_brace_in_record_constructor, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_OPENING_BRACE_IN_RECORD_CONSTRUCTOR))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_lambda, "-lambdas", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_arrow_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_LAMBDA_ARROW)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_arrow_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_LAMBDA_ARROW)))
@@ -1169,7 +1194,9 @@ public class FormatterModifyDialog extends ModifyDialog {
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_PREFIX_OPERATOR)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_prefix_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_PREFIX_OPERATOR)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_UNARY_OPERATOR)
-								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_UNARY_OPERATOR))
+								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_unary_operators, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_UNARY_OPERATOR, pref -> {
+									fTree.addCheckbox(pref, FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_not_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_NOT_OPERATOR, CheckboxPreference.DO_NOT_INSERT_INSERT);
+								}))
 						.node(fTree.builder(FormatterMessages.FormatterModifyDialog_whiteSpace_tree_binary_operators, "-binaryoperators", modAll) //$NON-NLS-1$
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_before_multiplicative_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_BEFORE_MULTIPLICATIVE_OPERATOR)
 								.pref(FormatterMessages.FormatterModifyDialog_whiteSpace_pref_after_multiplicative_operator, DefaultCodeFormatterConstants.FORMATTER_INSERT_SPACE_AFTER_MULTIPLICATIVE_OPERATOR)
@@ -1263,11 +1290,20 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_between_type_declarations, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BETWEEN_TYPE_DECLARATIONS))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_blankLines_tree_class_declarations, null, modAll)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_first_decl, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_FIRST_CLASS_BODY_DECLARATION)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_after_last_decl, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AFTER_LAST_CLASS_BODY_DECLARATION)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_decls_of_same_kind, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_NEW_CHUNK)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_member_class_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_MEMBER_TYPE)
 						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_field_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_FIELD)
-						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_method_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_METHOD)
-						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_beginning_of_method_body, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_BEGINNING_OF_METHOD_BODY))
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_abstract_method_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_ABSTRACT_METHOD)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_method_decls, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_METHOD))
+				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_blankLines_tree_method_declarations, null, modAll)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_beginning_of_method_body, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_BEGINNING_OF_METHOD_BODY)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_end_of_method_body, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_END_OF_METHOD_BODY)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_beginning_of_code_block, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_BEGINNING_OF_CODE_BLOCK)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_at_end_of_code_block, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AT_END_OF_CODE_BLOCK)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_before_code_block, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BEFORE_CODE_BLOCK)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_after_code_block, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_AFTER_CODE_BLOCK)
+						.pref(FormatterMessages.FormatterModifyDialog_blankLines_pref_between_statement_groups_in_switch, DefaultCodeFormatterConstants.FORMATTER_BLANK_LINES_BETWEEN_STATEMENT_GROUPS_IN_SWITCH))
 				.build(null, new PreferenceBuilder() {
 					NumberPreference fPreserveLinesPref;
 
@@ -1377,6 +1413,8 @@ public class FormatterModifyDialog extends ModifyDialog {
 				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_anonymous_type_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ANONYMOUS_TYPE_DECLARATION_ON_ONE_LINE)
 				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_enum_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_DECLARATION_ON_ONE_LINE)
 				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_enum_constant_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ENUM_CONSTANT_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_record_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_RECORD_DECLARATION_ON_ONE_LINE)
+				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_record_constructor_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_RECORD_CONSTRUCTOR_ON_ONE_LINE)
 				.pref(FormatterMessages.FormatterModifyDialog_newLines_pref_keep_annotation_declaration_on_one_line, DefaultCodeFormatterConstants.FORMATTER_KEEP_ANNOTATION_DECLARATION_ON_ONE_LINE);
 
 		return fTree.new SimpleTreeBuilder<PreferenceTreeNode<?>>(null, null, null) {
@@ -1418,6 +1456,9 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_constants, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ENUM_CONSTANTS)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_superinterfaces, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_SUPERINTERFACES_IN_ENUM_DECLARATION)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_constant_arguments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ARGUMENTS_IN_ENUM_CONSTANT))
+				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_record_decls, null, modAll)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_record_components, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_RECORD_COMPONENTS)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_superinterfaces, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_SUPERINTERFACES_IN_RECORD_DECLARATION))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_function_calls, null, modAll)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_arguments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ARGUMENTS_IN_METHOD_INVOCATION)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_qualified_invocations, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_SELECTOR_IN_METHOD_INVOCATION)
@@ -1442,7 +1483,8 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_compact_if_else, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_COMPACT_IF)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_compact_loops, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_COMPACT_LOOP)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_try, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_RESOURCES_IN_TRY)
-						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_catch, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_UNION_TYPE_IN_MULTICATCH))
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_catch, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_UNION_TYPE_IN_MULTICATCH)
+						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_assertion_message, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ASSERTION_MESSAGE))
 				.node(fTree.builder(FormatterMessages.FormatterModifyDialog_lineWrap_tree_parameterized_types, null, modAll)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_param_type_ref, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_PARAMETERIZED_TYPE_REFERENCES)
 						.pref(FormatterMessages.FormatterModifyDialog_lineWrap_pref_param_type_arguments, DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_TYPE_ARGUMENTS)
@@ -1482,6 +1524,9 @@ public class FormatterModifyDialog extends ModifyDialog {
 						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ASSIGNMENT:
 							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_ASSIGNMENT_OPERATOR;
 							break;
+						case DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ASSERTION_MESSAGE:
+							wrapBeforeKey= DefaultCodeFormatterConstants.FORMATTER_WRAP_BEFORE_ASSERTION_MESSAGE_OPERATOR;
+							break;
 						default:
 					}
 					LineWrapPreference preference= LineWrapPreference.create(parent.fInnerComposite, label, key, wrapBeforeKey, fImages);
@@ -1513,6 +1558,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 						.pref(FormatterMessages.FormatterModifyDialog_comments_pref_format_html, DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_HTML)
 						.pref(FormatterMessages.FormatterModifyDialog_comments_pref_format_code_snippets, DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_SOURCE)
 						.pref(FormatterMessages.FormatterModifyDialog_comments_pref_blank_line_before_javadoc_tags, DefaultCodeFormatterConstants.FORMATTER_COMMENT_INSERT_EMPTY_LINE_BEFORE_ROOT_TAGS)
+						.pref(FormatterMessages.FormatterModifyDialog_comments_pref_blank_line_beftween_different_tags, DefaultCodeFormatterConstants.FORMATTER_COMMENT_INSERT_EMPTY_LINE_BETWEEN_DIFFERENT_TAGS)
 						.node(createJavadocAlignOptions())
 						.gap()
 						.pref(FormatterMessages.FormatterModifyDialog_comments_pref_new_lines_at_javadoc_boundaries, DefaultCodeFormatterConstants.FORMATTER_COMMENT_NEW_LINES_AT_JAVADOC_BOUNDARIES)
@@ -1527,6 +1573,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 						case DefaultCodeFormatterConstants.FORMATTER_JOIN_LINES_IN_COMMENTS:
 							return fTree.addCheckbox(parent, label, key, CheckboxPreference.TRUE_FALSE);
 						case DefaultCodeFormatterConstants.FORMATTER_COMMENT_INSERT_EMPTY_LINE_BEFORE_ROOT_TAGS:
+						case DefaultCodeFormatterConstants.FORMATTER_COMMENT_INSERT_EMPTY_LINE_BETWEEN_DIFFERENT_TAGS:
 							return fTree.addCheckbox(parent, label, key, CheckboxPreference.DO_NOT_INSERT_INSERT);
 						default:
 							return fTree.addCheckbox(parent, label, key, CheckboxPreference.FALSE_TRUE);
@@ -1536,10 +1583,10 @@ public class FormatterModifyDialog extends ModifyDialog {
 		Preference<?> javadocMaster= section.findChildPreference(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_JAVADOC_COMMENT);
 		Preference<?> blockMaster= section.findChildPreference(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_BLOCK_COMMENT);
 		Preference<?> headerMaster= section.findChildPreference(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_HEADER);
-		
+
 		Predicate<String> javadocChecker= v -> javadocMaster.getValue().equals(DefaultCodeFormatterConstants.TRUE) || headerMaster.getValue().equals(DefaultCodeFormatterConstants.TRUE);
 		Predicate<String> blockChecker= v -> blockMaster.getValue().equals(DefaultCodeFormatterConstants.TRUE) || headerMaster.getValue().equals(DefaultCodeFormatterConstants.TRUE);
-		
+
 		List<PreferenceTreeNode<?>> mainItems= section.getChildren();
 		Function<String, Section> sectionFinder= key -> mainItems.stream().filter(n -> n instanceof Section)
 				.map(n -> (Section) n).filter(n -> n.getKey().endsWith(key)).findAny().get();
@@ -1701,7 +1748,7 @@ public class FormatterModifyDialog extends ModifyDialog {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	@Override

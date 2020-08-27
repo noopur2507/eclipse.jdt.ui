@@ -102,14 +102,12 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 
 		int minStart= Integer.MAX_VALUE;
 		int maxEnd= Integer.MIN_VALUE;
-		for (int i= 0, n= removedPositions.size(); i < n; i++) {
-			Position position= removedPositions.get(i);
+		for (Position position : removedPositions) {
 			int offset= position.getOffset();
 			minStart= Math.min(minStart, offset);
 			maxEnd= Math.max(maxEnd, offset + position.getLength());
 		}
-		for (int i= 0, n= addedPositions.size(); i < n; i++) {
-			Position position= addedPositions.get(i);
+		for (Position position : addedPositions) {
 			int offset= position.getOffset();
 			minStart= Math.min(minStart, offset);
 			maxEnd= Math.max(maxEnd, offset + position.getLength());
@@ -148,12 +146,7 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 		if (isCanceled())
 			return null;
 
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				updatePresentation(textPresentation, added, removed);
-			}
-		};
+		Runnable runnable= () -> updatePresentation(textPresentation, added, removed);
 		return runnable;
 	}
 
@@ -242,10 +235,7 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 				}
 				fPositions= newPositions;
 			}
-		} catch (BadPositionCategoryException e) {
-			// Should not happen
-			JavaPlugin.log(e);
-		} catch (BadLocationException e) {
+		} catch (BadPositionCategoryException | BadLocationException e) {
 			// Should not happen
 			JavaPlugin.log(e);
 		}
@@ -445,8 +435,8 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 	 * @param highlighting The highlighting
 	 */
 	public void highlightingStyleChanged(Highlighting highlighting) {
-		for (int i= 0, n= fPositions.size(); i < n; i++) {
-			HighlightedPosition position= (HighlightedPosition) fPositions.get(i);
+		for (Position fPosition : fPositions) {
+			HighlightedPosition position= (HighlightedPosition) fPosition;
 			if (position.getHighlighting() == highlighting)
 				fSourceViewer.invalidateTextPresentation(position.getOffset(), position.getLength());
 		}
@@ -456,8 +446,7 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 	 * Invalidate text presentation of all positions.
 	 */
 	private void invalidateTextPresentation() {
-		for (int i= 0, n= fPositions.size(); i < n; i++) {
-			Position position= fPositions.get(i);
+		for (Position position : fPositions) {
 			fSourceViewer.invalidateTextPresentation(position.getOffset(), position.getLength());
 		}
 	}
@@ -466,7 +455,7 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 	 * Add a position with the given range and highlighting unconditionally, only from UI thread.
 	 * The position will also be registered on the document. The text presentation is not
 	 * invalidated.
-	 * 
+	 *
 	 * @param offset The range offset
 	 * @param length The range length
 	 * @param highlighting the highlighting
@@ -483,10 +472,7 @@ public class SemanticHighlightingPresenter extends SemanticHighlightingPresenter
 		String positionCategory= getPositionCategory();
 		try {
 			document.addPosition(positionCategory, position);
-		} catch (BadLocationException e) {
-			// Should not happen
-			JavaPlugin.log(e);
-		} catch (BadPositionCategoryException e) {
+		} catch (BadLocationException | BadPositionCategoryException e) {
 			// Should not happen
 			JavaPlugin.log(e);
 		}

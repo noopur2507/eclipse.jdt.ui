@@ -16,7 +16,6 @@ package org.eclipse.jdt.ui.text.java.correction;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -65,19 +64,19 @@ import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
  * Implementation of a Java completion proposal to be used for quick fix and quick assist proposals
  * that are based on a {@link Change}. The proposal offers additional proposal information (based on
  * the {@link Change}).
- * 
+ *
  * @since 3.8
  */
 public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore implements IJavaCompletionProposal, ICommandAccess, ICompletionProposalExtension5, ICompletionProposalExtension6 {
 
 	private static final NullChange COMPUTING_CHANGE= new NullChange("ChangeCorrectionProposal computing..."); //$NON-NLS-1$
-	
+
 	private Image fImage;
 	private String fCommandId;
 
 	/**
 	 * Constructs a change correction proposal.
-	 * 
+	 *
 	 * @param name the name that is displayed in the proposal selection dialog
 	 * @param change the change that is executed when the proposal is applied or <code>null</code>
 	 *            if the change will be created by implementors of {@link #createChange()}
@@ -93,7 +92,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 
 	/**
 	 * Constructs a change correction proposal. Uses the default image for this proposal.
-	 * 
+	 *
 	 * @param name The name that is displayed in the proposal selection dialog.
 	 * @param change The change that is executed when the proposal is applied or <code>null</code>
 	 *            if the change will be created by implementors of {@link #createChange()}.
@@ -119,7 +118,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 	 * Performs the change associated with this proposal.
 	 * <p>
  	 * Subclasses may extend, but must call the super implementation.
-	 * 
+	 *
 	 * @param activeEditor the editor currently active or <code>null</code> if no editor is active
 	 * @param document the document of the editor currently active or <code>null</code> if no editor
 	 *            is visible
@@ -128,7 +127,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 	protected void performChange(IEditorPart activeEditor, IDocument document) throws CoreException {
 		StyledText disabledStyledText= null;
 		TraverseListener traverseBlocker= null;
-		
+
 		Change change= null;
 		IRewriteTarget rewriteTarget= null;
 		try {
@@ -148,7 +147,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 					 * widget has focus. When that happens and the user e.g. pressed a key, the event is prematurely
 					 * delivered to the text widget and screws up the document. Change execution fails or performs
 					 * wrong changes.
-					 * 
+					 *
 					 * The fix is to temporarily disable the text widget.
 					 */
 					Object control= activeEditor.getAdapter(Control.class);
@@ -156,12 +155,9 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 						disabledStyledText= (StyledText) control;
 						if (disabledStyledText.getEditable()) {
 							disabledStyledText.setEditable(false);
-							traverseBlocker= new TraverseListener() {
-								@Override
-								public void keyTraversed(TraverseEvent e) {
-									e.doit= true;
-									e.detail= SWT.TRAVERSE_NONE;
-								}
+							traverseBlocker= e -> {
+								e.doit= true;
+								e.detail= SWT.TRAVERSE_NONE;
 							};
 							disabledStyledText.addTraverseListener(traverseBlocker);
 						} else {
@@ -281,7 +277,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 	/**
 	 * Returns the change that will be executed when the proposal is applied.
 	 * This method calls {@link #createChange()} to compute the change.
-	 * 
+	 *
 	 * @return the change for this proposal, can be <code>null</code> in rare cases if creation of
 	 *         the change failed
 	 * @throws CoreException when the change could not be created
@@ -291,7 +287,7 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 		if (Util.isGtk()) {
 			// workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=293995 :
 			// [Widgets] Deadlock while UI thread displaying/computing a change proposal and non-UI thread creating image
-			
+
 			// Solution is to create the change outside a 'synchronized' block.
 			// Synchronization is achieved by polling fChange, using "fChange == COMPUTING_CHANGE" as barrier.
 			// Timeout of 10s for safety reasons (should not be reached).
@@ -332,13 +328,13 @@ public class ChangeCorrectionProposal extends ChangeCorrectionProposalCore imple
 					return change;
 				}
 			} while (System.currentTimeMillis() < end);
-			
+
 			synchronized (this) {
 				if (fChange == COMPUTING_CHANGE) {
 					return null; //failed
 				}
 			}
-			
+
 		} else {
 			synchronized (this) {
 				if (fChange == null) {

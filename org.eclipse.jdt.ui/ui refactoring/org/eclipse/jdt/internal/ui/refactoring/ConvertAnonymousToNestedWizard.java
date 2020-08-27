@@ -14,8 +14,6 @@
 package org.eclipse.jdt.internal.ui.refactoring;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -43,7 +41,7 @@ public class ConvertAnonymousToNestedWizard extends RefactoringWizard {
 
 	/**
 	 * The dialog setting section for <code>ConvertAnonymousToNestedWizard</code>.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	static final String DIALOG_SETTING_SECTION= "ConvertAnonymousToNestedWizard"; //$NON-NLS-1$
@@ -69,28 +67,28 @@ public class ConvertAnonymousToNestedWizard extends RefactoringWizard {
 
 		/**
 		 * Stores the value of the declare as static option.
-		 * 
+		 *
 		 * @since 3.7
 		 */
 		private static final String DECLARE_AS_STATIC= "DeclareAsStatic"; //$NON-NLS-1$
 
 		/**
 		 * Stores the value of the declare as final option.
-		 * 
+		 *
 		 * @since 3.7
 		 */
 		private static final String DECLARE_AS_FINAL= "DeclareAsFinal"; //$NON-NLS-1$
 
 		/**
 		 * Stores the value of visibility control option.
-		 * 
+		 *
 		 * @since 3.7
 		 */
 		private static final String VISIBILITY_CONTROL= "VisibilityControl"; //$NON-NLS-1$
 
 		/**
 		 * Stores the dialog settings.
-		 * 
+		 *
 		 * @since 3.7
 		 */
 		private IDialogSettings fSettings;
@@ -102,7 +100,7 @@ public class ConvertAnonymousToNestedWizard extends RefactoringWizard {
 
 		/**
 		 * Initializes the default settings for the dialog options.
-		 * 
+		 *
 		 * @since 3.7
 		 */
 		private void initializeDefaultSettings() {
@@ -143,12 +141,9 @@ public class ConvertAnonymousToNestedWizard extends RefactoringWizard {
 
 			final Text classNameField= new Text(result, SWT.BORDER | SWT.SINGLE);
 			classNameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			classNameField.addModifyListener(new ModifyListener(){
-				@Override
-				public void modifyText(ModifyEvent e) {
-					ConvertAnonymousToNestedInputPage.this.getConvertRefactoring().setClassName(classNameField.getText());
-					ConvertAnonymousToNestedInputPage.this.updateStatus();
-				}
+			classNameField.addModifyListener(e -> {
+				ConvertAnonymousToNestedInputPage.this.getConvertRefactoring().setClassName(classNameField.getText());
+				ConvertAnonymousToNestedInputPage.this.updateStatus();
 			});
 			TextFieldNavigationHandler.install(classNameField);
 			return classNameField;

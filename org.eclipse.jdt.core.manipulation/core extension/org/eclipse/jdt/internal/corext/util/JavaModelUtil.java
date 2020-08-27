@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.SubMonitor;
 
@@ -36,6 +37,8 @@ import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ltk.core.refactoring.resource.Resources;
 
 import org.eclipse.jdt.core.ClasspathContainerInitializer;
+import org.eclipse.jdt.core.CompletionProposal;
+import org.eclipse.jdt.core.CompletionRequestor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -70,14 +73,14 @@ import org.eclipse.jdt.launching.environments.IExecutionEnvironment;
  */
 // @see JDTUIHelperClasses
 public final class JavaModelUtil {
-	
+
 	/**
 	 * The latest available {@link JavaCore}{@code #VERSION_*} level.
 	 * @since 3.7
 	 */
 	public static final String VERSION_LATEST;
 	static {
-		VERSION_LATEST= JavaCore.VERSION_12; // make sure it is not inlined
+		VERSION_LATEST= JavaCore.VERSION_14; // make sure it is not inlined
 	}
 
 	public static final int VALIDATE_EDIT_CHANGED_CONTENT= 10003;
@@ -102,7 +105,7 @@ public final class JavaModelUtil {
 	 * @since 3.8
 	 */
 	public static final String PACKAGE_INFO_JAVA= "package-info.java"; //$NON-NLS-1$
-	
+
 	/**
 	 * The name of the package-info.class file.
 	 * @since 3.9
@@ -137,7 +140,7 @@ public final class JavaModelUtil {
 	 * Finds a type container by container name. The returned element will be of type
 	 * <code>IType</code> or a <code>IPackageFragment</code>. <code>null</code> is returned if the
 	 * type container could not be found.
-	 * 
+	 *
 	 * @param jproject The Java project defining the context to search
 	 * @param typeContainerName A dot separated name of the type container
 	 * @return returns the container
@@ -168,11 +171,10 @@ public final class JavaModelUtil {
 	 * @throws JavaModelException thrown when the cu can not be accessed
 	 */
 	public static IType findTypeInCompilationUnit(ICompilationUnit cu, String typeQualifiedName) throws JavaModelException {
-		IType[] types= cu.getAllTypes();
-		for (int i= 0; i < types.length; i++) {
-			String currName= types[i].getTypeQualifiedName('.');
+		for (IType type : cu.getAllTypes()) {
+			String currName= type.getTypeQualifiedName('.');
 			if (typeQualifiedName.equals(currName)) {
-				return types[i];
+				return type;
 			}
 		}
 		return null;
@@ -254,7 +256,7 @@ public final class JavaModelUtil {
 	/**
 	 * Returns whether the two names match. They match if they
 	 * are equal, or if they are the same name but one is missing a dot-separated qualifier.
-	 * 
+	 *
 	 * @param nameA a potentially qualified name
 	 * @param nameB a potentially qualified name
 	 * @return <code>true</code> iff the given names match
@@ -352,10 +354,9 @@ public final class JavaModelUtil {
 	 * @throws JavaModelException thrown when the type can not be accessed
 	 */
 	public static IMethod findMethod(String name, String[] paramTypes, boolean isConstructor, IType type) throws JavaModelException {
-		IMethod[] methods= type.getMethods();
-		for (int i= 0; i < methods.length; i++) {
-			if (isSameMethodSignature(name, paramTypes, isConstructor, methods[i])) {
-				return methods[i];
+		for (IMethod method : type.getMethods()) {
+			if (isSameMethodSignature(name, paramTypes, isConstructor, method)) {
+				return method;
 			}
 		}
 		return null;
@@ -388,9 +389,8 @@ public final class JavaModelUtil {
 			}
 		}
 		if (!isConstructor) {
-			IType[] superInterfaces= hierarchy.getSuperInterfaces(type);
-			for (int i= 0; i < superInterfaces.length; i++) {
-				IMethod res= findMethodInHierarchy(hierarchy, superInterfaces[i], name, paramTypes, false);
+			for (IType superInterface : hierarchy.getSuperInterfaces(type)) {
+				IMethod res= findMethodInHierarchy(hierarchy, superInterface, name, paramTypes, false);
 				if (res != null) {
 					return res;
 				}
@@ -448,9 +448,8 @@ public final class JavaModelUtil {
 	 * @throws JavaModelException thrown when the type can not be accessed
 	 */
 	public static boolean hasMainMethod(IType type) throws JavaModelException {
-		IMethod[] methods= type.getMethods();
-		for (int i= 0; i < methods.length; i++) {
-			if (methods[i].isMainMethod()) {
+		for (IMethod method : type.getMethods()) {
+			if (method.isMainMethod()) {
 				return true;
 			}
 		}
@@ -493,7 +492,7 @@ public final class JavaModelUtil {
 	 *
 	 * @param refTypeSig the type name in signature notation (for example 'QVector') this can also be an array type, but dimensions will be ignored.
 	 * @param declaringType the context for resolving (type where the reference was made in)
-	 * @param enclosingTypeSeparator the enclosing type separator used in the qualified type name 
+	 * @param enclosingTypeSeparator the enclosing type separator used in the qualified type name
 	 * @return returns the fully qualified type name or build-in-type name. if a unresolved type couldn't be resolved null is returned
 	 * @throws JavaModelException thrown when the type can not be accessed
 	 */
@@ -544,7 +543,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Checks whether the given type signature is from a primitive type.
-	 * 
+	 *
 	 * @param typeSignature the type signature string to check
 	 * @return <code>true</code> if the type is a primitive type, <code> false</code> otherwise
 	 * @throws JavaModelException if this element does not exist or if an exception occurs while
@@ -597,9 +596,7 @@ public final class JavaModelUtil {
 			return true;
 		}
 		if (Flags.isInterface(hierarchy.getCachedFlags(possibleSuperType))) {
-			IType[] superInterfaces= hierarchy.getSuperInterfaces(type);
-			for (int i= 0; i < superInterfaces.length; i++) {
-				IType curr= superInterfaces[i];
+			for (IType curr : hierarchy.getSuperInterfaces(type)) {
 				if (possibleSuperType.equals(curr) || isSuperType(hierarchy, possibleSuperType, curr)) {
 					return true;
 				}
@@ -610,8 +607,8 @@ public final class JavaModelUtil {
 
 	public static boolean isExcludedPath(IPath resourcePath, IPath[] exclusionPatterns) {
 		char[] path = resourcePath.toString().toCharArray();
-		for (int i = 0, length = exclusionPatterns.length; i < length; i++) {
-			char[] pattern= exclusionPatterns[i].toString().toCharArray();
+		for (IPath exclusionPattern : exclusionPatterns) {
+			char[] pattern= exclusionPattern.toString().toCharArray();
 			if (CharOperation.pathMatch(pattern, path, true, '/')) {
 				return true;
 			}
@@ -632,8 +629,8 @@ public final class JavaModelUtil {
 	public static boolean isExcluded(IPath resourcePath, char[][] exclusionPatterns) {
 		if (exclusionPatterns == null) return false;
 		char[] path = resourcePath.toString().toCharArray();
-		for (int i = 0, length = exclusionPatterns.length; i < length; i++)
-			if (CharOperation.pathMatch(exclusionPatterns[i], path, true, '/'))
+		for (char[] exclusionPattern : exclusionPatterns)
+			if (CharOperation.pathMatch(exclusionPattern, path, true, '/'))
 				return true;
 		return false;
 	}
@@ -681,9 +678,7 @@ public final class JavaModelUtil {
 	 * <code>null</code> if the container can not be modified.
 	 */
 	public static IClasspathEntry findEntryInContainer(IClasspathContainer container, IPath libPath) {
-		IClasspathEntry[] entries= container.getClasspathEntries();
-		for (int i= 0; i < entries.length; i++) {
-			IClasspathEntry curr= entries[i];
+		for (IClasspathEntry curr : container.getClasspathEntries()) {
 			IClasspathEntry resolved= JavaCore.getResolvedClasspathEntry(curr);
 			if (resolved != null && libPath.equals(resolved.getPath())) {
 				return curr; // return the real entry
@@ -695,7 +690,7 @@ public final class JavaModelUtil {
 	/**
 	 * Returns the classpath entry of the given package fragment root. This is the raw entry, except
 	 * if the root is a referenced library, in which case it's the resolved entry.
-	 * 
+	 *
 	 * @param root a package fragment root
 	 * @return the corresponding classpath entry
 	 * @throws JavaModelException if accessing the entry failed
@@ -729,8 +724,8 @@ public final class JavaModelUtil {
 	 */
 	public static ICompilationUnit[] getAllCompilationUnits(IJavaElement[] javaElements) throws JavaModelException {
 		HashSet<ICompilationUnit> result= new HashSet<>();
-		for (int i= 0; i < javaElements.length; i++) {
-			addAllCus(result, javaElements[i]);
+		for (IJavaElement javaElement : javaElements) {
+			addAllCus(result, javaElement);
 		}
 		return result.toArray(new ICompilationUnit[result.size()]);
 	}
@@ -739,19 +734,21 @@ public final class JavaModelUtil {
 		switch (javaElement.getElementType()) {
 			case IJavaElement.JAVA_PROJECT:
 				IJavaProject javaProject= (IJavaProject) javaElement;
-				IPackageFragmentRoot[] packageFragmentRoots= javaProject.getPackageFragmentRoots();
-				for (int i= 0; i < packageFragmentRoots.length; i++)
-					addAllCus(collector, packageFragmentRoots[i]);
+				for (IPackageFragmentRoot packageFragmentRoot : javaProject.getPackageFragmentRoots()) {
+					addAllCus(collector, packageFragmentRoot);
+				}
 				return;
+
 
 			case IJavaElement.PACKAGE_FRAGMENT_ROOT:
 				IPackageFragmentRoot packageFragmentRoot= (IPackageFragmentRoot) javaElement;
 				if (packageFragmentRoot.getKind() != IPackageFragmentRoot.K_SOURCE)
 					return;
-				IJavaElement[] packageFragments= packageFragmentRoot.getChildren();
-				for (int j= 0; j < packageFragments.length; j++)
-					addAllCus(collector, packageFragments[j]);
+				for (IJavaElement packageFragment : packageFragmentRoot.getChildren()) {
+					addAllCus(collector, packageFragment);
+				}
 				return;
+
 
 			case IJavaElement.PACKAGE_FRAGMENT:
 				IPackageFragment packageFragment= (IPackageFragment) javaElement;
@@ -792,14 +789,18 @@ public final class JavaModelUtil {
 	}
 
 
+	public static boolean is40OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_1_4);
+	}
+
 	public static boolean is50OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_1_5);
 	}
-	
+
 	public static boolean is16OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_1_6);
 	}
-	
+
 	public static boolean is17OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_1_7);
 	}
@@ -811,7 +812,7 @@ public final class JavaModelUtil {
 	public static boolean is9OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_9);
 	}
-	
+
 	public static boolean is10OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_10);
 	}
@@ -822,6 +823,24 @@ public final class JavaModelUtil {
 
 	public static boolean is12OrHigher(String compliance) {
 		return !isVersionLessThan(compliance, JavaCore.VERSION_12);
+	}
+
+	public static boolean is13OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_13);
+	}
+
+	public static boolean is14OrHigher(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.VERSION_14);
+	}
+
+	/**
+	 * Checks if the given project or workspace has source compliance 1.4 or greater.
+	 *
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 * @return <code>true</code> if the given project or workspace has source compliance 1.4 or greater.
+	 */
+	public static boolean is1d4OrHigher(IJavaProject project) {
+		return is40OrHigher(getSourceCompliance(project));
 	}
 
 	/**
@@ -843,10 +862,10 @@ public final class JavaModelUtil {
 	public static boolean is17OrHigher(IJavaProject project) {
 		return is17OrHigher(getSourceCompliance(project));
 	}
-	
+
 	/**
 	 * Checks if the given project or workspace has source compliance 1.8 or greater.
-	 * 
+	 *
 	 * @param project the project to test or <code>null</code> to test the workspace settings
 	 * @return <code>true</code> if the given project or workspace has source compliance 1.8 or
 	 *         greater.
@@ -857,7 +876,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Checks if the given project or workspace has source compliance 9 or greater.
-	 * 
+	 *
 	 * @param project the project to test or <code>null</code> to test the workspace settings
 	 * @return <code>true</code> if the given project or workspace has source compliance 9 or
 	 *         greater.
@@ -868,7 +887,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Checks if the given project or workspace has source compliance 10 or greater.
-	 * 
+	 *
 	 * @param project the project to test or <code>null</code> to test the workspace settings
 	 * @return <code>true</code> if the given project or workspace has source compliance 10 or greater.
 	 */
@@ -878,22 +897,60 @@ public final class JavaModelUtil {
 
 	/**
 	 * Checks if the given project or workspace has source compliance 11 or greater.
-	 * 
+	 *
 	 * @param project the project to test or <code>null</code> to test the workspace settings
 	 * @return <code>true</code> if the given project or workspace has source compliance 11 or greater.
 	 */
 	public static boolean is11OrHigher(IJavaProject project) {
 		return is11OrHigher(getSourceCompliance(project));
 	}
-	
+
 	public static boolean is12OrHigher(IJavaProject project) {
 		return is12OrHigher(getSourceCompliance(project));
+	}
+
+	/**
+	 * Checks if the given project or workspace has source compliance 13 or greater.
+	 *
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 * @return <code>true</code> if the given project or workspace has source compliance 13 or greater.
+	 */
+	public static boolean is13OrHigher(IJavaProject project) {
+		return is13OrHigher(getSourceCompliance(project));
+	}
+
+	/**
+	 * Checks if the given project or workspace has source compliance 14 or greater.
+	 *
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 * @return <code>true</code> if the given project or workspace has source compliance 14 or
+	 *         greater.
+	 */
+	public static boolean is14OrHigher(IJavaProject project) {
+		return is14OrHigher(getSourceCompliance(project));
 	}
 
 	private static String getSourceCompliance(IJavaProject project) {
 		return project != null ? project.getOption(JavaCore.COMPILER_SOURCE, true) : JavaCore.getOption(JavaCore.COMPILER_SOURCE);
 	}
-	
+
+	/**
+	 * Checks if the given project or workspace has source compliance greater than or equal to the
+	 * latest supported Java version.
+	 *
+	 * @param project the project to test or <code>null</code> to test the workspace settings
+	 *
+	 * @return <code>true</code> if the given project or workspace has source compliance greater
+	 *         than or equal to the latest supported Java version.
+	 */
+	public static boolean isLatestOrHigherJavaVersion(IJavaProject project) {
+		return isLatestOrHigherJavaVersion(getSourceCompliance(project));
+	}
+
+	public static boolean isLatestOrHigherJavaVersion(String compliance) {
+		return !isVersionLessThan(compliance, JavaCore.latestSupportedJavaVersion());
+	}
+
 	/**
 	 * Checks if the JRE of the given project or workspace default JRE have source compliance 1.5 or
 	 * greater.
@@ -923,6 +980,10 @@ public final class JavaModelUtil {
 		String version= vMInstall.getJavaVersion();
 		if (version == null) {
 			return defaultCompliance;
+		} else if (version.startsWith(JavaCore.VERSION_14)) {
+			return JavaCore.VERSION_14;
+		} else if (version.startsWith(JavaCore.VERSION_13)) {
+			return JavaCore.VERSION_13;
 		} else if (version.startsWith(JavaCore.VERSION_12)) {
 			return JavaCore.VERSION_12;
 		} else if (version.startsWith(JavaCore.VERSION_11)) {
@@ -958,10 +1019,14 @@ public final class JavaModelUtil {
 			if (compliance instanceof String)
 				return (String)compliance;
 		}
-		
+
 		// fallback:
 		String desc= executionEnvironment.getId();
-		if (desc.indexOf(JavaCore.VERSION_12) != -1) {
+		if (desc.indexOf(JavaCore.VERSION_14) != -1) {
+			return JavaCore.VERSION_14;
+		} else if (desc.indexOf(JavaCore.VERSION_13) != -1) {
+			return JavaCore.VERSION_13;
+		} else if (desc.indexOf(JavaCore.VERSION_12) != -1) {
 			return JavaCore.VERSION_12;
 		} else if (desc.indexOf(JavaCore.VERSION_11) != -1) {
 			return JavaCore.VERSION_11;
@@ -1046,7 +1111,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Tells whether the given type root represents a module.
-	 * 
+	 *
 	 * @param typeRoot the type root to test
 	 * @return <code>true</code> if the given type root is a module-info.java CU or a module-info.class class file.
 	 * @since 3.14
@@ -1058,7 +1123,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Tells whether the given Java element represents a module.
-	 * 
+	 *
 	 * @param javaElement the Java element to test
 	 * @return <code>true</code> if the given Java element represents a module.
 	 * @since 3.14
@@ -1072,7 +1137,7 @@ public final class JavaModelUtil {
 	 * Tells whether the given package fragment contains any ordinary compilation unit,
 	 * not counting the modular compilation unit module-info.java nor its class file module-info.class.
 	 * @param fragment a package fragment to test
-	 * @return true iff at least one ordinary compilation unit (or class file) was found. 
+	 * @return true iff at least one ordinary compilation unit (or class file) was found.
 	 * @throws JavaModelException if the package fragment does not exist or if an
 	 *      exception occurs while accessing its corresponding resource
 	 * @since 3.14
@@ -1091,7 +1156,7 @@ public final class JavaModelUtil {
 
 	/**
 	 * Applies a text edit to a compilation unit.
-	 * 
+	 *
 	 * @param cu the compilation unit to apply the edit to
 	 * @param edit the edit to apply
 	 * @param save is set, save the CU after the edit has been applied
@@ -1111,6 +1176,62 @@ public final class JavaModelUtil {
 			}
 			cu.applyTextEdit(edit, subMonitor.split(1));
 			cu.save(subMonitor.split(1), true);
+		}
+	}
+
+	private JavaModelUtil() {
+	}
+
+	public static String[] getStaticImportFavorites(ICompilationUnit cu, final String elementName, boolean isMethod, String[] favorites) throws JavaModelException {
+		StringBuilder dummyCU= new StringBuilder();
+		String packName= cu.getParent().getElementName();
+		IType type= cu.findPrimaryType();
+		if (type == null)
+			return new String[0];
+
+		if (packName.length() > 0) {
+			dummyCU.append("package ").append(packName).append(';'); //$NON-NLS-1$
+		}
+		dummyCU.append("public class ").append(type.getElementName()).append("{\n static {\n").append(elementName); // static initializer  //$NON-NLS-1$//$NON-NLS-2$
+		int offset= dummyCU.length();
+		dummyCU.append("\n}\n }"); //$NON-NLS-1$
+
+		ICompilationUnit newCU= null;
+		try {
+			newCU= cu.getWorkingCopy(null);
+			newCU.getBuffer().setContents(dummyCU.toString());
+
+			final HashSet<String> result= new HashSet<>();
+
+			CompletionRequestor requestor= new CompletionRequestor(true) {
+				@Override
+				public void accept(CompletionProposal proposal) {
+					if (elementName.equals(new String(proposal.getName()))) {
+						for (CompletionProposal curr : proposal.getRequiredProposals()) {
+							if (curr.getKind() == CompletionProposal.METHOD_IMPORT || curr.getKind() == CompletionProposal.FIELD_IMPORT) {
+								result.add(concatenateName(Signature.toCharArray(curr.getDeclarationSignature()), curr.getName()));
+							}
+						}
+					}
+				}
+			};
+
+			if (isMethod) {
+				requestor.setIgnored(CompletionProposal.METHOD_REF, false);
+				requestor.setAllowsRequiredProposals(CompletionProposal.METHOD_REF, CompletionProposal.METHOD_IMPORT, true);
+			} else {
+				requestor.setIgnored(CompletionProposal.FIELD_REF, false);
+				requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.FIELD_IMPORT, true);
+			}
+			requestor.setFavoriteReferences(favorites);
+
+			newCU.codeComplete(offset, requestor, new NullProgressMonitor());
+
+			return result.toArray(new String[result.size()]);
+		} finally {
+			if (newCU != null) {
+				newCU.discardWorkingCopy();
+			}
 		}
 	}
 }

@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -215,9 +215,7 @@ public class LazyJavaTypeCompletionProposal extends LazyJavaCompletionProposal {
 				setUpLinkedMode(document, ')');
 
 			rememberSelection();
-		} catch (CoreException e) {
-			JavaPlugin.log(e);
-		} catch (BadLocationException e) {
+		} catch (CoreException | BadLocationException e) {
 			JavaPlugin.log(e);
 		}
 	}

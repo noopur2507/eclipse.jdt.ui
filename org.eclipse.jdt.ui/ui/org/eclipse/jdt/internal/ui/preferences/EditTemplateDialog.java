@@ -25,11 +25,8 @@ import com.ibm.icu.text.Collator;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -51,7 +48,6 @@ import org.eclipse.core.expressions.Expression;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
@@ -62,17 +58,13 @@ import org.eclipse.jface.dialogs.StatusDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.BidiUtils;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
-import org.eclipse.jface.text.ITextListener;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.jface.text.templates.ContextTypeRegistry;
@@ -263,12 +255,7 @@ public class EditTemplateDialog extends StatusDialog {
 		parent.setLayout(layout);
 		parent.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		ModifyListener listener= new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doTextWidgetChanged(e.widget);
-			}
-		};
+		ModifyListener listener= e -> doTextWidgetChanged(e.widget);
 
 		if (fIsNameModifiable) {
 			createLabel(parent, PreferencesMessages.EditTemplateDialog_name);
@@ -302,8 +289,8 @@ public class EditTemplateDialog extends StatusDialog {
 			fContextCombo= new Combo(composite, SWT.READ_ONLY);
 			SWTUtil.setDefaultVisibleItemCount(fContextCombo);
 
-			for (int i= 0; i < fContextTypes.length; i++) {
-				fContextCombo.add(fContextTypes[i][1]);
+			for (String[] fContextType : fContextTypes) {
+				fContextCombo.add(fContextType[1]);
 			}
 
 			fContextCombo.addModifyListener(listener);
@@ -383,9 +370,9 @@ public class EditTemplateDialog extends StatusDialog {
 	private String getContextId() {
 		if (fContextCombo != null && !fContextCombo.isDisposed()) {
 			String name= fContextCombo.getText();
-			for (int i= 0; i < fContextTypes.length; i++) {
-				if (name.equals(fContextTypes[i][1])) {
-					return fContextTypes[i][0];
+			for (String[] fContextType : fContextTypes) {
+				if (name.equals(fContextType[1])) {
+					return fContextType[0];
 				}
 			}
 		}
@@ -466,20 +453,12 @@ public class EditTemplateDialog extends StatusDialog {
 		data.heightHint= convertHeightInCharsToPixels(nLines);
 		control.setLayoutData(data);
 
-		viewer.addTextListener(new ITextListener() {
-			@Override
-			public void textChanged(TextEvent event) {
-				if (event .getDocumentEvent() != null)
-					doSourceChanged(event.getDocumentEvent().getDocument());
-			}
+		viewer.addTextListener(event -> {
+			if (event .getDocumentEvent() != null)
+				doSourceChanged(event.getDocumentEvent().getDocument());
 		});
 
-		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				updateSelectionDependentActions();
-			}
-		});
+		viewer.addSelectionChangedListener(event -> updateSelectionDependentActions());
 
 		return viewer;
 	}
@@ -498,12 +477,7 @@ public class EditTemplateDialog extends StatusDialog {
 		final IHandlerService handlerService= PlatformUI.getWorkbench().getAdapter(IHandlerService.class);
 		final Expression expression= new ActiveShellExpression(fPatternEditor.getControl().getShell());
 
-		getShell().addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				handlerService.deactivateHandlers(handlerActivations);
-				}
-						});
+		getShell().addDisposeListener(e -> handlerService.deactivateHandlers(handlerActivations));
 
 		fPatternEditor.getTextWidget().addFocusListener(new FocusListener() {
 			@Override
@@ -557,12 +531,7 @@ public class EditTemplateDialog extends StatusDialog {
 		// create context menu
 		MenuManager manager= new MenuManager(null, null);
 		manager.setRemoveAllWhenShown(true);
-		manager.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager mgr) {
-				fillContextMenu(mgr);
-			}
-		});
+		manager.addMenuListener(this::fillContextMenu);
 
 		StyledText text= fPatternEditor.getTextWidget();
 		Menu menu= manager.createContextMenu(text);
@@ -639,7 +608,7 @@ public class EditTemplateDialog extends StatusDialog {
 	 * <p>
 	 * This implementation rejects invalid XML characters.
 	 * </p>
-	 * 
+	 *
 	 * @param pattern the pattern to verify
 	 * @return <code>true</code> if the pattern is valid
 	 * @since 3.6
@@ -647,7 +616,7 @@ public class EditTemplateDialog extends StatusDialog {
 	private boolean isValidPattern(String pattern) {
 		for (int i= 0; i < pattern.length(); i++) {
 			char ch= pattern.charAt(i);
-			if (!(ch == 9 || ch == 10 || ch == 13 || ch >= 32))
+			if ((ch != 9) && (ch != 10) && (ch != 13) && (ch < 32))
 				return false;
 		}
 		return true;
@@ -655,7 +624,7 @@ public class EditTemplateDialog extends StatusDialog {
 
 	/**
 	 * Checks whether the given string is a valid template name.
-	 * 
+	 *
 	 * @param name the string to test
 	 * @return <code>true</code> if the name is valid
 	 * @since 3.3.1

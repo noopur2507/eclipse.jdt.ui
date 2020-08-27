@@ -25,7 +25,6 @@ import org.eclipse.jdt.testplugin.JavaTestPlugin;
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
 import org.eclipse.core.resources.IFolder;
@@ -34,11 +33,9 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
@@ -72,7 +69,6 @@ public final class CreateStubsAction implements IObjectActionDelegate {
 			"java.nio.charset",
 			"java.nio.charset.spi",
 			"java.security",
-			"java.security.acl",
 			"java.security.cert",
 			"java.security.interfaces",
 			"java.security.spec",
@@ -100,6 +96,8 @@ public final class CreateStubsAction implements IObjectActionDelegate {
 			//9:
 			"java.lang.module",
 			"java.nio.file.spi",
+			//13:
+			"java.lang.constant"
 	};
 
 	private static final String SETTINGS_ID_STUBS_PROJECT= "stubsProject";
@@ -132,61 +130,54 @@ public final class CreateStubsAction implements IObjectActionDelegate {
 		final IStructuredSelection structuredSelection= (IStructuredSelection) selection;
 
 		Shell shell= fTargetPart.getSite().getShell();
-		String initialValue= JavaTestPlugin.getDefault().getDialogSettings().get(SETTINGS_ID_STUBS_PROJECT); //$NON-NLS-1$
+		String initialValue= JavaTestPlugin.getDefault().getDialogSettings().get(SETTINGS_ID_STUBS_PROJECT);
 		if (initialValue == null)
 			initialValue = "stubs"; //$NON-NLS-1$
-		final InputDialog inputDialog= new InputDialog(shell, CREATE_STUBS_DIALOG_TITLE, "Target project name:", initialValue, new IInputValidator() { //$NON-NLS-1$
-					@Override
-					public String isValid(String newText) {
-						IStatus status = ResourcesPlugin.getWorkspace().validateName(newText, IResource.PROJECT);
-						return status.isOK() ? null : (String) status.getMessage();
-					}
-				});
+		final InputDialog inputDialog= new InputDialog(shell, CREATE_STUBS_DIALOG_TITLE, "Target project name:", initialValue, newText -> {
+			IStatus status = ResourcesPlugin.getWorkspace().validateName(newText, IResource.PROJECT);
+			return status.isOK() ? null : (String) status.getMessage();
+		});
 		if (inputDialog.open() != Window.OK)
 			return;
 		try {
 
 			final String name= inputDialog.getValue();
-			JavaTestPlugin.getDefault().getDialogSettings().put(SETTINGS_ID_STUBS_PROJECT, name); //$NON-NLS-1$
+			JavaTestPlugin.getDefault().getDialogSettings().put(SETTINGS_ID_STUBS_PROJECT, name);
 			long start= System.currentTimeMillis();
 
 			ArrayList<String> defaultPackages= new ArrayList<>(Arrays.asList(DEFAULT_PACKAGES));
-			
-			ProgressMonitorDialog progressMonitorDialog= new ProgressMonitorDialog(shell);
-			progressMonitorDialog.run(true, true, new IRunnableWithProgress() {
 
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						createJavaProject(name);
-						IFolder target = ResourcesPlugin.getWorkspace().getRoot().getProject(inputDialog.getValue()).getFolder("src"); //$NON-NLS-1$
-						List<IPackageFragment> packageFragments= new ArrayList<>();
-						
-						boolean checkCompletionOfDefaultPackages= false;
-						for (Object sel : structuredSelection.toList()) {
-							if (sel instanceof IPackageFragment) {
-								packageFragments.add((IPackageFragment) sel);
-							} else if (sel instanceof IPackageFragmentRoot) {
-								IPackageFragmentRoot root = (IPackageFragmentRoot) sel;
-								for (Iterator<String> iter= defaultPackages.iterator(); iter.hasNext();) {
-									String packName= iter.next();
-									IPackageFragment packageFragment = root.getPackageFragment(packName);
-									if (packageFragment.exists()) {
-										packageFragments.add(packageFragment);
-										iter.remove();
-									} else {
-										checkCompletionOfDefaultPackages= true;
-									}
+			ProgressMonitorDialog progressMonitorDialog= new ProgressMonitorDialog(shell);
+			progressMonitorDialog.run(true, true, monitor -> {
+				try {
+					createJavaProject(name);
+					IFolder target = ResourcesPlugin.getWorkspace().getRoot().getProject(inputDialog.getValue()).getFolder("src"); //$NON-NLS-1$
+					List<IPackageFragment> packageFragments= new ArrayList<>();
+
+					boolean checkCompletionOfDefaultPackages= false;
+					for (Object sel : structuredSelection.toList()) {
+						if (sel instanceof IPackageFragment) {
+							packageFragments.add((IPackageFragment) sel);
+						} else if (sel instanceof IPackageFragmentRoot) {
+							IPackageFragmentRoot root = (IPackageFragmentRoot) sel;
+							for (Iterator<String> iter= defaultPackages.iterator(); iter.hasNext();) {
+								String packName= iter.next();
+								IPackageFragment packageFragment = root.getPackageFragment(packName);
+								if (packageFragment.exists()) {
+									packageFragments.add(packageFragment);
+									iter.remove();
+								} else {
+									checkCompletionOfDefaultPackages= true;
 								}
 							}
 						}
-						ResourcesPlugin.getWorkspace().run(new StubCreationOperation(target.getLocationURI(), packageFragments), monitor);
-						if (!checkCompletionOfDefaultPackages) {
-							defaultPackages.clear();
-						}
-					} catch (CoreException e) {
-						throw new InvocationTargetException(e);
 					}
+					ResourcesPlugin.getWorkspace().run(new StubCreationOperation(target.getLocationURI(), packageFragments), monitor);
+					if (!checkCompletionOfDefaultPackages) {
+						defaultPackages.clear();
+					}
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
 				}
 			});
 			IProject project= ResourcesPlugin.getWorkspace().getRoot().getProject(name);
@@ -196,7 +187,7 @@ public final class CreateStubsAction implements IObjectActionDelegate {
 			if (!defaultPackages.isEmpty() ) {
 				message+= "\n\nNo stubs generated for packages: " + defaultPackages.toString();
 			}
-			MessageDialog.openInformation(fTargetPart.getSite().getShell(), CREATE_STUBS_DIALOG_TITLE, message); 
+			MessageDialog.openInformation(fTargetPart.getSite().getShell(), CREATE_STUBS_DIALOG_TITLE, message);
 		} catch (InterruptedException e) {
 			// Do not log
 		} catch (InvocationTargetException e) {

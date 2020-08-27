@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import org.eclipse.swt.widgets.Display;
@@ -51,6 +50,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
@@ -59,7 +59,6 @@ import org.eclipse.jdt.ui.jarpackager.JarPackageData;
 
 import org.eclipse.jdt.internal.ui.IJavaStatusConstants;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 /**
  * Utility methods for JAR Import/Export.
@@ -128,8 +127,7 @@ public final class JarPackagerUtil {
 		if (elements == null)
 			return null;
 		List<IResource> selectedResources= new ArrayList<>(elements.length);
-		for (int i= 0; i < elements.length; i++) {
-			Object element= elements[i];
+		for (Object element : elements) {
 			if (element instanceof IJavaElement) {
 				selectedResources.add(((IJavaElement)element).getResource());
 			}
@@ -154,7 +152,7 @@ public final class JarPackagerUtil {
 
 	/**
 	 * Gets the name of the manifest's main class
-	 * 
+	 *
 	 * @param jarPackage the Jar package data
 	 * @return a string with the name
 	 */
@@ -171,12 +169,7 @@ public final class JarPackagerUtil {
 		if (display == null || display.isDisposed())
 			return false;
 		final boolean[] returnValue= new boolean[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				returnValue[0]= MessageDialog.openQuestion(parent, title, message);
-			}
-		};
+		Runnable runnable= () -> returnValue[0]= MessageDialog.openQuestion(parent, title, message);
 		display.syncExec(runnable);
 		return returnValue[0];
 	}
@@ -196,7 +189,7 @@ public final class JarPackagerUtil {
 
 	/**
 	 * Tells whether the specified manifest main class is valid.
-	 * 
+	 *
 	 * @param data the Jar package data
 	 * @param context the runnable context
 	 * @return <code>true</code> if a main class is specified and valid
@@ -288,11 +281,11 @@ public final class JarPackagerUtil {
 	 * Opens the archive file at the given location.<br>
 	 * <em>Note: It is the caller's responsibility to close the returned
 	 * {@link ZipFile}.</em>
-	 * 
+	 *
 	 * @param location the location of the archive file
 	 * @return the archive or <code>null</code> if it could not be retrieved
 	 * @throws CoreException if the archive could not be read
-	 * 
+	 *
 	 * @since 3.4
 	 */
 	public static ZipFile getArchiveFile(IPath location) throws CoreException {
@@ -318,8 +311,6 @@ public final class JarPackagerUtil {
 
 		try {
 			return new ZipFile(localFile);
-		} catch (ZipException e) {
-			throw new CoreException(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, e.getLocalizedMessage(), e));
 		} catch (IOException e) {
 			throw new CoreException(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, e.getLocalizedMessage(), e));
 		}

@@ -14,12 +14,10 @@
 package org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
@@ -203,8 +201,7 @@ public class GenerateBuildPathActionGroup extends ActionGroup {
 		final ConfigureBuildPathAction configure= new ConfigureBuildPathAction(site);
 		fActions.add(configure);
 
-		for (Iterator<Action> iter= fActions.iterator(); iter.hasNext();) {
-			Action action= iter.next();
+		for (Action action : fActions) {
 			if (action instanceof ISelectionChangedListener) {
 				ISelectionChangedListener listener= (ISelectionChangedListener)action;
 				selectionProvider.addSelectionChangedListener(listener);
@@ -227,12 +224,7 @@ public class GenerateBuildPathActionGroup extends ActionGroup {
         	return;
         String menuText= ActionMessages.BuildPath_label;
         IMenuManager subMenu= new MenuManager(menuText, MENU_ID);
-        subMenu.addMenuListener(new IMenuListener() {
-        	@Override
-			public void menuAboutToShow(IMenuManager manager) {
-        		fillViewSubMenu(manager);
-        	}
-        });
+        subMenu.addMenuListener(this::fillViewSubMenu);
         subMenu.setRemoveAllWhenShown(true);
         subMenu.add(new ConfigureBuildPathAction(fSite));
         menu.appendToGroup(fGroupName, subMenu);
@@ -241,17 +233,23 @@ public class GenerateBuildPathActionGroup extends ActionGroup {
 	private void fillViewSubMenu(IMenuManager source) {
         int added= 0;
         int i=0;
-        for (Iterator<Action> iter= fActions.iterator(); iter.hasNext();) {
-			Action action= iter.next();
+        for (Action action : fActions) {
 			if (action instanceof IUpdate)
 				((IUpdate) action).update();
 
-            if (i == 2)
-                source.add(new Separator(GROUP_BUILDPATH));
-            else if (i == 9)
-                source.add(new Separator(GROUP_FILTER));
-            else if (i == 11)
-                source.add(new Separator(GROUP_CUSTOMIZE));
+			switch (i) {
+			case 2:
+				source.add(new Separator(GROUP_BUILDPATH));
+				break;
+			case 9:
+				source.add(new Separator(GROUP_FILTER));
+				break;
+			case 11:
+				source.add(new Separator(GROUP_CUSTOMIZE));
+				break;
+			default:
+				break;
+			}
             added+= addAction(source, action);
             i++;
 		}
@@ -283,8 +281,7 @@ public class GenerateBuildPathActionGroup extends ActionGroup {
     	IStructuredSelection selection= (IStructuredSelection)sel;
     	if (selection.isEmpty())
 			return false;
-    	for (Iterator<?> iter= selection.iterator(); iter.hasNext();) {
-			Object element= iter.next();
+    	for (Object element : selection) {
 			if (element instanceof IWorkingSet)
 				return false;
 		}
@@ -294,8 +291,7 @@ public class GenerateBuildPathActionGroup extends ActionGroup {
 	@Override
 	public void dispose() {
 		if (fActions != null) {
-			for (Iterator<Action> iter= fActions.iterator(); iter.hasNext();) {
-				Action action= iter.next();
+			for (Action action : fActions) {
 				if (action instanceof ISelectionChangedListener)
 					fSelectionProvider.removeSelectionChangedListener((ISelectionChangedListener) action);
 			}

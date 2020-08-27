@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2018 GK Software AG and others.
+ * Copyright (c) 2012, 2020 GK Software AG and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,10 +14,18 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.osgi.framework.Bundle;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
@@ -50,7 +58,7 @@ import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.fix.CleanUpRefactoring.MultiFixTarget;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
@@ -64,30 +72,17 @@ import org.eclipse.jdt.internal.ui.text.correction.CorrectionMarkerResolutionGen
 import org.eclipse.jdt.internal.ui.text.correction.JavaCorrectionProcessor;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.CreatePackageInfoWithDefaultNullnessProposal;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
-	private static final Class<NullAnnotationsQuickFixTest> THIS= NullAnnotationsQuickFixTest.class;
+	@Rule
+    public ProjectTestSetup projectSetup = new ProjectTestSetup();
+
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 	private String ANNOTATION_JAR_PATH;
 
-	public NullAnnotationsQuickFixTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
@@ -113,7 +108,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		StubUtility.setCodeTemplate(CodeTemplateContextType.CONSTRUCTORSTUB_ID, "", null);
 		StubUtility.setCodeTemplate(CodeTemplateContextType.METHODSTUB_ID, "", null);
 
-		fJProject1= ProjectTestSetup.getProject();
+		fJProject1= projectSetup.getProject();
 
 		if (ANNOTATION_JAR_PATH == null) {
 			String version= "[1.1.0,2.0.0)"; // tests run at 1.5, need the "old" null annotations
@@ -129,15 +124,16 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, projectSetup.getDefaultClasspath());
 	}
 
 	// ==== Problem:	dereferencing a @Nullable field
 	// ==== Fix:		extract field access to a fresh local variable and add a null-check
 
 	// basic case
+	@Test
 	public void testExtractNullableField1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -177,6 +173,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// statement is not element of a block - need to create a new block - local name f2 already in use
+	@Test
 	public void testExtractNullableField2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -221,6 +218,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// field name is part of a qualified field reference - inside a return statement (type: int)
+	@Test
 	public void testExtractNullableField3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -263,6 +261,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// field name is part of a this-qualified field reference - inside a return statement (type: String)
+	@Test
 	public void testExtractNullableField4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -305,6 +304,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// field referenced inside the rhs of an assignment-as-expression
+	@Test
 	public void testExtractNullableField5() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -350,6 +350,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// reference to field of array type - dereferenced by f[0] and f.length
+	@Test
 	public void testExtractNullableField6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -416,6 +417,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// field has a generic type
+	@Test
 	public void testExtractNullableField7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -457,6 +459,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// occurrences inside a class initializer
+	@Test
 	public void testExtractNullableField8() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -496,6 +499,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// field reference inside a local variable initialization - ensure correct scoping of this local
+	@Test
 	public void testExtractNullableField9() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -542,6 +546,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// ==== Fix:		extract field access to a fresh local variable and add a null-check
 
 	// return situation, field reference is this.f
+	@Test
 	public void testExtractPotentiallyNullField1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -599,6 +604,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// message send argument situation, field reference is local.f
+	@Test
 	public void testExtractPotentiallyNullField2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -643,6 +649,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 
 	// @Nullable argument is used where @NonNull is required -> change to @NonNull
+	@Test
 	public void testChangeParameter1a() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -678,6 +685,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// unspec'ed argument is used where @NonNull is required -> change to @NonNull
+	@Test
 	public void testChangeParameter1b() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -712,6 +720,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testChangeParameter1c() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -744,6 +753,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testChangeParameter1d() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -777,6 +787,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// don't propose to change argument if mismatch is in an assignment to the argument
+	@Test
 	public void testChangeParameter2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -797,6 +808,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// Attempt to override a @Nullable argument with a @NonNull argument
 	// -> change to @Nullable
 	// -> change overridden to @NonNull
+	@Test
 	public void testChangeParameter3a() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -855,6 +867,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// Attempt to override a @Nullable argument with an unspec'ed argument
 	// -> change to @Nullable
+	@Test
 	public void testChangeParameter3b() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -899,6 +912,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// Attempt to override a @NonNull argument with an unspec'ed argument
 	// -> change to @NonNull
+	@Test
 	public void testChangeParameter3c() throws Exception {
 		// quickfix only offered with this warning enabled, but no need to say, because default is already "warning"
 //		this.fJProject1.setOption(JavaCore.COMPILER_PB_NONNULL_PARAMETER_ANNOTATION_DROPPED, JavaCore.WARNING);
@@ -946,6 +960,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// http://bugs.eclipse.org/400668 - [quick fix] The fix change parameter type to @Nonnull generated a null change
 	// don't confuse changing arguments of current method and target method
 	// -> split into two proposals
+	@Test
 	public void testChangeParameter4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1008,6 +1023,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// don't confuse changing arguments of current method and target method
 	// -> split into two proposals
 	// variant with un-annotated parameter
+	@Test
 	public void testChangeParameter4a() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1068,6 +1084,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// Bug 405086 - [quick fix] don't propose null annotations when those are disabled
+	@Test
 	public void testChangeParameter5() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_ANNOTATION_NULL_ANALYSIS, JavaCore.DISABLED);
 		try {
@@ -1092,6 +1109,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// Bug 405086 - [quick fix] don't propose null annotations when those are disabled
 	// don't propose a parameter change if there was no parameter annotation being the cause for the warning
+	@Test
 	public void testChangeParameter6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -1111,6 +1129,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// Bug 405086 - [quick fix] don't propose null annotations when those are disabled
 	// positive case (redundant check)
+	@Test
 	public void testChangeParameter7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1146,6 +1165,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// Bug 405086 - [quick fix] don't propose null annotations when those are disabled
 	// positive case 2 (check always false)
+	@Test
 	public void testChangeParameter8() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1182,6 +1202,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// http://bugs.eclipse.org/395555 - [quickfix] Update null annotation quick fixes for bug 388281
 	// conflict between inherited and default nullness
+	@Test
 	public void testChangeParameter9() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_INHERIT_NULL_ANNOTATIONS, JavaCore.ENABLED);
 		try {
@@ -1249,6 +1270,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	}
 
 	// returning @Nullable value from @NonNull method -> change to @Nullable return
+	@Test
 	public void testChangeReturn1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1280,6 +1302,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testChangeReturn2a() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1338,6 +1361,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testChangeReturn2b() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1381,6 +1405,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 	// https://bugs.eclipse.org/395555 - [quickfix] Update null annotation quick fixes for bug 388281
 	// conflict between nullness inherited from different parents
+	@Test
 	public void testChangeReturn3() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_INHERIT_NULL_ANNOTATIONS, JavaCore.ENABLED);
 		try {
@@ -1459,6 +1484,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// https://bugs.eclipse.org/378724 - Null annotations are extremely hard to use in an existing project
 	// see comment 12
 	// remove @Nullable without adding redundant @NonNull (due to @NonNullByDefault)
+	@Test
 	public void testChangeReturn4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1524,6 +1550,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// see comment 12
 	// remove @Nullable without adding redundant @NonNull (due to @NonNullByDefault)
 	// variant: package-level default
+	@Test
 	public void testChangeReturn5() throws Exception {
 		String suppressOptionalErrors= fJProject1.getOption(JavaCore.COMPILER_PB_SUPPRESS_OPTIONAL_ERRORS, true);
 		try {
@@ -1600,6 +1627,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// see comment 12
 	// remove @Nullable without adding redundant @NonNull (due to @NonNullByDefault)
 	// variant: cancelled default
+	@Test
 	public void testChangeReturn6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 
@@ -1668,6 +1696,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1697,6 +1726,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1729,6 +1759,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1761,6 +1792,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1791,6 +1823,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation5() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1821,6 +1854,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1855,6 +1889,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1884,6 +1919,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testRemoveRedundantAnnotation8() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1916,6 +1952,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
+	@Test
 	public void testAddNonNull() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1960,6 +1997,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 	// -> change to @Nullable
 	// -> change overridden to @NonNull
 	// Specific for this test: arg name is different in overridden method.
+	@Test
 	public void testBug506108() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -2015,6 +2053,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
+	@Test
 	public void testBug525428a() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.ERROR);
 		try {
@@ -2022,16 +2061,16 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			StringBuilder buf= new StringBuilder();
 			buf.append("package test1;\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("package-info.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= getASTRoot(cu);
 			ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot);
 			assertNumberOfProposals(proposals, 2);
 			CUCorrectionProposal proposal= (CUCorrectionProposal)proposals.get(0);
-	
+
 			assertEqualString(proposal.getDisplayString(), "Add '@NonNullByDefault' to the package declaration");
-	
+
 			String preview= getPreviewContent(proposal);
-	
+
 			buf= new StringBuilder();
 			buf.append("@org.eclipse.jdt.annotation.NonNullByDefault\n");
 			buf.append("package test1;\n");
@@ -2040,6 +2079,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.IGNORE);
 		}
 	}
+	@Test
 	public void testBug525428b() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.ERROR);
 		String typecomment= StubUtility.getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, null).getPattern();
@@ -2066,14 +2106,14 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 
 			assertNumberOfProposals(proposals, 2);
 			IJavaCompletionProposal proposal= proposals.get(0);
-	
+
 			assertEqualString(proposal.getDisplayString(), "Add package-info.java with '@NonNullByDefault'");
 			proposal.apply(null);
 
 			cu.getJavaProject().getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
 
 			assertEquals(0, pack1.getResource().findMarkers(null, true, IResource.DEPTH_INFINITE).length);
-			
+
 			ICompilationUnit packageInfoCU= pack1.getCompilationUnit("package-info.java");
 			StringBuilder expected=new StringBuilder();
 			expected.append("/**\n");
@@ -2092,6 +2132,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		}
 	}
 	// marker for same project in two source folders in same project: package-info.java must be created in first one (when comparing paths)
+	@Test
 	public void testBug525428c() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.ERROR);
 		String typecomment= StubUtility.getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, null).getPattern();
@@ -2158,7 +2199,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			ICompilationUnit packageInfoCU= pack1.getCompilationUnit("package-info.java");
 			ICompilationUnit packageInfoCU2= pack2.getCompilationUnit("package-info.java");
 			assertTrue("a package-info.java should have been created in src", packageInfoCU.exists());
-			assertTrue("no package-info.java should have been created in src-tests", !packageInfoCU2.exists());
+			assertFalse("no package-info.java should have been created in src-tests", packageInfoCU2.exists());
 
 			StringBuilder expected= new StringBuilder();
 			expected.append("/**\n");
@@ -2177,6 +2218,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		}
 	}
 	// marker for same project in two dependent projects: package-info.java must be created in the one that cannot see the other
+	@Test
 	public void testBug525428d() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.ERROR);
 		String typecomment= StubUtility.getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, null).getPattern();
@@ -2188,7 +2230,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			StubUtility.setCodeTemplate(CodeTemplateContextType.FILECOMMENT_ID, "/**\n * File\n */", null);
 
 			proj2= JavaProjectHelper.createJavaProject("OtherProject", "bin");
-			proj2.setRawClasspath(ProjectTestSetup.getDefaultClasspath(), null);
+			proj2.setRawClasspath(projectSetup.getDefaultClasspath(), null);
 			TestOptions.initializeProjectOptions(proj2);
 			JavaProjectHelper.addLibrary(proj2, new Path(ANNOTATION_JAR_PATH));
 			JavaProjectHelper.addRequiredProject(proj2, fJProject1);
@@ -2244,14 +2286,14 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			((CreatePackageInfoWithDefaultNullnessProposal) proposal).resolve(problems, new NullProgressMonitor());
 
 			cu1.getJavaProject().getProject().getWorkspace().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
-			
+
 			assertEquals(0, cu1.getJavaProject().getProject().findMarkers(null, true, IResource.DEPTH_INFINITE).length);
 			assertEquals(0, cu2.getJavaProject().getProject().findMarkers(null, true, IResource.DEPTH_INFINITE).length);
 
 			ICompilationUnit packageInfoCU= pack1.getCompilationUnit("package-info.java");
 			ICompilationUnit packageInfoCU2= pack2.getCompilationUnit("package-info.java");
 			assertTrue("a package-info.java should have been created in fJProject1", packageInfoCU.exists());
-			assertTrue("no package-info.java should have been created in proj2", !packageInfoCU2.exists());
+			assertFalse("no package-info.java should have been created in proj2", packageInfoCU2.exists());
 
 			StringBuilder expected= new StringBuilder();
 			expected.append("/**\n");
@@ -2273,6 +2315,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 		}
 	}
 	// marker for same project in two independent projects: package-info.java must be created in both
+	@Test
 	public void testBug525428e() throws Exception {
 		fJProject1.setOption(JavaCore.COMPILER_PB_MISSING_NONNULL_BY_DEFAULT_ANNOTATION, JavaCore.ERROR);
 		String typecomment= StubUtility.getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, null).getPattern();
@@ -2284,7 +2327,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			StubUtility.setCodeTemplate(CodeTemplateContextType.FILECOMMENT_ID, "/**\n * File\n */", null);
 
 			proj2= JavaProjectHelper.createJavaProject("OtherProject", "bin");
-			proj2.setRawClasspath(ProjectTestSetup.getDefaultClasspath(), null);
+			proj2.setRawClasspath(projectSetup.getDefaultClasspath(), null);
 			TestOptions.initializeProjectOptions(proj2);
 			JavaProjectHelper.addLibrary(proj2, new Path(ANNOTATION_JAR_PATH));
 			IPackageFragmentRoot sourceFolder2= JavaProjectHelper.addSourceContainer(proj2, "src");
@@ -2339,7 +2382,7 @@ public class NullAnnotationsQuickFixTest extends QuickFixTest {
 			((CreatePackageInfoWithDefaultNullnessProposal) proposal).resolve(problems, new NullProgressMonitor());
 
 			cu1.getJavaProject().getProject().getWorkspace().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
-			
+
 			assertEquals(0, cu1.getJavaProject().getProject().findMarkers(null, true, IResource.DEPTH_INFINITE).length);
 			assertEquals(0, cu2.getJavaProject().getProject().findMarkers(null, true, IResource.DEPTH_INFINITE).length);
 

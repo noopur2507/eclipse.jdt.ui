@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,8 +14,15 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertFalse;
+
 import java.util.ArrayList;
 import java.util.Hashtable;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -38,36 +45,22 @@ import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.correction.CUCorrectionProposal;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 
-	private static final Class<UnresolvedTypesQuickFixTest> THIS= UnresolvedTypesQuickFixTest.class;
+	@Rule
+    public ProjectTestSetup projectSetup = new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 
-	public UnresolvedTypesQuickFixTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_NUMBER_OF_EMPTY_LINES_TO_PRESERVE, "1");
@@ -77,7 +70,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setValue(PreferenceConstants.CODEGEN_ADD_COMMENTS, false);
 
-		fJProject1= ProjectTestSetup.getProject();
+		fJProject1= projectSetup.getProject();
 
 		String newFileTemplate= "${package_declaration}\n\n${type_declaration}";
 		StubUtility.setCodeTemplate(CodeTemplateContextType.NEWTYPE_ID, newFileTemplate, null);
@@ -87,12 +80,12 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, projectSetup.getDefaultClasspath());
 	}
 
+	@Test
 	public void testTypeInFieldDecl() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -151,6 +144,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 
 	}
 
+	@Test
 	public void testTypeInMethodArguments() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -219,6 +213,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3, expected4, expected5, expected6 });
 	}
 
+	@Test
 	public void testTypeInMethodReturnType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -291,6 +286,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3, expected4, expected5, expected6 });
 	}
 
+	@Test
 	public void testTypeInExceptionType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -328,6 +324,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testTypeInVarDeclWithWildcard() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -402,6 +399,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3, expected4, expected5, expected6 });
 	}
 
+	@Test
 	public void testTypeInStatement() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -442,6 +440,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testArrayTypeInStatement() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -532,6 +531,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3, expected4, expected5, expected6, expected7});
 	}
 
+	@Test
 	public void testQualifiedType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -574,6 +574,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testInnerType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -629,6 +630,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3 });
 	}
 
+	@Test
 	public void testTypeInCatchBlock() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -657,6 +659,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testTypeInSuperType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -680,6 +683,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testTypeInSuperInterface() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -703,6 +707,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testTypeInAnnotation() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -727,6 +732,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testTypeInAnnotation_bug153881() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("a", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -754,6 +760,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testPrimitiveTypeInFieldDecl() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -822,6 +829,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1, expected2, expected3, expected4, expected5, expected6, expected7});
 	}
 
+	@Test
 	public void testTypeInTypeArguments1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -896,6 +904,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testTypeInTypeArguments2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -981,6 +990,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testParameterizedType1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1018,6 +1028,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, expected);
 	}
 
+	@Test
 	public void testParameterizedType2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1034,10 +1045,10 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		CompilationUnit astRoot= getASTRoot(cu);
 		IProblem[] problems= astRoot.getProblems();
 		assertNumberOfProblems(2, problems);
-		
+
 		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, problems[0], null);
 		proposals.addAll(collectCorrections(cu, problems[1], null));
-		
+
 		assertCorrectLabels(proposals);
 
 		String[] expected= new String[3];
@@ -1105,6 +1116,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testAmbiguousTypeInSuperClass() throws Exception {
 		createSomeAmbiguity(false, false);
 
@@ -1156,6 +1168,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInInterface() throws Exception {
 		createSomeAmbiguity(true, false);
 
@@ -1207,6 +1220,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInField() throws Exception {
 		createSomeAmbiguity(true, false);
 
@@ -1261,6 +1275,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInArgument() throws Exception {
 		createSomeAmbiguity(true, false);
 
@@ -1318,6 +1333,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInReturnType() throws Exception {
 		createSomeAmbiguity(false, false);
 
@@ -1378,6 +1394,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInExceptionType() throws Exception {
 		createSomeAmbiguity(false, true);
 
@@ -1435,6 +1452,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
+	@Test
 	public void testAmbiguousTypeInCatchBlock() throws Exception {
 		createSomeAmbiguity(false, true);
 
@@ -1501,20 +1519,21 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertEqualStringsIgnoreOrder(new String[] { preview1, preview2 }, new String[] { expected1, expected2 });
 	}
 
-	
+
 	/**
 	 * Offers to raise visibility of method instead of class.
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=94755
-	 * 
+	 *
 	 * @throws Exception if anything goes wrong
 	 * @since 3.9
 	 */
+	@Test
 	public void testIndirectRefDefaultClass() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		IPackageFragment pack2= fSourceFolder.createPackageFragment("test2", false, null);
 
 		StringBuffer buf= new StringBuffer();
-		
+
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("class B {\n");
@@ -1561,6 +1580,7 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 
+	@Test
 	public void testForEachMissingType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("pack", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -1575,13 +1595,13 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-		
+
 		CompilationUnit astRoot= getASTRoot(cu);
 		ArrayList<IJavaCompletionProposal> proposals= collectCorrections(cu, astRoot, 3, 1);
-		
+
 		assertCorrectLabels(proposals);
 		assertNumberOfProposals(proposals, 6);
-		
+
 		String[] expected= new String[1];
 		buf= new StringBuffer();
 		buf.append("package pack;\n");
@@ -1595,9 +1615,10 @@ public class UnresolvedTypesQuickFixTest extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		expected[0]= buf.toString();
-		
+
 		assertExpectedExistInProposals(proposals, expected);
 	}
+	@Test
 	public void testBug530193() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 		IPackageFragmentRoot testSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src-tests", new Path[0], new Path[0], "bin-tests",

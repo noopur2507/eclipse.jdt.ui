@@ -17,7 +17,6 @@ package org.eclipse.jdt.internal.ui.text.template.contentassist;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -48,6 +47,7 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
+import org.eclipse.jdt.internal.ui.text.correction.PreviewFeaturesSubProcessor;
 
 
 public class TemplateEngine {
@@ -55,9 +55,11 @@ public class TemplateEngine {
 	private static final Pattern $_LINE_SELECTION_PATTERN= Pattern.compile("\\$\\{(.*:)?" + GlobalTemplateVariables.LineSelection.NAME + "(\\(.*\\))?\\}"); //$NON-NLS-1$ //$NON-NLS-2$
 
 	private static final Pattern $_WORD_SELECTION_PATTERN= Pattern.compile("\\$\\{(.*:)?" + GlobalTemplateVariables.WordSelection.NAME + "(\\(.*\\))?\\}"); //$NON-NLS-1$ //$NON-NLS-2$
-	
+
 	private static String Switch_Name = "switch"; //$NON-NLS-1$
 	private static String Switch_Default = "switch case statement"; //$NON-NLS-1$
+
+	private static String NEW_RECORD_TEMPLATE_NAME= "new_record"; //$NON-NLS-1$
 
 	/** The context type. */
 	private TemplateContextType fContextType;
@@ -84,8 +86,7 @@ public class TemplateEngine {
 	 */
 	public void reset() {
 		fProposals.clear();
-		for (Iterator<Entry<IDocument, Position>> it= fPositions.entrySet().iterator(); it.hasNext();) {
-			Entry<IDocument, Position> entry= it.next();
+		for (Entry<IDocument, Position> entry : fPositions.entrySet()) {
 			IDocument doc= entry.getKey();
 			Position position= entry.getValue();
 			doc.removePosition(position);
@@ -108,27 +109,45 @@ public class TemplateEngine {
 	 * @param viewer the text viewer
 	 * @param completionPosition the context position in the document of the text viewer
 	 * @param compilationUnit the compilation unit (may be <code>null</code>)
+	 *
+	 * @deprecated Use {@link #complete(ITextViewer, Point, int, ICompilationUnit)} instead.
 	 */
+	@Deprecated
 	public void complete(ITextViewer viewer, int completionPosition, ICompilationUnit compilationUnit) {
+		if (!(fContextType instanceof CompilationUnitContextType)) {
+			return;
+		}
+		complete(viewer, viewer.getSelectedRange(), completionPosition, compilationUnit);
+	}
+
+	/**
+	 * Inspects the context of the compilation unit around <code>completionPosition</code>
+	 * and feeds the collector with proposals.
+	 * @param viewer the text viewer
+	 * @param selectedRange the selected range
+	 * @param completionPosition the context position in the document of the text viewer
+	 * @param compilationUnit the compilation unit (may be <code>null</code>)
+	 */
+	public void complete(ITextViewer viewer, Point selectedRange, int completionPosition, ICompilationUnit compilationUnit) {
 	    IDocument document= viewer.getDocument();
 
-		if (!(fContextType instanceof CompilationUnitContextType))
+		if (!(fContextType instanceof CompilationUnitContextType)) {
 			return;
+		}
 
-		Point selection= viewer.getSelectedRange();
-		Position position= new Position(completionPosition, selection.y);
+		Position position= new Position(completionPosition, selectedRange.y);
 
 		// remember selected text
 		String selectedText= null;
-		if (selection.y != 0) {
+		if (selectedRange.y != 0) {
 			try {
-				selectedText= document.get(selection.x, selection.y);
+				selectedText= document.get(selectedRange.x, selectedRange.y);
 				document.addPosition(position);
 				fPositions.put(document, position);
 			} catch (BadLocationException e) {}
 		}
 
-		CompilationUnitContext context= ((CompilationUnitContextType) fContextType).createContext(document, position, compilationUnit);
+		CompilationUnitContext context= (CompilationUnitContext) ((CompilationUnitContextType) fContextType).createContext(document, position, compilationUnit);
 		context.setVariable("selection", selectedText); //$NON-NLS-1$
 		int start= context.getStart();
 		int end= context.getEnd();
@@ -136,7 +155,7 @@ public class TemplateEngine {
 
 		Template[] templates= JavaPlugin.getDefault().getTemplateStore().getTemplates();
 		boolean needsCheck= !isJava12OrHigherProject(compilationUnit);
-		if (selection.y == 0) {
+		if (selectedRange.y == 0) {
 			for (int i= 0; i != templates.length; i++) {
 				Template template= templates[i];
 				if (canEvaluate(context, template, needsCheck)) {
@@ -145,10 +164,11 @@ public class TemplateEngine {
 			}
 		} else {
 
-			if (context.getKey().length() == 0)
+			if (context.getKey().length() == 0) {
 				context.setForceEvaluation(true);
+			}
 
-			boolean multipleLinesSelected= areMultipleLinesSelected(viewer);
+			boolean multipleLinesSelected= areMultipleLinesSelected(document, selectedRange);
 
 			for (int i= 0; i != templates.length; i++) {
 				Template template= templates[i];
@@ -173,10 +193,11 @@ public class TemplateEngine {
 	}
 
 	protected Image getImage() {
-		if (fContextType instanceof SWTContextType)
+		if (fContextType instanceof SWTContextType) {
 			return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_SWT_TEMPLATE);
-		else
+		} else {
 			return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_TEMPLATE);
+		}
 	}
 
 	private boolean isJava12OrHigherProject(ICompilationUnit compUnit) {
@@ -187,12 +208,15 @@ public class TemplateEngine {
 		return false;
 	}
 
-	private boolean isTemplateAllowed(Template template) {
+	private boolean isTemplateAllowed(Template template, CompilationUnitContext context) {
 		if (Switch_Name.equals(template.getName())) {
 			if (Switch_Default.equals(template.getDescription())) {
 				return true;
 			}
 			return false;
+		}
+		if (NEW_RECORD_TEMPLATE_NAME.equals(template.getName()) && PreviewFeaturesSubProcessor.isPreviewFeatureEnabled(context.getJavaProject())) {
+			return true;
 		}
 		return true;
 	}
@@ -201,7 +225,7 @@ public class TemplateEngine {
 		if (!needsCheck) {
 			return context.canEvaluate(template);
 		}
-		if (isTemplateAllowed(template)) {
+		if (isTemplateAllowed(template, context)) {
 			return context.canEvaluate(template);
 		}
 		return false;
@@ -212,25 +236,24 @@ public class TemplateEngine {
 	 * Being completely selected means that all characters except the new line characters are
 	 * selected.
 	 *
-	 * @param viewer the text viewer
+	 * @param document the document
+	 * @param selectedRange the range
 	 * @return <code>true</code> if one or multiple lines are selected
-	 * @since 2.1
 	 */
-	private boolean areMultipleLinesSelected(ITextViewer viewer) {
-		if (viewer == null)
+	private boolean areMultipleLinesSelected(IDocument document, Point selectedRange) {
+		if (document == null || selectedRange == null) {
 			return false;
+		}
 
-		Point s= viewer.getSelectedRange();
-		if (s.y == 0)
+		if (selectedRange.y == 0) {
 			return false;
+		}
 
 		try {
-
-			IDocument document= viewer.getDocument();
-			int startLine= document.getLineOfOffset(s.x);
-			int endLine= document.getLineOfOffset(s.x + s.y);
+			int startLine= document.getLineOfOffset(selectedRange.x);
+			int endLine= document.getLineOfOffset(selectedRange.x + selectedRange.y);
 			IRegion line= document.getLineInformation(startLine);
-			return startLine != endLine || (s.x == line.getOffset() && s.y == line.getLength());
+			return startLine != endLine || (selectedRange.x == line.getOffset() && selectedRange.y == line.getLength());
 
 		} catch (BadLocationException x) {
 			return false;

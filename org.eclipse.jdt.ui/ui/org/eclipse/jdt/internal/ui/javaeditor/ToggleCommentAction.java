@@ -105,12 +105,7 @@ public final class ToggleCommentAction extends TextEditorAction {
 		if (shell != null && !shell.isDisposed())
 			display= shell.getDisplay();
 
-		BusyIndicator.showWhile(display, new Runnable() {
-			@Override
-			public void run() {
-				fOperationTarget.doOperation(operationCode);
-			}
-		});
+		BusyIndicator.showWhile(display, () -> fOperationTarget.doOperation(operationCode));
 	}
 
 	/**
@@ -302,15 +297,15 @@ public final class ToggleCommentAction extends TextEditorAction {
 
 		String[] types= configuration.getConfiguredContentTypes(sourceViewer);
 		Map<String, String[]> prefixesMap= new HashMap<>(types.length);
-		for (int i= 0; i < types.length; i++) {
-			String type= types[i];
+		for (String type : types) {
 			String[] prefixes= configuration.getDefaultPrefixes(sourceViewer, type);
 			if (prefixes != null && prefixes.length > 0) {
 				int emptyPrefixes= 0;
-				for (int j= 0; j < prefixes.length; j++)
-					if (prefixes[j].length() == 0)
+				for (String prefix : prefixes) {
+					if (prefix.length() == 0) {
 						emptyPrefixes++;
-
+					}
+				}
 				if (emptyPrefixes > 0) {
 					String[] nonemptyPrefixes= new String[prefixes.length - emptyPrefixes];
 					for (int j= 0, k= 0; j < prefixes.length; j++) {
@@ -322,7 +317,6 @@ public final class ToggleCommentAction extends TextEditorAction {
 					}
 					prefixes= nonemptyPrefixes;
 				}
-
 				prefixesMap.put(type, prefixes);
 			}
 		}

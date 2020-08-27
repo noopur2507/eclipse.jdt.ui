@@ -23,14 +23,12 @@ import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 
 import org.eclipse.jface.operation.IRunnableContext;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.IMarkerResolution2;
@@ -129,7 +127,7 @@ public class BuildpathProblemMarkerResolutionGenerator implements IMarkerResolut
 				}
 			});
 		}
-		
+
 		String optionId= JavaCore.getOptionForConfigurableBuildPathProblemSeverity(id);
 
 
@@ -185,14 +183,11 @@ public class BuildpathProblemMarkerResolutionGenerator implements IMarkerResolut
 			if (context == null) {
 				context= PlatformUI.getWorkbench().getProgressService();
 			}
-			context.run(true, true, new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						project.setRawClasspath(newEntries, project.getOutputLocation(), monitor);
-					} catch (CoreException e) {
-						throw new InvocationTargetException(e);
-					}
+			context.run(true, true, monitor -> {
+				try {
+					project.setRawClasspath(newEntries, project.getOutputLocation(), monitor);
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
 				}
 			});
 		} catch (JavaModelException e) {
@@ -259,7 +254,7 @@ public class BuildpathProblemMarkerResolutionGenerator implements IMarkerResolut
 			return fImage;
 		}
 	}
-	
+
 	private static class ConfigureSeverityResolution implements IMarkerResolution2, IMarkerResolutionRelevance {
 		private final IJavaProject fProject;
 		private String fOptionId;
@@ -329,7 +324,7 @@ public class BuildpathProblemMarkerResolutionGenerator implements IMarkerResolut
 	private static class OpenRequiredProjectMarkerResolution implements IMarkerResolution2, IMarkerResolutionRelevance {
 
 		private final ArrayList<IProject> closedProjects= new ArrayList<>();
-		
+
 		public OpenRequiredProjectMarkerResolution(IMarker marker) {
 			try {
 				// collect required closed projects
@@ -356,7 +351,7 @@ public class BuildpathProblemMarkerResolutionGenerator implements IMarkerResolut
 
 		@Override
 		public String getLabel() {
-			String projects = closedProjects.stream().map(p -> p.getName()).collect(Collectors.joining("', '")); //$NON-NLS-1$
+			String projects = closedProjects.stream().map(IProject::getName).collect(Collectors.joining("', '")); //$NON-NLS-1$
 			if(closedProjects.size() > 1) {
 				return Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_open_required_projects_description, projects);
 			}

@@ -23,8 +23,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -44,9 +42,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.DecoratingLabelProvider;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.wizard.WizardPage;
@@ -188,12 +184,12 @@ public final class JarImportWizardPage extends WizardPage {
 			@Override
 			protected Object[] getJavaProjects(final IJavaModel model) throws JavaModelException {
 				final Set<IJavaProject> set= new HashSet<>();
-				final IJavaProject[] projects= model.getJavaProjects();
-				for (int index= 0; index < projects.length; index++) {
-					if (JarImportWizard.isValidJavaProject(projects[index])) {
-						final Object[] roots= getPackageFragmentRoots(projects[index]);
-						if (roots.length > 0)
-							set.add(projects[index]);
+				for (IJavaProject project : model.getJavaProjects()) {
+					if (JarImportWizard.isValidJavaProject(project)) {
+						final Object[] roots= getPackageFragmentRoots(project);
+						if (roots.length > 0) {
+							set.add(project);
+						}
 					}
 				}
 				return set.toArray();
@@ -202,12 +198,10 @@ public final class JarImportWizardPage extends WizardPage {
 			@Override
 			protected Object[] getPackageFragmentRoots(final IJavaProject project) throws JavaModelException {
 				final Set<IPackageFragmentRoot> set= new HashSet<>();
-				final IPackageFragmentRoot[] roots= project.getPackageFragmentRoots();
-				for (int offset= 0; offset < roots.length; offset++) {
-					IPackageFragmentRoot root= roots[offset];
+				for (IPackageFragmentRoot root : project.getPackageFragmentRoots()) {
 					IClasspathEntry entry= root.getRawClasspathEntry();
 					if (JarImportWizard.isValidClassPathEntry(entry)
-							&& root.getResolvedClasspathEntry().getReferencingEntry() == null)
+						&& root.getResolvedClasspathEntry().getReferencingEntry() == null)
 						set.add(root);
 				}
 				return set.toArray();
@@ -233,13 +227,7 @@ public final class JarImportWizardPage extends WizardPage {
 			fTreeViewer.setSelection(new StructuredSelection(new Object[] { root}), true);
 			fTreeViewer.expandToLevel(root, 1);
 		}
-		fTreeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-			@Override
-			public void selectionChanged(final SelectionChangedEvent event) {
-				handleInputChanged();
-			}
-		});
+		fTreeViewer.addSelectionChangedListener(event -> handleInputChanged());
 		if (contentProvider.getChildren(JavaCore.create(ResourcesPlugin.getWorkspace().getRoot())).length == 0) {
 			fTreeViewer.getControl().setEnabled(false);
 			label.setEnabled(false);
@@ -264,13 +252,7 @@ public final class JarImportWizardPage extends WizardPage {
 		fLocationControl= new RefactoringLocationControl(fWizard, composite, SETTING_HISTORY);
 		fLocationControl.setLayoutData(createGridData(GridData.FILL_HORIZONTAL, 1, 0));
 		fLocationControl.loadHistory();
-		fLocationControl.getControl().addModifyListener(new ModifyListener() {
-
-			@Override
-			public final void modifyText(final ModifyEvent event) {
-				handleInputChanged();
-			}
-		});
+		fLocationControl.getControl().addModifyListener(event -> handleInputChanged());
 		fLocationControl.getControl().addSelectionListener(new SelectionAdapter() {
 
 			@Override

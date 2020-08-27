@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -45,21 +44,15 @@ import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
-import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.ICellModifier;
-import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.window.Window;
@@ -290,8 +283,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 
 	private static int getEditableCount(final MemberActionInfo[] infos) {
 		int result= 0;
-		for (int i= 0; i < infos.length; i++) {
-			final MemberActionInfo info= infos[i];
+		for (PullUpMemberPage.MemberActionInfo info : infos) {
 			if (info.isEditable())
 				result++;
 		}
@@ -303,8 +295,8 @@ public class PullUpMemberPage extends UserInputWizardPage {
 	}
 
 	private static void setActionForInfos(final MemberActionInfo[] infos, final int action) {
-		for (int i= 0; i < infos.length; i++) {
-			infos[i].setAction(action);
+		for (PullUpMemberPage.MemberActionInfo info : infos) {
+			info.setAction(action);
 		}
 	}
 
@@ -572,33 +564,17 @@ public class PullUpMemberPage extends UserInputWizardPage {
 		fTableViewer.setUseHashlookup(true);
 		fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 		fTableViewer.setLabelProvider(new MemberActionInfoLabelProvider());
-		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-			@Override
-			public void selectionChanged(final SelectionChangedEvent event) {
-				updateButtonEnablement(event.getSelection());
-			}
+		fTableViewer.addSelectionChangedListener(event -> updateButtonEnablement(event.getSelection()));
+		fTableViewer.addCheckStateListener(event -> {
+			final boolean checked= event.getChecked();
+			final MemberActionInfo info= (MemberActionInfo) event.getElement();
+			if (checked)
+				info.setAction(PULL_UP_ACTION);
+			else
+				info.setAction(MemberActionInfo.NO_ACTION);
+			updateWizardPage(null, true);
 		});
-		fTableViewer.addCheckStateListener(new ICheckStateListener() {
-
-			@Override
-			public void checkStateChanged(final CheckStateChangedEvent event) {
-				final boolean checked= event.getChecked();
-				final MemberActionInfo info= (MemberActionInfo) event.getElement();
-				if (checked)
-					info.setAction(PULL_UP_ACTION);
-				else
-					info.setAction(MemberActionInfo.NO_ACTION);
-				updateWizardPage(null, true);
-			}
-		});
-		fTableViewer.addDoubleClickListener(new IDoubleClickListener() {
-
-			@Override
-			public void doubleClick(final DoubleClickEvent event) {
-				editSelectedMembers();
-			}
-		});
+		fTableViewer.addDoubleClickListener(event -> editSelectedMembers());
 
 		setTableInput();
 		checkPullUp(fProcessor.getMembersToMove(), false);
@@ -680,8 +656,8 @@ public class PullUpMemberPage extends UserInputWizardPage {
 		fSuperTypesCombo= new Combo(parent, SWT.READ_ONLY);
 		SWTUtil.setDefaultVisibleItemCount(fSuperTypesCombo);
 		if (fCandidateTypes.length > 0) {
-			for (int i= 0; i < fCandidateTypes.length; i++) {
-				final String comboLabel= fCandidateTypes[i].getFullyQualifiedName('.');
+			for (IType candidateType : fCandidateTypes) {
+				final String comboLabel= candidateType.getFullyQualifiedName('.');
 				fSuperTypesCombo.add(comboLabel);
 			}
 			fSuperTypesCombo.select(fCandidateTypes.length - 1);
@@ -691,16 +667,13 @@ public class PullUpMemberPage extends UserInputWizardPage {
 
 	protected void createSuperTypeControl(final Composite parent) {
 		try {
-			PlatformUI.getWorkbench().getActiveWorkbenchWindow().run(true, false, new IRunnableWithProgress() {
-				@Override
-				public void run(final IProgressMonitor monitor) throws InvocationTargetException {
-					try {
-						fCandidateTypes= fProcessor.getCandidateTypes(new RefactoringStatus(), monitor);
-					} catch (JavaModelException exception) {
-						throw new InvocationTargetException(exception);
-					} finally {
-						monitor.done();
-					}
+			PlatformUI.getWorkbench().getActiveWorkbenchWindow().run(true, false, monitor -> {
+				try {
+					fCandidateTypes= fProcessor.getCandidateTypes(new RefactoringStatus(), monitor);
+				} catch (JavaModelException exception) {
+					throw new InvocationTargetException(exception);
+				} finally {
+					monitor.done();
 				}
 			});
 			createSuperTypeCombo(parent);
@@ -732,7 +705,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 							JavaElementLabels.M_PARAMETER_TYPES))
 					: Messages.format(RefactoringMessages.PullUpInputPage1_Mark_selected_members_plural, String.valueOf(selectedMembers.length));
 			final Map<String, Integer> stringMapping= createStringMappingForSelectedMembers();
-			final String[] keys= stringMapping.keySet().toArray(new String[stringMapping.keySet().size()]);
+			final String[] keys= stringMapping.keySet().toArray(new String[stringMapping.size()]);
 			Arrays.sort(keys);
 			final int initialSelectionIndex= getInitialSelectionIndexForEditDialog(stringMapping, keys);
 			final ComboSelectionDialog dialog= new ComboSelectionDialog(getShell(), shellTitle, labelText, keys, initialSelectionIndex);
@@ -755,8 +728,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 	private MemberActionInfo[] getActiveInfos() {
 		final MemberActionInfo[] infos= getTableInput();
 		final List<MemberActionInfo> result= new ArrayList<>(infos.length);
-		for (int i= 0; i < infos.length; i++) {
-			final MemberActionInfo info= infos[i];
+		for (PullUpMemberPage.MemberActionInfo info : infos) {
 			if (info.isActive())
 				result.add(info);
 		}
@@ -769,9 +741,10 @@ public class PullUpMemberPage extends UserInputWizardPage {
 			return -1;
 
 		final int code= infos[0].getAction();
-		for (int i= 0; i < infos.length; i++) {
-			if (code != infos[i].getAction())
+		for (PullUpMemberPage.MemberActionInfo info : infos) {
+			if (code != info.getAction()) {
 				return -1;
+			}
 		}
 		return code;
 	}
@@ -795,8 +768,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 		final int commonActionCode= getCommonActionCodeForSelectedInfos();
 		if (commonActionCode == -1)
 			return 0;
-		for (final Iterator<String> iter= stringMapping.keySet().iterator(); iter.hasNext();) {
-			final String key= iter.next();
+		for (String key : stringMapping.keySet()) {
 			final int action= stringMapping.get(key).intValue();
 			if (commonActionCode == action) {
 				for (int i= 0; i < keys.length; i++) {
@@ -816,8 +788,8 @@ public class PullUpMemberPage extends UserInputWizardPage {
 	private IMember[] getMembers() {
 		final MemberActionInfo[] infos= getTableInput();
 		final List<IMember> result= new ArrayList<>(infos.length);
-		for (int index= 0; index < infos.length; index++) {
-			result.add(infos[index].getMember());
+		for (PullUpMemberPage.MemberActionInfo info : infos) {
+			result.add(info.getMember());
 		}
 		return result.toArray(new IMember[result.size()]);
 	}
@@ -836,9 +808,7 @@ public class PullUpMemberPage extends UserInputWizardPage {
 
 	private void getMembersForAction(int action, boolean onlyMethods, List<IMember> result) {
 		boolean isDestinationInterface= isDestinationInterface();
-		final MemberActionInfo[] infos= getTableInput();
-		for (int index= 0; index < infos.length; index++) {
-			MemberActionInfo info= infos[index];
+		for (PullUpMemberPage.MemberActionInfo info : getTableInput()) {
 			int infoAction= info.getAction();
 			boolean isMethodInfo= info.isMethodInfo();
 			if (!isMethodInfo && onlyMethods)
@@ -947,10 +917,11 @@ public class PullUpMemberPage extends UserInputWizardPage {
 
 	private void setActionForMembers(final IMember[] members, final int action) {
 		final MemberActionInfo[] infos= getTableInput();
-		for (int i= 0; i < members.length; i++) {
-			for (int j= 0; j < infos.length; j++) {
-				if (infos[j].getMember().equals(members[i]))
-					infos[j].setAction(action);
+		for (IMember member : members) {
+			for (PullUpMemberPage.MemberActionInfo info : infos) {
+				if (info.getMember().equals(member)) {
+					info.setAction(action);
+				}
 			}
 		}
 	}
@@ -963,22 +934,18 @@ public class PullUpMemberPage extends UserInputWizardPage {
 		final ComboBoxCellEditor editor= new ComboBoxCellEditor();
 		editor.setStyle(SWT.READ_ONLY);
 		fTableViewer.setCellEditors(new CellEditor[] { null, editor});
-		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-			@Override
-			public void selectionChanged(final SelectionChangedEvent event) {
-				if (editor.getControl() == null && !table.isDisposed())
-					editor.create(table);
-				final ISelection sel= event.getSelection();
-				if (!(sel instanceof IStructuredSelection))
-					return;
-				final IStructuredSelection structured= (IStructuredSelection) sel;
-				if (structured.size() != 1)
-					return;
-				final MemberActionInfo info= (MemberActionInfo) structured.getFirstElement();
-				editor.setItems(info.getAllowedLabels());
-				editor.setValue(Integer.valueOf(info.getAction()));
-			}
+		fTableViewer.addSelectionChangedListener(event -> {
+			if (editor.getControl() == null && !table.isDisposed())
+				editor.create(table);
+			final ISelection sel= event.getSelection();
+			if (!(sel instanceof IStructuredSelection))
+				return;
+			final IStructuredSelection structured= (IStructuredSelection) sel;
+			if (structured.size() != 1)
+				return;
+			final MemberActionInfo info= (MemberActionInfo) structured.getFirstElement();
+			editor.setItems(info.getAllowedLabels());
+			editor.setValue(Integer.valueOf(info.getAction()));
 		});
 
 		final ICellModifier cellModifier= new MemberActionCellModifier();

@@ -104,8 +104,6 @@ import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.CustomPr
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.Profile;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField;
 
@@ -297,7 +295,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 
 		/**
 		 * Set the key which is used to store the value.
-		 * 
+		 *
 		 * @param key New value
 		 */
 		public final void setKey(String key) {
@@ -387,7 +385,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 
 		/**
 		 * Create a new CheckboxPreference.
-		 * 
+		 *
 		 * @param parentComposite The composite on which the SWT widgets are added.
 		 * @param indent how many levels of indentation to apply.
 		 * @param label The label text for this Preference.
@@ -727,7 +725,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 
 		private StringPreference(Text control, String label, String key) {
 			super(control, label, key, FilteredPreferenceTree.TEXT_VALUE_MATCHER);
-			
+
 			fControl.addModifyListener(e -> updateValue());
 
 			fControl.addFocusListener(new FocusAdapter() {
@@ -760,7 +758,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		/**
 		 * Helper class for easy, call-chain based building of subtrees that contain only Sections and one
 		 * type of preference.
-		 * 
+		 *
 		 * @param <T> Type of preference or section built
 		 */
 		public abstract class SimpleTreeBuilder<T extends PreferenceTreeNode<?>> {
@@ -902,7 +900,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 					doValidate();
 					return true;
 				};
-				((Preference<?>) node).init(fWorkingValues, validator , () -> valuesModified());
+				((Preference<?>) node).init(fWorkingValues, validator, ModifyDialog.this::valuesModified);
 			}
 
 			if (!(node instanceof Section)) {
@@ -995,7 +993,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 				}
 			}
 			int c= in.read();
-			while (c != '.' && c != -1) { // some extra nodes in stored tree 
+			while (c != '.' && c != -1) { // some extra nodes in stored tree
 				readExpansionState(new PreferenceTreeNode<>(null, null, false), in);
 				c= in.read();
 			}
@@ -1068,10 +1066,10 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 	 * The default focus manager. It knows all widgets which can have the focus and listens for
 	 * focusGained events, on which it stores the index of the current focus holder. When the dialog
 	 * is restarted, <code>restoreFocus()</code> sets the focus to the last control which had it.
-	 * 
+	 *
 	 * Focus manager also makes sure that proper preview is displayed for currently focused
 	 * preference.
-	 * 
+	 *
 	 * The standard Preference objects are managed by this focus manager if they are created using
 	 * the respective factory methods. Other SWT widgets can be added in subclasses when they are
 	 * created.
@@ -1301,12 +1299,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		fProfileNameField.setText(fProfile.getName());
 		fProfileNameField.getLabelControl(nameComposite).setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
 		fProfileNameField.getTextControl(nameComposite).setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		fProfileNameField.setDialogFieldListener(new IDialogFieldListener() {
-			@Override
-			public void dialogFieldChanged(DialogField field) {
-				doValidate();
-			}
-		});
+		fProfileNameField.setDialogFieldListener(field -> doValidate());
 
 		fSaveButton= createButton(nameComposite, SAVE_BUTTON_ID, FormatterMessages.ModifyDialog_Export_Button, false);
 	}
@@ -1362,7 +1355,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		super.okPressed();
 	}
 
-    @Override
+	@Override
 	protected void buttonPressed(int buttonId) {
 		if (buttonId == APPLAY_BUTTON_ID) {
 			applyPressed();
@@ -1372,7 +1365,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		} else {
 			super.buttonPressed(buttonId);
 		}
-    }
+	}
 
 	private void applyPressed() {
 		if (!fProfile.getName().equals(fProfileNameField.getText())) {
@@ -1419,9 +1412,9 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		}
 	}
 
-    @Override
+	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
-	    fApplyButton= createButton(parent, APPLAY_BUTTON_ID, FormatterMessages.ModifyDialog_apply_button, false);
+		fApplyButton= createButton(parent, APPLAY_BUTTON_ID, FormatterMessages.ModifyDialog_apply_button, false);
 		fApplyButton.setEnabled(false);
 
 		GridLayout layout= (GridLayout) parent.getLayout();
@@ -1443,27 +1436,27 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 
 	@Override
 	protected void updateButtonsEnableState(IStatus status) {
-	    super.updateButtonsEnableState(status);
-	    if (fApplyButton != null && !fApplyButton.isDisposed()) {
-	    	fApplyButton.setEnabled(hasChanges() && !status.matches(IStatus.ERROR));
+		super.updateButtonsEnableState(status);
+		if (fApplyButton != null && !fApplyButton.isDisposed()) {
+			fApplyButton.setEnabled(hasChanges() && !status.matches(IStatus.ERROR));
 		}
-	    if (fSaveButton != null && !fSaveButton.isDisposed()) {
-	    	fSaveButton.setEnabled(!validateProfileName().matches(IStatus.ERROR));
-	    }
+		if (fSaveButton != null && !fSaveButton.isDisposed()) {
+			fSaveButton.setEnabled(!validateProfileName().matches(IStatus.ERROR));
+		}
 	}
 
-    private void doValidate() {
-    	String name= fProfileNameField.getText().trim();
+	private void doValidate() {
+		String name= fProfileNameField.getText().trim();
 		if (name.equals(fProfile.getName()) && fProfile.hasEqualSettings(fWorkingValues, fWorkingValues.keySet())) {
 			updateStatus(StatusInfo.OK_STATUS);
 			return;
 		}
 
-    	IStatus status= validateProfileName();
-    	if (status.matches(IStatus.ERROR)) {
-    		updateStatus(status);
-    		return;
-    	}
+		IStatus status= validateProfileName();
+		if (status.matches(IStatus.ERROR)) {
+			updateStatus(status);
+			return;
+		}
 
 		if (!name.equals(fProfile.getName()) && fProfileManager.containsName(name)) {
 			updateStatus(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, FormatterMessages.ModifyDialog_Duplicate_Status));
@@ -1475,30 +1468,30 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 			return;
 		}
 
-	    updateStatus(StatusInfo.OK_STATUS);
-    }
+		updateStatus(StatusInfo.OK_STATUS);
+	}
 
-    private IStatus validateProfileName() {
-    	final String name= fProfileNameField.getText().trim();
+	private IStatus validateProfileName() {
+		final String name= fProfileNameField.getText().trim();
 
-	    if (fProfile.isBuiltInProfile()) {
+		if (fProfile.isBuiltInProfile()) {
 			if (fProfile.getName().equals(name)) {
 				return new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, FormatterMessages.ModifyDialog_BuiltIn_Status);
 			}
-    	}
+		}
 
-    	if (fProfile.isSharedProfile()) {
+		if (fProfile.isSharedProfile()) {
 			if (fProfile.getName().equals(name)) {
 				return new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, FormatterMessages.ModifyDialog_Shared_Status);
 			}
-    	}
+		}
 
 		if (name.length() == 0) {
 			return new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, FormatterMessages.ModifyDialog_EmptyName_Status);
 		}
 
 		return StatusInfo.OK_STATUS;
-    }
+	}
 
 	private boolean hasChanges() {
 		if (!fProfileNameField.getText().trim().equals(fProfile.getName()))
@@ -1540,7 +1533,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 		PreferenceTreeNode<?> currentNode= fFocusManager.fCurrentlyFocused;
 		if (currentNode == null)
 			return null;
-		
+
 		// try this node
 		String previewCode= doGetPreviewCode(currentNode);
 		if (previewCode != null)
@@ -1581,7 +1574,7 @@ public abstract class ModifyDialog extends StatusDialog implements IModification
 	}
 
 	private String doGetPreviewCode(PreferenceTreeNode<?> node) {
-		if (!(node instanceof Section || node instanceof Preference))
+		if (!(node instanceof Section) && !(node instanceof Preference))
 			return null;
 		String key= node instanceof Section ? ((Section) node).getKey() : ((Preference<?>) node).getKey();
 		final String START_PREFIX= "//--PREVIEW--START--"; //$NON-NLS-1$

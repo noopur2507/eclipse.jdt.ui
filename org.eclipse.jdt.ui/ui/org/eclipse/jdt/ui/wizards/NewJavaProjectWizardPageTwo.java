@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Display;
@@ -307,14 +306,13 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 				List<IClasspathEntry> cpEntries= new ArrayList<>();
 				IWorkspaceRoot root= project.getWorkspace().getRoot();
 
-				IClasspathEntry[] sourceClasspathEntries= fFirstPage.getSourceClasspathEntries();
-				for (int i= 0; i < sourceClasspathEntries.length; i++) {
-					IPath path= sourceClasspathEntries[i].getPath();
+				for (IClasspathEntry sourceClasspathEntry : fFirstPage.getSourceClasspathEntries()) {
+					IPath path= sourceClasspathEntry.getPath();
 					if (path.segmentCount() > 1) {
 						IFolder folder= root.getFolder(path);
 						CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 1));
 					}
-					cpEntries.add(sourceClasspathEntries[i]);
+					cpEntries.add(sourceClasspathEntry);
 				}
 
 				cpEntries.addAll(0, Arrays.asList(fFirstPage.getDefaultClasspathEntries()));
@@ -351,9 +349,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 		fOrginalFolders= new HashSet<>();
 
 		try {
-			IFileStore[] children= EFS.getStore(projectLocation).childStores(EFS.NONE, null);
-			for (int i= 0; i < children.length; i++) {
-				IFileStore child= children[i];
+			for (IFileStore child : EFS.getStore(projectLocation).childStores(EFS.NONE, null)) {
 				IFileInfo info= child.fetchInfo();
 				if (info.isDirectory() && info.exists()) {
 					fOrginalFolders.add(child);
@@ -377,15 +373,12 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 						foldersToKeep.add(canonicalFileStore);
 					}
 				}
-			} catch (IOException e) {
-			} catch (CoreException e) {
+			} catch (IOException | CoreException e) {
 			}
 		}
 
 		try {
-			IFileStore[] children= EFS.getStore(projectLocation).childStores(EFS.NONE, null);
-			for (int i= 0; i < children.length; i++) {
-				IFileStore child= children[i];
+			for (IFileStore child : EFS.getStore(projectLocation).childStores(EFS.NONE, null)) {
 				IFileInfo info= child.fetchInfo();
 				if (info.isDirectory() && info.exists() && !foldersToKeep.contains(child)) {
 					child.delete(EFS.NONE, null);
@@ -393,8 +386,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 				}
 			}
 
-			for (Iterator<IFileStore> iterator= fOrginalFolders.iterator(); iterator.hasNext();) {
-				IFileStore deleted= iterator.next();
+			for (IFileStore deleted : fOrginalFolders) {
 				deleted.mkdir(EFS.NONE, null);
 			}
 		} catch (CoreException e) {
@@ -536,12 +528,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 			return;
 		}
 
-		IRunnableWithProgress op= new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-				doRemoveProject(monitor);
-			}
-		};
+		IRunnableWithProgress op= this::doRemoveProject;
 
 		try {
 			getContainer().run(true, true, new WorkspaceModifyDelegatingOperation(op));
@@ -597,7 +584,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 	public void dispose() {
 		super.dispose();
 	}
-	
+
 	private void setCompilerCompliance(String compilerCompliance) {
 		BuildPathsBlock buildPathsBlock= getBuildPathsBlock();
 		if (buildPathsBlock != null) {
@@ -607,7 +594,7 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 			}
 		}
 	}
-	
+
 	private void createJavaProjectModuleInfoFile() {
 		String compilerCompliance= fFirstPage.getCompilerCompliance();
 		if (compilerCompliance == null) {
@@ -616,22 +603,19 @@ public class NewJavaProjectWizardPageTwo extends JavaCapabilityConfigurationPage
 		if (compilerCompliance!= null && JavaModelUtil.is9OrHigher(compilerCompliance)) {
 			boolean createModuleInfoFile= isCreateModuleInfoFile();
 			if (createModuleInfoFile) {
-				Display.getDefault().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						CreateModuleInfoAction action= new CreateModuleInfoAction();
-						action.selectionChanged(null, new StructuredSelection(getJavaProject()));
-						action.run(null);
-					}
+				Display.getDefault().asyncExec(() -> {
+					CreateModuleInfoAction action= new CreateModuleInfoAction();
+					action.selectionChanged(null, new StructuredSelection(getJavaProject()));
+					action.run(null);
 				});
-				
+
 			}
 		}
 	}
-	
+
 	boolean isCreateModuleInfoFile() {
 		BuildPathsBlock buildPathsBlock= getBuildPathsBlock();
-		if (buildPathsBlock != null) {		
+		if (buildPathsBlock != null) {
 			BuildPathBasePage sourceContainerPage= buildPathsBlock.getSourceContainerPage();
 			if (sourceContainerPage instanceof NewSourceContainerWorkbookPage) {
 				return ((NewSourceContainerWorkbookPage) sourceContainerPage).isCreateModuleInfoFile();

@@ -50,7 +50,6 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogFieldGroup;
 
@@ -172,7 +171,7 @@ public class NewAnnotationWizardPage extends NewTypeWizardPage {
 
 	/**
 	 * Control for adding an annotation with enum-based values to the generated source code.
-	 * 
+	 *
 	 * @param <A> the class to add as an annotation
 	 * @param <E> the enum class that supplies values for the annotation
 	 */
@@ -219,12 +218,7 @@ public class NewAnnotationWizardPage extends NewTypeWizardPage {
 
 			fEnumButtons= new SelectionButtonDialogFieldGroup(style, enumLabels, nColumns);
 
-			fEnableButton.setDialogFieldListener(new IDialogFieldListener() {
-				@Override
-				public void dialogFieldChanged(DialogField field) {
-					fEnumButtons.setEnabled(fEnableButton.isSelected());
-				}
-			});
+			fEnableButton.setDialogFieldListener(field -> fEnumButtons.setEnabled(fEnableButton.isSelected()));
 		}
 
 		private String[] toStringArray(Class<E> enumClass) {
@@ -322,7 +316,7 @@ public class NewAnnotationWizardPage extends NewTypeWizardPage {
 		/**
 		 * Sets or changes the target <code>IJavaProject</code>. The availability of enum constants
 		 * may depend on the project, e.g. its source level.
-		 * 
+		 *
 		 * @param javaProject the new Java project in which the annotation will be created.
 		 */
 		public void setProject(IJavaProject javaProject) {
@@ -380,31 +374,31 @@ public class NewAnnotationWizardPage extends NewTypeWizardPage {
 
 		private String createAnnotationAndImports(List<E> selectedEnums, ImportsManager imports, String lineDelimiter) {
 			StringBuilder buffer= new StringBuilder();
-		
+
 			String annotationTypeName= imports.addImport(fAnnotationClass.getName());
 			buffer.append("@"); //$NON-NLS-1$
 			buffer.append(annotationTypeName);
 			buffer.append("("); //$NON-NLS-1$
-		
+
 			if (selectedEnums.size() > 1) {
 				buffer.append("{"); //$NON-NLS-1$
 			}
-		
+
 			for (Enum<?> en : selectedEnums) {
 				String enumTypeName= imports.addStaticImport(en.getClass().getName(), en.name(), true);
 				buffer.append(enumTypeName);
 				buffer.append(", "); //$NON-NLS-1$
 			}
-		
+
 			buffer.delete(buffer.length() - 2, buffer.length());
-		
+
 			if (selectedEnums.size() > 1) {
 				buffer.append("}"); //$NON-NLS-1$
 			}
-		
+
 			buffer.append(")"); //$NON-NLS-1$
 			buffer.append(lineDelimiter);
-		
+
 			return buffer.toString();
 		}
 	}

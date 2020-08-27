@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Benjamin Muskalla <b.muskalla@gmx.net> - [quick fix] Quick fix for missing synchronized modifier - https://bugs.eclipse.org/bugs/show_bug.cgi?id=245250
@@ -134,8 +134,10 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.UnqualifiedFieldAccess:
 			case IProblem.JavadocMissing:
 			case IProblem.JavadocMissingParamTag:
+			case IProblem.JavadocMissingProvidesTag:
 			case IProblem.JavadocMissingReturnTag:
 			case IProblem.JavadocMissingThrowsTag:
+			case IProblem.JavadocMissingUsesTag:
 			case IProblem.JavadocUndefinedType:
 			case IProblem.JavadocAmbiguousType:
 			case IProblem.JavadocNotVisibleType:
@@ -143,6 +145,8 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.JavadocDuplicateThrowsClassName:
 			case IProblem.JavadocDuplicateReturnTag:
 			case IProblem.JavadocDuplicateParamName:
+			case IProblem.JavadocDuplicateProvidesTag:
+			case IProblem.JavadocDuplicateUsesTag:
 			case IProblem.JavadocInvalidParamName:
 			case IProblem.JavadocUnexpectedTag:
 			case IProblem.JavadocInvalidTag:
@@ -302,8 +306,12 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.ServiceImplDefaultConstructorNotPublic:
 			case IProblem.PreviewFeatureDisabled:
 			case IProblem.PreviewFeatureNotSupported:
-			case IProblem.SwitchExpressionMissingEnumConstantCase:
-			case IProblem.SwitchExpressionMissingDefaultCase:
+			case IProblem.SwitchExpressionsYieldMissingEnumConstantCase:
+			case IProblem.SwitchExpressionsYieldMissingDefaultCase:
+			case IProblem.PreviewFeaturesNotAllowed:
+			case IProblem.UninitializedBlankFinalField:
+			case IProblem.SwitchExpressionsReturnWithinSwitchExpression:
+			case IProblem.DanglingReference:
 				return true;
 			default:
 				return SuppressWarningsSubProcessor.hasSuppressWarningsProposal(cu.getJavaProject(), problemId)
@@ -335,8 +343,7 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 
 		HashSet<Integer> handledProblems= new HashSet<>(locations.length);
 		ArrayList<ICommandAccess> resultingCollections= new ArrayList<>();
-		for (int i= 0; i < locations.length; i++) {
-			IProblemLocation curr= locations[i];
+		for (IProblemLocation curr : locations) {
 			Integer id= Integer.valueOf(curr.getProblemId());
 			if (handledProblems.add(id)) {
 				process(context, curr, resultingCollections);
@@ -385,6 +392,9 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.UndefinedName:
 			case IProblem.UnresolvedVariable:
 				UnresolvedElementsSubProcessor.getVariableProposals(context, problem, null, proposals);
+				break;
+			case IProblem.UninitializedBlankFinalField:
+				UnInitializedFinalFieldSubProcessor.getProposals(context, problem, proposals);
 				break;
 			case IProblem.AmbiguousType:
 			case IProblem.JavadocAmbiguousType:
@@ -588,6 +598,8 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.JavadocMissingParamTag:
 			case IProblem.JavadocMissingReturnTag:
 			case IProblem.JavadocMissingThrowsTag:
+			case IProblem.JavadocMissingUsesTag:
+			case IProblem.JavadocMissingProvidesTag:
 				JavadocTagsSubProcessor.getMissingJavadocTagProposals(context, problem, proposals);
 				break;
 			case IProblem.JavadocInvalidThrowsClassName:
@@ -598,6 +610,10 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 			case IProblem.JavadocUnexpectedTag:
 			case IProblem.JavadocInvalidTag:
 				JavadocTagsSubProcessor.getRemoveJavadocTagProposals(context, problem, proposals);
+				break;
+			case IProblem.JavadocDuplicateProvidesTag:
+			case IProblem.JavadocDuplicateUsesTag:
+				JavadocTagsSubProcessor.getRemoveDuplicateModuleJavadocTagProposals(context, problem, proposals);
 				break;
 			case IProblem.JavadocInvalidMemberTypeQualification:
 				JavadocTagsSubProcessor.getInvalidQualificationProposals(context, problem, proposals);
@@ -721,18 +737,16 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				SuppressWarningsSubProcessor.addUnknownSuppressWarningProposals(context, problem, proposals);
 				break;
 			case IProblem.ProblemNotAnalysed:
-				SuppressWarningsSubProcessor.addRemoveUnusedSuppressWarningProposals(context, problem, proposals);
-				break;
 			case IProblem.UnusedWarningToken:
 				SuppressWarningsSubProcessor.addRemoveUnusedSuppressWarningProposals(context, problem, proposals);
 				break;
 			case IProblem.MissingEnumConstantCase:
 			case IProblem.MissingEnumDefaultCase:
-			case IProblem.SwitchExpressionMissingEnumConstantCase:
+			case IProblem.SwitchExpressionsYieldMissingEnumConstantCase:
 				LocalCorrectionsSubProcessor.getMissingEnumConstantCaseProposals(context, problem, proposals);
 				break;
 			case IProblem.MissingDefaultCase:
-			case IProblem.SwitchExpressionMissingDefaultCase:
+			case IProblem.SwitchExpressionsYieldMissingDefaultCase:
 				LocalCorrectionsSubProcessor.addMissingDefaultCaseProposal(context, problem, proposals);
 				break;
 			case IProblem.MissingEnumConstantCaseDespiteDefault:
@@ -853,7 +867,11 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 				PreviewFeaturesSubProcessor.getOpenCompliancePageToEnablePreviewFeaturesProposal(context, proposals);
 				break;
 			case IProblem.PreviewFeatureNotSupported:
+			case IProblem.PreviewFeaturesNotAllowed:
 				PreviewFeaturesSubProcessor.getNeedHigherComplianceProposals(context, problem, proposals);
+				break;
+			case IProblem.SwitchExpressionsReturnWithinSwitchExpression:
+				ReturnTypeSubProcessor.replaceReturnWithYieldStatementProposals(context, problem, proposals);
 				break;
 			default:
 		}

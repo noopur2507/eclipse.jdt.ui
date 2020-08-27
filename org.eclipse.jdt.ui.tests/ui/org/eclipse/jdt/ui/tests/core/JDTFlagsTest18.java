@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2017 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.Hashtable;
 
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.JavaTestPlugin;
@@ -51,40 +58,28 @@ import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.core.rules.Java1d8ProjectTestSetup;
 
-public class JDTFlagsTest18 extends TestCase {
-
-	private static final Class<JDTFlagsTest18> THIS= JDTFlagsTest18.class;
-
+/**
+ * Those tests are made to run on Java Spider 1.8 .
+ */
+public class JDTFlagsTest18 {
 	private IJavaProject fJProject1;
 
 	private IPackageFragmentRoot fSourceFolder;
 
-	public JDTFlagsTest18(String name) {
-		super(name);
-	}
+	@Rule
+	public Java1d8ProjectTestSetup j18p= new Java1d8ProjectTestSetup();
 
-	public static Test suite() {
-		return new Java18ProjectTestSetup(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new Java18ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		fJProject1= Java18ProjectTestSetup.getProject();
+	@Before
+	public void setUp() throws Exception {
+		fJProject1= j18p.getProject();
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, Java18ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, j18p.getDefaultClasspath());
 	}
 
 	protected CompilationUnit getCompilationUnitNode(String source) {
@@ -97,6 +92,7 @@ public class JDTFlagsTest18 extends TestCase {
 		return cuNode;
 	}
 
+	@Test
 	public void testIsStaticInSrcFile() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -108,25 +104,26 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("public static");
 		IMethod method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertTrue(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isAbstract(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
 
 		ASTParser p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(fJProject1);
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertTrue(JdtFlags.isStatic(binding));
-			Assert.assertFalse(JdtFlags.isAbstract(binding));
-			Assert.assertFalse(JdtFlags.isDefaultMethod(binding));
+			assertTrue(JdtFlags.isStatic(binding));
+			assertFalse(JdtFlags.isAbstract(binding));
+			assertFalse(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 
 		MethodDeclaration methodNode= ASTNodeSearchUtil.getMethodDeclarationNode(method, getCompilationUnitNode(buf.toString()));
-		Assert.assertTrue(JdtFlags.isStatic(methodNode));
+		assertTrue(JdtFlags.isStatic(methodNode));
 	}
 
+	@Test
 	public void testNestedEnumInEnum() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -141,10 +138,11 @@ public class JDTFlagsTest18 extends TestCase {
 		int offset= cUnit.getSource().indexOf("enum E");
 		IJavaElement elem= cUnit.getElementAt(offset);
 		EnumDeclaration enumNode= ASTNodeSearchUtil.getEnumDeclarationNode((IType)elem, getCompilationUnitNode(buf.toString()));
-		Assert.assertTrue(JdtFlags.isStatic(enumNode));
-		Assert.assertTrue(JdtFlags.isStatic((IType)elem));
+		assertTrue(JdtFlags.isStatic(enumNode));
+		assertTrue(JdtFlags.isStatic((IType)elem));
 	}
 
+	@Test
 	public void testNestedEnumInInterface() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -173,19 +171,20 @@ public class JDTFlagsTest18 extends TestCase {
 		int offset= cUnit.getSource().indexOf("enum CoffeeSize");
 		IJavaElement elem= cUnit.getElementAt(offset);
 		IMember type= (IMember)elem;
-		Assert.assertTrue(JdtFlags.isStatic(type));
-		Assert.assertFalse(JdtFlags.isAbstract(type));
+		assertTrue(JdtFlags.isStatic(type));
+		assertFalse(JdtFlags.isAbstract(type));
 
 		EnumDeclaration enumNode= ASTNodeSearchUtil.getEnumDeclarationNode((IType)elem, getCompilationUnitNode(buf.toString()));
-		Assert.assertTrue(JdtFlags.isStatic(enumNode));
+		assertTrue(JdtFlags.isStatic(enumNode));
 
 		// testcase for isF an enum
-		Assert.assertFalse(JdtFlags.isFinal(type));
+		assertFalse(JdtFlags.isFinal(type));
 		offset= cUnit.getSource().indexOf("enum Colors");
 		type= (IMember)cUnit.getElementAt(offset);
-		Assert.assertTrue(JdtFlags.isFinal(type));
+		assertTrue(JdtFlags.isFinal(type));
 	}
 
+	@Test
 	public void testNestedEnumInClass() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -211,29 +210,30 @@ public class JDTFlagsTest18 extends TestCase {
 		CompilationUnit cuNode= getCompilationUnitNode(buf.toString());
 		IJavaElement javaElem= cUnit.getElementAt(offset);
 		IMember element= (IMember)javaElem;
-		Assert.assertTrue(JdtFlags.isStatic(element));
-		Assert.assertFalse(JdtFlags.isAbstract(element));
+		assertTrue(JdtFlags.isStatic(element));
+		assertFalse(JdtFlags.isAbstract(element));
 
 		EnumDeclaration enumNode= ASTNodeSearchUtil.getEnumDeclarationNode((IType)javaElem, cuNode);
-		Assert.assertTrue(JdtFlags.isStatic(enumNode));
+		assertTrue(JdtFlags.isStatic(enumNode));
 
 		// testing enum constant
 		offset= cUnit.getSource().indexOf("RED");
 		javaElem= cUnit.getElementAt(offset);
 		element= (IMember)javaElem;
-		Assert.assertTrue(JdtFlags.isStatic(element));
-		Assert.assertFalse(JdtFlags.isAbstract(element));
+		assertTrue(JdtFlags.isStatic(element));
+		assertFalse(JdtFlags.isAbstract(element));
 
 		EnumConstantDeclaration enumConst= ASTNodeSearchUtil.getEnumConstantDeclaration((IField)javaElem, cuNode);
-		Assert.assertTrue(JdtFlags.isStatic(enumConst));
+		assertTrue(JdtFlags.isStatic(enumConst));
 
 		// testing enum constant
 		offset= cUnit.getSource().indexOf("Runnable r");
 		element= (IMember)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isFinal(element));
+		assertFalse(JdtFlags.isFinal(element));
 
 	}
 
+	@Test
 	public void testNestedEnumIsFinal() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -246,27 +246,30 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("enum Color");
 		IMember element= (IMember)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isFinal(element));
+		assertFalse(JdtFlags.isFinal(element));
 	}
 
+	@Test
 	public void testIsStaticInBinaryFile() throws Exception {
 		File clsJarPath= JavaTestPlugin.getDefault().getFileInPlugin(new Path("/testresources/JDTFlagsTest18.zip"));
-		assertTrue("lib not found", clsJarPath != null && clsJarPath.exists());//$NON-NLS-1$
+		assertNotNull("lib not found", clsJarPath);//$NON-NLS-1$
+		assertTrue("lib not found", clsJarPath.exists());
 		IPackageFragmentRoot jarRoot= JavaProjectHelper.addLibraryWithImport(fJProject1, new Path(clsJarPath.getAbsolutePath()), null, null);
 		fJProject1.open(null);
 		fJProject1.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		Assert.assertTrue(jarRoot.exists());
-		Assert.assertTrue(jarRoot.isArchive());
+		assertTrue(jarRoot.exists());
+		assertTrue(jarRoot.isArchive());
 		IPackageFragment pf= jarRoot.getPackageFragment("pack1");//$NON-NLS-1$
-		Assert.assertTrue(pf.exists());
+		assertTrue(pf.exists());
 		IOrdinaryClassFile classFile2= (IOrdinaryClassFile) pf.getClassFile("Snippet.class");
 		IMethod[] clsFile= classFile2.getType().getMethods();
 		IMethod method= clsFile[0];
-		Assert.assertTrue(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isAbstract(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
 	}
 
+	@Test
 	public void testIsDefaultInInterface() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -279,39 +282,42 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("public default");
 		IMethod method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isAbstract(method));
-		Assert.assertTrue(JdtFlags.isDefaultMethod(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isAbstract(method));
+		assertTrue(JdtFlags.isDefaultMethod(method));
 
 		ASTParser p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(pack1.getJavaProject());
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertFalse(JdtFlags.isStatic(binding));
-			Assert.assertFalse(JdtFlags.isAbstract(binding));
-			Assert.assertTrue(JdtFlags.isDefaultMethod(binding));
+			assertFalse(JdtFlags.isStatic(binding));
+			assertFalse(JdtFlags.isAbstract(binding));
+			assertTrue(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 	}
 
+	@Test
 	public void testIsDefaultInBinaryFile() throws Exception {
 		File clsJarPath= JavaTestPlugin.getDefault().getFileInPlugin(new Path("/testresources/JDTFlagsTest18.zip"));
-		assertTrue("lib not found", clsJarPath != null && clsJarPath.exists());//$NON-NLS-1$
+		assertNotNull("lib not found", clsJarPath);//$NON-NLS-1$
+		assertTrue("lib not found", clsJarPath.exists());//$NON-NLS-1$
 		IPackageFragmentRoot jarRoot= JavaProjectHelper.addLibraryWithImport(fJProject1, new Path(clsJarPath.getAbsolutePath()), null, null);
 		fJProject1.open(null);
 		fJProject1.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		Assert.assertTrue(jarRoot.exists());
-		Assert.assertTrue(jarRoot.isArchive());
+		assertTrue(jarRoot.exists());
+		assertTrue(jarRoot.isArchive());
 		IPackageFragment pf= jarRoot.getPackageFragment("pack1");//$NON-NLS-1$
-		Assert.assertTrue(pf.exists());
+		assertTrue(pf.exists());
 		IOrdinaryClassFile classFile2= (IOrdinaryClassFile) pf.getClassFile("Snippet.class");
 		IMethod method= classFile2.getType().getMethod("defaultMethod", null);
-		Assert.assertTrue(JdtFlags.isDefaultMethod(method));
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isAbstract(method));
+		assertTrue(JdtFlags.isDefaultMethod(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isAbstract(method));
 	}
 
+	@Test
 	public void testIsDefaultInClass() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -327,39 +333,40 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("public String notDefaultMethod");
 		IMethod method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isAbstract(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
 
 		ASTParser p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(pack1.getJavaProject());
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertFalse(JdtFlags.isStatic(binding));
-			Assert.assertFalse(JdtFlags.isAbstract(binding));
-			Assert.assertFalse(JdtFlags.isDefaultMethod(binding));
+			assertFalse(JdtFlags.isStatic(binding));
+			assertFalse(JdtFlags.isAbstract(binding));
+			assertFalse(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 
 		offset= cUnit.getSource().indexOf("public String notDefaultIntMet");
 		method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertTrue(JdtFlags.isAbstract(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertTrue(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
 
 		p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(pack1.getJavaProject());
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertFalse(JdtFlags.isStatic(binding));
-			Assert.assertTrue(JdtFlags.isAbstract(binding));
-			Assert.assertFalse(JdtFlags.isDefaultMethod(binding));
+			assertFalse(JdtFlags.isStatic(binding));
+			assertTrue(JdtFlags.isAbstract(binding));
+			assertFalse(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 	}
 
+	@Test
 	public void testImplicitAbstractInSrcFile() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -371,25 +378,26 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("float");
 		IMethod method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
-		Assert.assertTrue(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isAbstract(method));
 
 		MethodDeclaration methodNode= ASTNodeSearchUtil.getMethodDeclarationNode(method, getCompilationUnitNode(buf.toString()));
-		Assert.assertFalse(JdtFlags.isStatic(methodNode));
+		assertFalse(JdtFlags.isStatic(methodNode));
 
 		ASTParser p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(pack1.getJavaProject());
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertFalse(JdtFlags.isStatic(binding));
-			Assert.assertTrue(JdtFlags.isAbstract(binding));
-			Assert.assertFalse(JdtFlags.isDefaultMethod(binding));
+			assertFalse(JdtFlags.isStatic(binding));
+			assertTrue(JdtFlags.isAbstract(binding));
+			assertFalse(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 	}
 
+	@Test
 	public void testExplicitAbstractInSrcFile() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -401,56 +409,61 @@ public class JDTFlagsTest18 extends TestCase {
 		ICompilationUnit cUnit= pack1.createCompilationUnit("Snippet.java", buf.toString(), false, null);
 		int offset= cUnit.getSource().indexOf("public abstract");
 		IMethod method= (IMethod)cUnit.getElementAt(offset);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
-		Assert.assertTrue(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isAbstract(method));
 
 		ASTParser p= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		p.setProject(pack1.getJavaProject());
 		p.setBindingsRecovery(true);
 		try {
 			IMethodBinding binding= (IMethodBinding)p.createBindings(new IJavaElement[] { method }, null)[0];
-			Assert.assertFalse(JdtFlags.isStatic(binding));
-			Assert.assertTrue(JdtFlags.isAbstract(binding));
-			Assert.assertFalse(JdtFlags.isDefaultMethod(binding));
+			assertFalse(JdtFlags.isStatic(binding));
+			assertTrue(JdtFlags.isAbstract(binding));
+			assertFalse(JdtFlags.isDefaultMethod(binding));
 		} catch (OperationCanceledException e) {
 		}
 	}
 
+	@Test
 	public void testExplicitAbstractInBinaryFile() throws Exception {
 		File clsJarPath= JavaTestPlugin.getDefault().getFileInPlugin(new Path("/testresources/JDTFlagsTest18.zip"));
-		assertTrue("lib not found", clsJarPath != null && clsJarPath.exists());//$NON-NLS-1$
+		assertNotNull("lib not found", clsJarPath);//$NON-NLS-1$
+		assertTrue("lib not found", clsJarPath.exists());//$NON-NLS-1$
 		IPackageFragmentRoot jarRoot= JavaProjectHelper.addLibraryWithImport(fJProject1, new Path(clsJarPath.getAbsolutePath()), null, null);
 		fJProject1.open(null);
 		fJProject1.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		Assert.assertTrue(jarRoot.exists());
-		Assert.assertTrue(jarRoot.isArchive());
+		assertTrue(jarRoot.exists());
+		assertTrue(jarRoot.isArchive());
 		IPackageFragment pf= jarRoot.getPackageFragment("pack1");//$NON-NLS-1$
-		Assert.assertTrue(pf.exists());
+		assertTrue(pf.exists());
 		IOrdinaryClassFile classFile2= (IOrdinaryClassFile) pf.getClassFile("Snippet.class");
 		IMethod method= classFile2.getType().getMethod("explicitAbstractMethod", null);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
-		Assert.assertTrue(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isAbstract(method));
 	}
 
+	@Test
 	public void testImplicitAbstractInBinaryFile() throws Exception {
 		File clsJarPath= JavaTestPlugin.getDefault().getFileInPlugin(new Path("/testresources/JDTFlagsTest18.zip"));
-		assertTrue("lib not found", clsJarPath != null && clsJarPath.exists());//$NON-NLS-1$
+		assertNotNull("lib not found", clsJarPath);//$NON-NLS-1$
+		assertTrue("lib not found", clsJarPath.exists());//$NON-NLS-1$
 		IPackageFragmentRoot jarRoot= JavaProjectHelper.addLibraryWithImport(fJProject1, new Path(clsJarPath.getAbsolutePath()), null, null);
 		fJProject1.open(null);
 		fJProject1.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		Assert.assertTrue(jarRoot.exists());
-		Assert.assertTrue(jarRoot.isArchive());
+		assertTrue(jarRoot.exists());
+		assertTrue(jarRoot.isArchive());
 		IPackageFragment pf= jarRoot.getPackageFragment("pack1");//$NON-NLS-1$
-		Assert.assertTrue(pf.exists());
+		assertTrue(pf.exists());
 		IOrdinaryClassFile classFile2= (IOrdinaryClassFile) pf.getClassFile("Snippet.class");
 		IMethod method= classFile2.getType().getMethod("implicitAbstractMethod", null);
-		Assert.assertFalse(JdtFlags.isStatic(method));
-		Assert.assertFalse(JdtFlags.isDefaultMethod(method));
-		Assert.assertTrue(JdtFlags.isAbstract(method));
+		assertFalse(JdtFlags.isStatic(method));
+		assertFalse(JdtFlags.isDefaultMethod(method));
+		assertTrue(JdtFlags.isAbstract(method));
 	}
 
+	@Test
 	public void testIsStaticAnnotationType() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuilder buf= new StringBuilder();
@@ -466,13 +479,13 @@ public class JDTFlagsTest18 extends TestCase {
 		int offset= cUnit.getSource().indexOf("i=");
 		IJavaElement elem= cUnit.getElementAt(offset);
 		FieldDeclaration field= ASTNodeSearchUtil.getFieldDeclarationNode((IField)elem, cuNode);
-		Assert.assertTrue(JdtFlags.isStatic(field));
-		Assert.assertTrue(JdtFlags.isStatic((IField)elem));
+		assertTrue(JdtFlags.isStatic(field));
+		assertTrue(JdtFlags.isStatic((IField)elem));
 
 		offset= cUnit.getSource().indexOf("name");
 		elem= cUnit.getElementAt(offset);
 		AnnotationTypeMemberDeclaration annotationMember= ASTNodeSearchUtil.getAnnotationTypeMemberDeclarationNode((IMethod)elem, cuNode);
-		Assert.assertFalse(JdtFlags.isStatic(annotationMember));
-		Assert.assertFalse(JdtFlags.isStatic((IMethod)elem));
+		assertFalse(JdtFlags.isStatic(annotationMember));
+		assertFalse(JdtFlags.isStatic((IMethod)elem));
 	}
 }

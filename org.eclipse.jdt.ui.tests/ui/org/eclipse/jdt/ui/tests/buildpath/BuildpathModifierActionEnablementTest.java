@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.buildpath;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -62,13 +69,7 @@ import org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage.ExcludeFromB
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage.IncludeToBuildpathAction;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage.RemoveFromBuildpathAction;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-public class BuildpathModifierActionEnablementTest extends TestCase {
-
-    public static final Class<BuildpathModifierActionEnablementTest> THIS= BuildpathModifierActionEnablementTest.class;
+public class BuildpathModifierActionEnablementTest {
 
     private BuildpathModifierAction[] fActions;
 
@@ -106,22 +107,15 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
      *        |- NormalFolder
      */
 
-    public BuildpathModifierActionEnablementTest() {
-        super(THIS.getName());
-    }
-
-    @Override
-	protected void setUp() throws Exception {
+    @Before
+	public void setUp() throws Exception {
     	fActions= createActions();
         fProject= createProject();
         assertFalse(fProject.isOnClasspath(fProject.getUnderlyingResource()));
     }
 
     private BuildpathModifierAction[] createActions() {
-    	ISetSelectionTarget nullSelectionTarget= new ISetSelectionTarget() {
-    		@Override
-			public void selectReveal(ISelection selection) {}
-        };
+    	ISetSelectionTarget nullSelectionTarget= selection -> {};
 
         IRunnableContext context= PlatformUI.getWorkbench().getProgressService();
 
@@ -144,36 +138,39 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         };
     }
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
         fProject.getProject().delete(true, true, null);
     }
 
     private void assertOnlyEnabled(IAction[] enabledActions) {
-    	for (int i= 0; i < fActions.length; i++) {
-	        if (fActions[i].isEnabled()) {
-	        	assertTrue(fActions[i].getText() + " is enabled but should not be.", contains(enabledActions, fActions[i]));
-	        } else {
-	        	assertTrue(fActions[i].getText() + " is disabled but should not be.", !contains(enabledActions, fActions[i]));
-	        }
-        }
+		for (BuildpathModifierAction action : fActions) {
+			if (action.isEnabled()) {
+				assertTrue(action.getText() + " is enabled but should not be.", contains(enabledActions, action));
+			} else {
+				assertTrue(action.getText() + " is disabled but should not be.", !contains(enabledActions, action));
+			}
+		}
     }
 
 	private boolean contains(IAction[] actions, IAction action) {
-    	for (int i= 0; i < actions.length; i++) {
-	        if (actions[i] == action)
-	        	return true;
-        }
+		for (IAction a : actions) {
+			if (a == action) {
+				return true;
+			}
+		}
 	    return false;
     }
 
 	private void assertAllDisabled() {
-		for (int i= 0; i < fActions.length; i++) {
-	        if (fActions[i].isEnabled())
-	        	assertTrue(fActions[i].getText() + " is enabled but should not be.", false);
-        }
+		for (BuildpathModifierAction action : fActions) {
+			if (action.isEnabled()) {
+				assertTrue(action.getText() + " is enabled but should not be.", false);
+			}
+		}
     }
 
+	@Test
     public void testProjectWithOthers() {
         select(new Object[] {fProject});
         assertOnlyEnabled(new IAction[] {fAddFolderToBuildpathAction, fCreateLinkedSourceFolderAction});
@@ -305,6 +302,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testSrcWithOthers() {
         select(new Object[] {fSourceFolder});
         assertOnlyEnabled(new IAction[] {fRemoveFromBuildpathAction, fEditFilterAction});
@@ -349,6 +347,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testNormalFolderWithOthers() {
         select(new Object[] {fFolder});
         assertOnlyEnabled(new IAction[] {fAddFolderToBuildpathAction});
@@ -417,6 +416,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testPackageWithOthers() {
         select(new Object[] {fPackage});
         assertOnlyEnabled(new IAction[] {fAddFolderToBuildpathAction, fExcludeFromBuildpathAction});
@@ -473,6 +473,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testCUWithOthers() {
         select(new Object[] {fCompilationUnit});
         assertOnlyEnabled(new IAction[] {fExcludeFromBuildpathAction});
@@ -517,6 +518,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testExcludedFileWithOthers() {
         select(new Object[] {fExcludedFile});
         assertOnlyEnabled(new IAction[] {fIncludeToBuildpathAction});
@@ -549,6 +551,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testFileWithOthers() {
         select(new Object[] {fFile});
         assertAllDisabled();
@@ -569,6 +572,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testExcludedPackWithOthers() {
         select(new Object[] {fExcludedPackage});
         assertOnlyEnabled(new IAction[] {fAddFolderToBuildpathAction, fIncludeToBuildpathAction});
@@ -595,6 +599,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testDefaultPackWithOthers() {
         select(new Object[] {fDefaultPackage});
         assertAllDisabled();
@@ -609,6 +614,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testDefaultJARWithOthers() {
         select(new Object[] {fLibrary});
         assertOnlyEnabled(new IAction[] {fRemoveFromBuildpathAction});
@@ -617,17 +623,13 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         assertAllDisabled();
     }
 
+	@Test
     public void testDefaultZipWithOthers() {
         select(new Object[] {fExcludedLibrary});
         assertAllDisabled();
 
         final IPackageFragmentRoot[] addedZipArchive= {null};
-        AddSelectedLibraryToBuildpathAction add= new AddSelectedLibraryToBuildpathAction(PlatformUI.getWorkbench().getProgressService(), new ISetSelectionTarget() {
-			@Override
-			public void selectReveal(ISelection selection) {
-				addedZipArchive[0]= (IPackageFragmentRoot)((StructuredSelection)selection).getFirstElement();
-            }
-        });
+        AddSelectedLibraryToBuildpathAction add= new AddSelectedLibraryToBuildpathAction(PlatformUI.getWorkbench().getProgressService(), selection -> addedZipArchive[0]= (IPackageFragmentRoot)((StructuredSelection)selection).getFirstElement());
         add.selectionChanged(new SelectionChangedEvent(new ISelectionProvider() {
 			@Override
 			public void addSelectionChangedListener(ISelectionChangedListener listener) {}
@@ -688,17 +690,12 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         final IResource excludedElements[]= {null, null};
         final IPackageFragment pack2= root.createPackageFragment("pack1.pack2", true, null);
         final ICompilationUnit cuB= createICompilationUnit("B", pack1);
-        ExcludeFromBuildpathAction exclude= new ExcludeFromBuildpathAction(PlatformUI.getWorkbench().getProgressService(), new ISetSelectionTarget() {
-
-			@Override
-			public void selectReveal(ISelection selection) {
-				StructuredSelection ss= (StructuredSelection)selection;
-				List<?> list= ss.toList();
-				excludedElements[0]= (IResource)list.get(0);
-				excludedElements[1]= (IResource)list.get(1);
-            }
-
-        });
+        ExcludeFromBuildpathAction exclude= new ExcludeFromBuildpathAction(PlatformUI.getWorkbench().getProgressService(), selection -> {
+			StructuredSelection ss= (StructuredSelection)selection;
+			List<?> list= ss.toList();
+			excludedElements[0]= (IResource)list.get(0);
+			excludedElements[1]= (IResource)list.get(1);
+		});
         exclude.selectionChanged(new SelectionChangedEvent(new ISelectionProvider() {
 			@Override
 			public void addSelectionChangedListener(ISelectionChangedListener listener) {}
@@ -715,14 +712,7 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         file.create(null, false, null);
 
         final IFile[] removedZipFile= {null};
-        RemoveFromBuildpathAction remove= new RemoveFromBuildpathAction(PlatformUI.getWorkbench().getProgressService(), new ISetSelectionTarget() {
-
-			@Override
-			public void selectReveal(ISelection selection) {
-				removedZipFile[0]= (IFile)((StructuredSelection)selection).getFirstElement();
-            }
-
-        });
+        RemoveFromBuildpathAction remove= new RemoveFromBuildpathAction(PlatformUI.getWorkbench().getProgressService(), selection -> removedZipFile[0]= (IFile)((StructuredSelection)selection).getFirstElement());
         remove.selectionChanged(new SelectionChangedEvent(new ISelectionProvider() {
 			@Override
 			public void addSelectionChangedListener(ISelectionChangedListener listener) {}
@@ -754,20 +744,20 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
     }
 
 	private void select(final StructuredSelection selection) {
-	    for (int i= 0; i < fActions.length; i++) {
-	        fActions[i].selectionChanged(new SelectionChangedEvent(new ISelectionProvider(){
+		for (BuildpathModifierAction action : fActions) {
+			action.selectionChanged(new SelectionChangedEvent(new ISelectionProvider(){
 				@Override
 				public void addSelectionChangedListener(ISelectionChangedListener listener) {}
 				@Override
 				public ISelection getSelection() {
-	                return selection;
-                }
+					return selection;
+				}
 				@Override
 				public void removeSelectionChangedListener(ISelectionChangedListener listener) {}
 				@Override
 				public void setSelection(ISelection s) {}
-	        }, selection));
-        }
+			}, selection));
+		}
     }
 
 	private ICompilationUnit createICompilationUnit(String className, IPackageFragment fragment) throws JavaModelException {
@@ -786,8 +776,4 @@ public class BuildpathModifierActionEnablementTest extends TestCase {
         buf.append("}\n");
         return buf;
     }
-
-	public static Test suite() {
-		return new TestSuite(BuildpathModifierActionEnablementTest.class);
-	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2019 IBM Corporation and others.
+ * Copyright (c) 2015, 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,6 +9,12 @@
  *     Stephan Herrmann - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
+
+import static org.junit.Assert.assertEquals;
+
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -20,41 +26,28 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jdt.ui.tests.core.rules.Java9ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementLinks;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class BindingLabels9Test extends AbstractBindingLabelsTest {
-	private static final Class<BindingLabels9Test> THIS= BindingLabels9Test.class;
 
-	public BindingLabels9Test(String name) {
-		super(name);
-	}
+	@Rule
+	public Java9ProjectTestSetup j9p= new Java9ProjectTestSetup();
 
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new Java9ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-		fJProject1= Java9ProjectTestSetup.getProject();
+	public void setUp() throws Exception {
+		fJProject1= j9p.getProject();
 
 		IPreferenceStore store= PreferenceConstants.getPreferenceStore();
 		store.setValue(PreferenceConstants.APPEARANCE_COMPRESS_PACKAGE_NAMES, false);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, Java9ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject1, j9p.getDefaultClasspath());
 	}
-	
 
+	@Test
 	public void testModuleWithCategory1() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -71,6 +64,7 @@ public class BindingLabels9Test extends AbstractBindingLabelsTest {
 		assertEquals("mymod", lab); // category not shown in binding labels
 	}
 
+	@Test
 	public void testModuleWithAnnotation() throws Exception {
 
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");

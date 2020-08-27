@@ -14,8 +14,6 @@
 package org.eclipse.jdt.internal.ui.refactoring;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -53,7 +51,7 @@ public class MoveInnerToTopWizard extends RefactoringWizard {
 			super(RefactoringMessages.MoveInnerToToplnputPage_description, true, initialValue);
 			final MoveInnerToTopRefactoring refactoring= getMoveRefactoring();
 			final boolean mandatory= refactoring.isCreatingInstanceFieldMandatory();
-			fInitialInputValid= (!initialValue.equals("")) || !mandatory; //$NON-NLS-1$
+			fInitialInputValid= (!initialValue.isEmpty()) || !mandatory;
 			if (!mandatory)
 				refactoring.setCreateInstanceField(false);
 		}
@@ -84,23 +82,19 @@ public class MoveInnerToTopWizard extends RefactoringWizard {
 					getMoveRefactoring().setMarkInstanceFieldAsFinal(fFinalCheckBox.getSelection());
 				}
 			});
-			fFieldNameEntryText.addModifyListener(new ModifyListener() {
-
-				@Override
-				public final void modifyText(ModifyEvent event) {
-					final String text= fFieldNameEntryText.getText();
-					final MoveInnerToTopRefactoring refactoring= getMoveRefactoring();
-					if (refactoring.isCreatingInstanceFieldMandatory())
-						setPageComplete(validateTextField(text));
-					final boolean empty= text.length() == 0;
-					if (refactoring.isCreatingInstanceFieldMandatory()) {
-						// Do nothing
-					} else if (refactoring.isCreatingInstanceFieldPossible()) {
-						fFinalCheckBox.setEnabled(!empty);
-					}
-					if (!refactoring.isCreatingInstanceFieldMandatory())
-						refactoring.setCreateInstanceField(!empty);
+			fFieldNameEntryText.addModifyListener(event -> {
+				final String text= fFieldNameEntryText.getText();
+				final MoveInnerToTopRefactoring refactoring= getMoveRefactoring();
+				if (refactoring.isCreatingInstanceFieldMandatory())
+					setPageComplete(validateTextField(text));
+				final boolean empty= text.length() == 0;
+				if (refactoring.isCreatingInstanceFieldMandatory()) {
+					// Do nothing
+				} else if (refactoring.isCreatingInstanceFieldPossible()) {
+					fFinalCheckBox.setEnabled(!empty);
 				}
+				if (!refactoring.isCreatingInstanceFieldMandatory())
+					refactoring.setCreateInstanceField(!empty);
 			});
 		}
 
@@ -170,7 +164,7 @@ public class MoveInnerToTopWizard extends RefactoringWizard {
 			refactoring.setEnclosingInstanceName(text);
 			if (refactoring.isCreatingInstanceFieldMandatory())
 				return refactoring.checkEnclosingInstanceName(text);
-			else if (!text.equals("")) //$NON-NLS-1$
+			else if (!text.isEmpty())
 				return refactoring.checkEnclosingInstanceName(text);
 			else
 				return new RefactoringStatus();

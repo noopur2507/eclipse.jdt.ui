@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.viewsupport;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.eclipse.swt.widgets.Display;
@@ -77,18 +76,12 @@ public class ColoredViewersManager implements IPropertyChangeListener {
 				|| property.equals(INHERITED_COLOR_NAME)
 				|| property.equals(IWorkbenchPreferenceConstants.USE_COLORED_LABELS)
 		) {
-			Display.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					updateAllViewers();
-				}
-			});
+			Display.getDefault().asyncExec(this::updateAllViewers);
 		}
 	}
 
 	protected final void updateAllViewers() {
-		for (Iterator<ColoringLabelProvider> iterator= fManagedLabelProviders.iterator(); iterator.hasNext();) {
-			ColoringLabelProvider lp= iterator.next();
+		for (ColoringLabelProvider lp : fManagedLabelProviders) {
 			lp.update();
 		}
 	}

@@ -108,12 +108,9 @@ public class PropertiesFileEditor extends TextEditor {
 		setInsertMode(INSERT);
 
 		// Need to listen on Editors UI preference store because JDT disables this functionality in its preferences.
-		fPropertyChangeListener= new IPropertyChangeListener() {
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SPACES_FOR_TABS.equals(event.getProperty()))
-					handlePreferenceStoreChanged(event);
-			}
+		fPropertyChangeListener= event -> {
+			if (AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SPACES_FOR_TABS.equals(event.getProperty()))
+				handlePreferenceStoreChanged(event);
 		};
 		EditorsUI.getPreferenceStore().addPropertyChangeListener(fPropertyChangeListener);
 	}
@@ -219,13 +216,7 @@ public class PropertiesFileEditor extends TextEditor {
 	@Override
 	public <T> T getAdapter(Class<T> adapter) {
 		if (adapter == IShowInTargetList.class) {
-			return (T) new IShowInTargetList() {
-				@Override
-				public String[] getShowInTargetIds() {
-					return new String[] { JavaUI.ID_PACKAGES, JavaPlugin.ID_RES_NAV };
-				}
-
-			};
+			return (T) (IShowInTargetList) () -> new String[] { JavaUI.ID_PACKAGES };
 		}
 		return super.getAdapter(adapter);
 	}
@@ -330,9 +321,9 @@ public class PropertiesFileEditor extends TextEditor {
 			return null;
 
 		ICompilationUnit[] compilationUnits= ((IPackageFragment) javaElement).getCompilationUnits();
-		for (int i= 0; i < compilationUnits.length; i++) {
-			if (evaluateCU(compilationUnits[i], fFile)) {
-				return compilationUnits[i].getTypes()[0];
+		for (ICompilationUnit compilationUnit : compilationUnits) {
+			if (evaluateCU(compilationUnit, fFile)) {
+				return compilationUnit.getTypes()[0];
 			}
 			if (pm != null && pm.isCanceled()) {
 				return null;

@@ -14,15 +14,12 @@
 package org.eclipse.jdt.internal.ui.dialogs;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import com.ibm.icu.text.BreakIterator;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.KeyAdapter;
@@ -295,12 +292,7 @@ public class TextFieldNavigationHandler {
 			control.addFocusListener(this);
 			if (control.isFocusControl())
 				activate();
-			control.addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					deactivate();
-				}
-			});
+			control.addDisposeListener(e -> deactivate());
 		}
 
 		@Override
@@ -365,11 +357,9 @@ public class TextFieldNavigationHandler {
 						int accelerator = SWTKeySupport.convertEventToUnmodifiedAccelerator(e);
 						KeySequence keySequence = KeySequence.getInstance(SWTKeySupport.convertAcceleratorToKeyStroke(accelerator));
 						getSubmissions();
-						for (Iterator<Submission> iter= getSubmissions().iterator(); iter.hasNext();) {
-							Submission submission= iter.next();
-							TriggerSequence[] triggerSequences= submission.getTriggerSequences();
-							for (int i= 0; i < triggerSequences.length; i++) {
-								if (triggerSequences[i].equals(keySequence)) { // XXX does not work for multi-stroke bindings
+						for (Submission submission : getSubmissions()) {
+							for (TriggerSequence triggerSequence : submission.getTriggerSequences()) {
+								if (triggerSequence.equals(keySequence)) { // XXX does not work for multi-stroke bindings
 									e.doit= false;
 									submission.execute();
 									return;
@@ -395,8 +385,7 @@ public class TextFieldNavigationHandler {
 						final Scheme[] definedSchemes= bindingService.getDefinedSchemes();
 						if (definedSchemes != null) {
 							try {
-								for (int i = 0; i < definedSchemes.length; i++) {
-									Scheme scheme= definedSchemes[i];
+								for (Scheme scheme : definedSchemes) {
 									Scheme localSchemeCopy= localBindingManager.getScheme(scheme.getId());
 									localSchemeCopy.define(scheme.getName(), scheme.getDescription(), scheme.getParentId());
 								}
@@ -542,6 +531,9 @@ public class TextFieldNavigationHandler {
 		}
 
 		public abstract void execute();
+	}
+
+	private TextFieldNavigationHandler() {
 	}
 
 }

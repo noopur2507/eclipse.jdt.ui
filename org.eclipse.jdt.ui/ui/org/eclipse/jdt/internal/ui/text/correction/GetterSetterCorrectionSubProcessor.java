@@ -135,9 +135,7 @@ public class GetterSetterCorrectionSubProcessor {
 			refactoring.checkFinalConditions(new NullProgressMonitor());
 			Change createdChange= refactoring.createChange(new NullProgressMonitor());
 			if (createdChange instanceof CompositeChange) {
-				Change[] children= ((CompositeChange) createdChange).getChildren();
-				for (int i= 0; i < children.length; i++) {
-					Change curr= children[i];
+				for (Change curr : ((CompositeChange) createdChange).getChildren()) {
 					if (curr instanceof TextFileChange && ((TextFileChange) curr).getFile().equals(file)) {
 						return (TextFileChange) curr;
 					}
@@ -172,22 +170,15 @@ public class GetterSetterCorrectionSubProcessor {
 					if (Display.getCurrent() != null) {
 						try {
 							helper.perform(false, false);
-						} catch (InterruptedException e) {
-							JavaPlugin.log(e);
-						} catch (InvocationTargetException e) {
+						} catch (InterruptedException | InvocationTargetException e) {
 							JavaPlugin.log(e);
 						}
 					} else {
-						Display.getDefault().syncExec(new Runnable() {
-							@Override
-							public void run() {
-								try {
-									helper.perform(false, false);
-								} catch (InterruptedException e) {
-									JavaPlugin.log(e);
-								} catch (InvocationTargetException e) {
-									JavaPlugin.log(e);
-								}
+						Display.getDefault().syncExec(() -> {
+							try {
+								helper.perform(false, false);
+							} catch (InterruptedException | InvocationTargetException e) {
+								JavaPlugin.log(e);
 							}
 						});
 					}
@@ -210,8 +201,8 @@ public class GetterSetterCorrectionSubProcessor {
 	 */
 	public static boolean addGetterSetterProposal(IInvocationContext context, ASTNode coveringNode, IProblemLocation[] locations, ArrayList<ICommandAccess> resultingCollections) {
 		if (locations != null) {
-			for (int i= 0; i < locations.length; i++) {
-				int problemId= locations[i].getProblemId();
+			for (IProblemLocation location : locations) {
+				int problemId= location.getProblemId();
 				if (problemId == IProblem.UnusedPrivateField)
 					return false;
 				if (problemId == IProblem.UnqualifiedFieldAccess)
@@ -274,7 +265,7 @@ public class GetterSetterCorrectionSubProcessor {
 
 	/**
 	 * Proposes a getter for this field.
-	 * 
+	 *
 	 * @param context the proposal parameter
 	 * @param relevance relevance of this proposal
 	 * @return the proposal if available or null
@@ -340,7 +331,7 @@ public class GetterSetterCorrectionSubProcessor {
 
 	/**
 	 * Proposes a setter for this field.
-	 * 
+	 *
 	 * @param context the proposal parameter
 	 * @param relevance relevance of this proposal
 	 * @return the proposal if available or null
@@ -403,6 +394,9 @@ public class GetterSetterCorrectionSubProcessor {
 			getterExpression.getParent().setStructuralProperty(getterExpression.getLocationInParent(), createMethodInvocation(context, getter, null));
 		}
 		return result;
+	}
+
+	private GetterSetterCorrectionSubProcessor() {
 	}
 
 }

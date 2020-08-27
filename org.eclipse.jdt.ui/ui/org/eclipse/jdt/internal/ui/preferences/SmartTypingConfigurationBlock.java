@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.preferences;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
@@ -127,7 +126,7 @@ class SmartTypingConfigurationBlock extends AbstractConfigurationBlock {
 
 	/**
 	 * Adds the Smart Insert Mode note to the preference page.
-	 * 
+	 *
 	 * @param parent the parent composite
 	 * @since 3.7
 	 */
@@ -172,7 +171,7 @@ class SmartTypingConfigurationBlock extends AbstractConfigurationBlock {
 
 	/**
 	 * Adds Indentation section to the preference page.
-	 * 
+	 *
 	 * @param parent the parent composite
 	 * @since 3.7
 	 */
@@ -272,25 +271,24 @@ class SmartTypingConfigurationBlock extends AbstractConfigurationBlock {
 			}
 		};
 		combinedStore.addPropertyChangeListener(propertyChangeListener);
-		link.addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(org.eclipse.swt.events.DisposeEvent e) {
-					combinedStore.removePropertyChangeListener(propertyChangeListener);
-				}
-		});
+		link.addDisposeListener(e -> combinedStore.removePropertyChangeListener(propertyChangeListener));
 	}
 
 	private String getIndentMode() {
 		String indentMode= JavaPlugin.getDefault().getCombinedPreferenceStore().getString(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR);
 
-		if (JavaCore.SPACE.equals(indentMode))
-			return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_spaces;
-
-		if (JavaCore.TAB.equals(indentMode))
-			return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_tabs;
-
-		if (DefaultCodeFormatterConstants.MIXED.equals(indentMode))
-			return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_tabsAndSpaces;
+		if (indentMode != null) {
+			switch (indentMode) {
+				case JavaCore.SPACE:
+					return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_spaces;
+				case JavaCore.TAB:
+					return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_tabs;
+				case DefaultCodeFormatterConstants.MIXED:
+					return PreferencesMessages.SmartTypingConfigurationBlock_tabs_message_tabsAndSpaces;
+				default:
+					break;
+			}
+		}
 
 		Assert.isTrue(false, "Illegal indent mode - must not happen"); //$NON-NLS-1$
 		return null;

@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.refactoring;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -24,8 +23,6 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
@@ -45,13 +42,11 @@ import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableFontProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -108,8 +103,7 @@ public class ChangeParametersControl extends Composite {
 		}
 		private ParameterInfo[] removeMarkedAsDeleted(List<ParameterInfo> paramInfos){
 			List<ParameterInfo> result= new ArrayList<>(paramInfos.size());
-			for (Iterator<ParameterInfo> iter= paramInfos.iterator(); iter.hasNext();) {
-				ParameterInfo info= iter.next();
+			for (ParameterInfo info : paramInfos) {
 				if (! info.isDeleted())
 					result.add(info);
 			}
@@ -324,20 +318,12 @@ public class ChangeParametersControl extends Composite {
 		fTableViewer.setUseHashlookup(true);
 		fTableViewer.setContentProvider(new ParameterInfoContentProvider());
 		fTableViewer.setLabelProvider(new ParameterInfoLabelProvider());
-		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				updateButtonsEnabledState();
-			}
-		});
+		fTableViewer.addSelectionChangedListener(event -> updateButtonsEnabledState());
 
-		table.addTraverseListener(new TraverseListener() {
-			@Override
-			public void keyTraversed(TraverseEvent e) {
-				if (e.detail == SWT.TRAVERSE_RETURN && e.stateMask == SWT.NONE) {
-					editColumnOrNextPossible(0);
-					e.detail= SWT.TRAVERSE_NONE;
-				}
+		table.addTraverseListener(e -> {
+			if (e.detail == SWT.TRAVERSE_RETURN && e.stateMask == SWT.NONE) {
+				editColumnOrNextPossible(0);
+				e.detail= SWT.TRAVERSE_NONE;
 			}
 		});
 		table.addKeyListener(new KeyAdapter() {
@@ -536,12 +522,12 @@ public class ChangeParametersControl extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				int index= getTable().getSelectionIndices()[0];
-				ParameterInfo[] selected= getSelectedElements();
-				for (int i= 0; i < selected.length; i++) {
-					if (selected[i].isAdded())
-						fParameterInfos.remove(selected[i]);
-					else
-						selected[i].markAsDeleted();
+				for (ParameterInfo s : getSelectedElements()) {
+					if (s.isAdded()) {
+						fParameterInfos.remove(s);
+					} else {
+						s.markAsDeleted();
+					}
 				}
 				restoreSelection(index);
 			}
@@ -614,35 +600,29 @@ public class ChangeParametersControl extends Composite {
 			final int editorColumn= i;
 			final TableTextCellEditor editor = editors[i];
 			// support tabbing between columns while editing:
-			editor.getText().addTraverseListener(new TraverseListener() {
-				@Override
-				public void keyTraversed(TraverseEvent e) {
-					switch (e.detail) {
-						case SWT.TRAVERSE_TAB_NEXT :
-							editColumnOrNextPossible(nextColumn(editorColumn));
-							e.detail= SWT.TRAVERSE_NONE;
-							break;
+			editor.getText().addTraverseListener(e -> {
+				switch (e.detail) {
+					case SWT.TRAVERSE_TAB_NEXT :
+						editColumnOrNextPossible(nextColumn(editorColumn));
+						e.detail= SWT.TRAVERSE_NONE;
+						break;
 
-						case SWT.TRAVERSE_TAB_PREVIOUS :
-							editColumnOrPrevPossible(prevColumn(editorColumn));
-							e.detail= SWT.TRAVERSE_NONE;
-							break;
+					case SWT.TRAVERSE_TAB_PREVIOUS :
+						editColumnOrPrevPossible(prevColumn(editorColumn));
+						e.detail= SWT.TRAVERSE_NONE;
+						break;
 
-						default :
-							break;
-					}
+					default :
+						break;
 				}
 			});
 			TextFieldNavigationHandler.install(editor.getText());
 		}
 
-		editors[NEWNAME_PROP].setActivationListener(new TableTextCellEditor.IActivationListener(){
-			@Override
-			public void activate() {
-				ParameterInfo[] selected= getSelectedElements();
-				if (selected.length == 1 && fNameContentAssistHandler != null) {
-					fNameContentAssistHandler.setEnabled(selected[0].isAdded());
-				}
+		editors[NEWNAME_PROP].setActivationListener(() -> {
+			ParameterInfo[] selected= getSelectedElements();
+			if (selected.length == 1 && fNameContentAssistHandler != null) {
+				fNameContentAssistHandler.setEnabled(selected[0].isAdded());
 			}
 		});
 
@@ -684,8 +664,7 @@ public class ChangeParametersControl extends Composite {
 		List<ParameterInfo> res= new ArrayList<>(elements.size());
 		List<ParameterInfo> deleted= new ArrayList<>();
 		ParameterInfo floating= null;
-		for (Iterator<ParameterInfo> iter= elements.iterator(); iter.hasNext();) {
-			ParameterInfo curr= iter.next();
+		for (ParameterInfo curr : elements) {
 			if (move.contains(curr)) {
 				res.add(curr);
 			} else if (curr.isDeleted()) {
@@ -701,9 +680,7 @@ public class ChangeParametersControl extends Composite {
 		}
 		res.addAll(deleted);
 		elements.clear();
-		for (Iterator<ParameterInfo> iter= res.iterator(); iter.hasNext();) {
-			elements.add(iter.next());
-		}
+		elements.addAll(res);
 	}
 
 	private boolean canMove(boolean up) {
@@ -714,8 +691,8 @@ public class ChangeParametersControl extends Composite {
 		if (indc.length == 0)
 			return false;
 		int invalid= up ? 0 : notDeletedInfosCount - 1;
-		for (int i= 0; i < indc.length; i++) {
-			if (indc[i] == invalid)
+		for (int element : indc) {
+			if (element == invalid)
 				return false;
 		}
 		return true;
@@ -725,8 +702,7 @@ public class ChangeParametersControl extends Composite {
 		if (fParameterInfos == null) // during initialization
 			return 0;
 		int result= 0;
-		for (Iterator<ParameterInfo> iter= fParameterInfos.iterator(); iter.hasNext();) {
-			ParameterInfo info= iter.next();
+		for (ParameterInfo info : fParameterInfos) {
 			if (! info.isDeleted())
 				result++;
 		}

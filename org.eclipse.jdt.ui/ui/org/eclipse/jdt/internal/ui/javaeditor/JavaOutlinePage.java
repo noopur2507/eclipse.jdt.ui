@@ -21,7 +21,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
@@ -45,7 +44,6 @@ import org.eclipse.text.edits.TextEdit;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -172,23 +170,20 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 					Display d= getControl().getDisplay();
 					if (d != null) {
-						d.asyncExec(new Runnable() {
-							@Override
-							public void run() {
-								ICompilationUnit cu= (ICompilationUnit) fInput;
-								IJavaElement base= cu;
-								if (fTopLevelTypeOnly) {
-									base= cu.findPrimaryType();
-									if (base == null) {
-										if (fOutlineViewer != null)
-											fOutlineViewer.refresh(true);
-										return;
-									}
+						d.asyncExec(() -> {
+							ICompilationUnit cu= (ICompilationUnit) fInput;
+							IJavaElement base= cu;
+							if (fTopLevelTypeOnly) {
+								base= cu.findPrimaryType();
+								if (base == null) {
+									if (fOutlineViewer != null)
+										fOutlineViewer.refresh(true);
+									return;
 								}
-								IJavaElementDelta delta= findElement(base, e.getDelta());
-								if (delta != null && fOutlineViewer != null) {
-									fOutlineViewer.reconcile(delta);
-								}
+							}
+							IJavaElementDelta delta= findElement(base, e.getDelta());
+							if (delta != null && fOutlineViewer != null) {
+								fOutlineViewer.reconcile(delta);
 							}
 						});
 					}
@@ -227,8 +222,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (children == null || children.length == 0)
 						return null;
 
-					for (int i= 0; i < children.length; i++) {
-						IJavaElementDelta d= findElement(unit, children[i]);
+					for (IJavaElementDelta child : children) {
+						IJavaElementDelta d= findElement(unit, child);
 						if (d != null)
 							return d;
 					}
@@ -275,8 +270,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 				protected IJavaElement[] filter(IJavaElement[] children) {
 					boolean initializers= false;
-					for (int i= 0; i < children.length; i++) {
-						if (matches(children[i])) {
+					for (IJavaElement child : children) {
+						if (matches(child)) {
 							initializers= true;
 							break;
 						}
@@ -285,16 +280,15 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (!initializers)
 						return children;
 
-					Vector<IJavaElement> v= new Vector<>();
-					for (int i= 0; i < children.length; i++) {
-						if (matches(children[i]))
+					ArrayList<IJavaElement> v= new ArrayList<>();
+					for (IJavaElement child : children) {
+						if (matches(child)) {
 							continue;
-						v.addElement(children[i]);
+						}
+						v.add(child);
 					}
 
-					IJavaElement[] result= new IJavaElement[v.size()];
-					v.copyInto(result);
-					return result;
+					return v.toArray(new IJavaElement[v.size()]);
 				}
 
 				@Override
@@ -452,8 +446,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (changed != null) {
 						IResource resource= getUnderlyingResource();
 						if (resource != null) {
-							for (int i= 0; i < changed.length; i++) {
-								if (changed[i] != null && changed[i].equals(resource)) {
+							for (Object c : changed) {
+								if (c != null && c.equals(resource)) {
 									// change event to a full refresh
 									event= new LabelProviderChangedEvent((IBaseLabelProvider) event.getSource());
 									break;
@@ -503,16 +497,13 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 				private void valueChanged(final boolean on, boolean store) {
 					setChecked(on);
-					BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), new Runnable() {
-						@Override
-						public void run() {
-							if (on) {
-								fOutlineViewer.setComparator(fComparator);
-								fDropSupport.setFeedbackEnabled(false);
-							} else {
-								fOutlineViewer.setComparator(fSourcePositonComparator);
-								fDropSupport.setFeedbackEnabled(true);
-							}
+					BusyIndicator.showWhile(fOutlineViewer.getControl().getDisplay(), () -> {
+						if (on) {
+							fOutlineViewer.setComparator(fComparator);
+							fDropSupport.setFeedbackEnabled(false);
+						} else {
+							fOutlineViewer.setComparator(fSourcePositonComparator);
+							fDropSupport.setFeedbackEnabled(true);
 						}
 					});
 
@@ -612,14 +603,14 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 	 * Formats the code associated with the elements selected in the Outline view. The action
 	 * requires that the selection provided by the site's selection provider is of type
 	 * {@link IStructuredSelection}
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private class FormatElementAction extends SelectionDispatchAction {
 
 		/**
 		 * Creates a new <code>FormatViewElementAction</code>.
-		 * 
+		 *
 		 * @param site the site providing context information for this action
 		 */
 		FormatElementAction(IPageSite site) {
@@ -629,7 +620,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Executes the action based on the Structured Selection. This formats the non-overlapping
 		 * element(s) that have been selected in the view.
-		 * 
+		 *
 		 * @param selection the current selection
 		 */
 		@Override
@@ -650,11 +641,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					TextEdit edit= CodeFormatterUtil.reformat(kind, content, regions, 0, lineDelimiter, formatterSettings);
 					edit.apply(javaSourceViewer.getDocument());
 
-				} catch (CoreException e) {
-					JavaPlugin.log(e);
-				} catch (MalformedTreeException e) {
-					JavaPlugin.log(e);
-				} catch (BadLocationException e) {
+				} catch (CoreException | MalformedTreeException | BadLocationException e) {
 					JavaPlugin.log(e);
 				} finally {
 					javaSourceViewer.setRedraw(true);
@@ -666,7 +653,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Parses the selections for non-overlapping elements and returns their source regions
 		 * ordered by their offsets.
-		 * 
+		 *
 		 * @param selection the selected elements
 		 * @param document the document containing the selected elements
 		 * @return the array of ordered source regions
@@ -681,18 +668,15 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					regions.add(getElementRegion(element, document));
 				}
 			}
-			Comparator<IRegion> comparator= new Comparator<IRegion>() {
-				@Override
-				public int compare(IRegion region0, IRegion region1) {
-					int region1Offset= region0.getOffset();
-					int region2Offset= region1.getOffset();
-					if (region1Offset > region2Offset)
-						return 1;
-					else if (region1Offset == region2Offset)
-						return 0;
-					else
-						return -1;
-				}
+			Comparator<IRegion> comparator= (region0, region1) -> {
+				int region1Offset= region0.getOffset();
+				int region2Offset= region1.getOffset();
+				if (region1Offset > region2Offset)
+					return 1;
+				else if (region1Offset == region2Offset)
+					return 0;
+				else
+					return -1;
 			};
 			Collections.sort(regions, comparator);
 			Object[] sortedObjects= regions.toArray();
@@ -704,7 +688,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Calculates the region of the element. The start is at beginning of its first line if from
 		 * the source start to the beginning of the line is all whitespace.
-		 * 
+		 *
 		 * @param element the element whose regions is to be calculated
 		 * @param document the document containing the element whose region is to be calculated
 		 * @return the region for the element
@@ -724,9 +708,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					return new Region(document.getLineOffset(lineAtSourceOffset), sourceLength);
 				else
 					return new Region(beginningOfWSOffset, sourceLength);
-			} catch (JavaModelException e) {
-				JavaPlugin.log(e);
-			} catch (BadLocationException e) {
+			} catch (JavaModelException | BadLocationException e) {
 				JavaPlugin.log(e);
 			}
 			return null;
@@ -734,7 +716,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 		/**
 		 * Checks if element has an enclosing parent among other selected elements.
-		 * 
+		 *
 		 * @param element the element to be checked for overlap against all elements
 		 * @param allElements the list of all elements
 		 * @return <code>true</code> if the element has a parent in the list of all elements
@@ -755,7 +737,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 		/**
 		 * Notifies the action of a change in the Selection.
-		 * 
+		 *
 		 * @param selection the new Structured Selection
 		 */
 		@Override
@@ -787,14 +769,14 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 	/**
 	 * Action for Collapse All.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private CollapseAllAction fCollapseAllAction;
 
 	/**
 	 * Action for Format Element
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private FormatElementAction fFormatElement;
@@ -833,12 +815,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		fTogglePresentation= new TogglePresentationAction();
 		fTogglePresentation.setEditor(editor);
 
-		fPropertyChangeListener= new IPropertyChangeListener() {
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				doPropertyChange(event);
-			}
-		};
+		fPropertyChangeListener= this::doPropertyChange;
 		JavaPlugin.getDefault().getPreferenceStore().addPropertyChangeListener(fPropertyChangeListener);
 	}
 
@@ -977,12 +954,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 		MenuManager manager= new MenuManager(fContextMenuID, fContextMenuID);
 		manager.setRemoveAllWhenShown(true);
-		manager.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager m) {
-				contextMenuAboutToShow(m);
-			}
-		});
+		manager.addMenuListener(this::contextMenuAboutToShow);
 		fMenu= manager.createContextMenu(tree);
 		tree.setMenu(fMenu);
 
@@ -1178,13 +1150,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 			return (T) getShowInSource();
 		}
 		if (key == IShowInTargetList.class) {
-			return (T) new IShowInTargetList() {
-				@Override
-				public String[] getShowInTargetIds() {
-					return new String[] { JavaUI.ID_PACKAGES };
-				}
-
-			};
+			return (T) (IShowInTargetList) () -> new String[] { JavaUI.ID_PACKAGES };
 		}
 		if (key == IShowInTarget.class) {
 			return (T) getShowInTarget();
@@ -1265,14 +1231,9 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 	 * @return the {@link IShowInSource}
 	 */
 	protected IShowInSource getShowInSource() {
-		return new IShowInSource() {
-			@Override
-			public ShowInContext getShowInContext() {
-				return new ShowInContext(
-					null,
-					getSite().getSelectionProvider().getSelection());
-			}
-		};
+		return () -> new ShowInContext(
+			null,
+			getSite().getSelectionProvider().getSelection());
 	}
 
 	/**
@@ -1281,24 +1242,21 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 	 * @return the {@link IShowInTarget}
 	 */
 	protected IShowInTarget getShowInTarget() {
-		return new IShowInTarget() {
-			@Override
-			public boolean show(ShowInContext context) {
-				ISelection sel= context.getSelection();
-				if (sel instanceof ITextSelection) {
-					ITextSelection tsel= (ITextSelection) sel;
-					int offset= tsel.getOffset();
-					IJavaElement element= fEditor.getElementAt(offset);
-					if (element != null) {
-						setSelection(new StructuredSelection(element));
-						return true;
-					}
-				} else if (sel instanceof IStructuredSelection) {
-					setSelection(sel);
+		return context -> {
+			ISelection sel= context.getSelection();
+			if (sel instanceof ITextSelection) {
+				ITextSelection tsel= (ITextSelection) sel;
+				int offset= tsel.getOffset();
+				IJavaElement element= fEditor.getElementAt(offset);
+				if (element != null) {
+					setSelection(new StructuredSelection(element));
 					return true;
 				}
-				return false;
+			} else if (sel instanceof IStructuredSelection) {
+				setSelection(sel);
+				return true;
 			}
+			return false;
 		};
 	}
 

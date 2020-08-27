@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     John Kaplan, johnkaplantech@gmail.com - 108071 [code templates] template for body of newly created class
+ *     Microsoft Corporation - [templates][content assist] - Extract the UI related code - https://bugs.eclipse.org/549989
  *******************************************************************************/
 package org.eclipse.jdt.ui.wizards;
 
@@ -19,7 +20,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -32,8 +32,6 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -117,6 +115,7 @@ import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddUnimplementedConstructorsOperation;
@@ -128,7 +127,7 @@ import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.TokenScanner;
 import org.eclipse.jdt.internal.corext.refactoring.StubTypeContext;
 import org.eclipse.jdt.internal.corext.refactoring.TypeContextChecker;
-import org.eclipse.jdt.internal.corext.template.java.JavaContext;
+import org.eclipse.jdt.internal.corext.template.java.TemplateUtils;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.JavaConventionsUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -150,10 +149,8 @@ import org.eclipse.jdt.internal.ui.refactoring.contentassist.CompletionContextRe
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.ControlContentAssistHelper;
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaPackageCompletionProcessor;
 import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaTypeCompletionProcessor;
+import org.eclipse.jdt.internal.ui.text.correction.PreviewFeaturesSubProcessor;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-
-import org.eclipse.jdt.internal.core.manipulation.StubUtility;
-
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
 import org.eclipse.jdt.internal.ui.wizards.SuperInterfaceSelectionDialog;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
@@ -231,7 +228,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		 * @param insertPosition the offset where the import will be used
 		 * @return Returns the simple type name that can be used in the code or the
 		 * fully qualified type name if an import conflict prevented the import.
-		 * 
+		 *
 		 * @since 3.8
 		 */
 		public String addImport(String qualifiedTypeName, int insertPosition) {
@@ -263,14 +260,14 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		 *
 		 * @return Returns the simple type name that can be used in the code or the
 		 * fully qualified type name if an import conflict prevented the import.
-		 * 
+		 *
 		 * @since 3.8
 		 */
 		public String addImport(ITypeBinding typeBinding, int insertPosition) {
 			ImportRewriteContext context= new ContextSensitiveImportRewriteContext(fAstRoot, insertPosition, fImportsRewrite);
 			return fImportsRewrite.addImport(typeBinding, context);
 		}
-		
+
 		/**
 		 * Adds a new import declaration for a static type that is sorted in the existing imports.
 		 * If an import already exists or the import would conflict with an import
@@ -446,6 +443,13 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	public static final int ANNOTATION_TYPE = 4;
 
 	/**
+	 * Constant to signal that the created type is an record.
+	 * @since 3.21
+	 * @noreference This field is not intended to be referenced by clients.
+	 */
+	public static final int RECORD_TYPE = 5;
+
+	/**
 	 * Creates a new <code>NewTypeWizardPage</code>.
 	 *
 	 * @param isClass <code>true</code> if a new class is to be created; otherwise
@@ -531,8 +535,12 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 					NewWizardMessages.NewTypeWizardPage_modifiers_static
 		        };
 		    }
-		    else
-		        buttonNames2= new String[] {};
+			else {
+				if (fTypeKind == RECORD_TYPE) {
+					buttonNames2= new String[] {NewWizardMessages.NewTypeWizardPage_modifiers_static};
+				} else
+					buttonNames2= new String[] {};
+			}
 		}
 
 		fOtherMdfButtons= new SelectionButtonDialogFieldGroup(SWT.CHECK, buttonNames2, 4);
@@ -686,12 +694,12 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	 * folder does not contain any package and if the project name is a valid package name. If the
 	 * source folder contains exactly one package then the name of that package is used as the
 	 * package fragment's name. <code>null</code> is returned if none of the above is applicable.
-	 * 
+	 *
 	 * @param javaProject the containing Java project of the selection used to initialize this page
-	 * 
+	 *
 	 * @return the package fragment to be pre-filled in this page or <code>null</code> if no
 	 *         suitable package can be suggested for the given project
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private IPackageFragment getPackage(IJavaProject javaProject) {
@@ -736,7 +744,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 
 	private static IStatus validateJavaTypeName(String text, IJavaProject project) {
 		if (project == null || !project.exists()) {
-			return JavaConventions.validateJavaTypeName(text, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3);
+			return JavaConventions.validateJavaTypeName(text, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3, null);
 		}
 		return JavaConventionsUtil.validateJavaTypeName(text, project);
 	}
@@ -886,23 +894,20 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		Text text= fTypeNameDialogField.getTextControl(null);
 		LayoutUtil.setWidthHint(text, getMaxFieldWidth());
 		TextFieldNavigationHandler.install(text);
-		
-		text.addVerifyListener(new VerifyListener() {
-			@Override
-			public void verifyText(VerifyEvent e) {
-				if (fCanModifyPackage && ! fEnclosingTypeSelection.isSelected() && e.start == 0 && e.end == ((Text) e.widget).getCharCount()) {
-					String typeNameWithoutParameters= getTypeNameWithoutParameters(getTypeNameWithoutExtension(e.text));
-					int lastDot= typeNameWithoutParameters.lastIndexOf('.');
-					if (lastDot == -1 || lastDot == typeNameWithoutParameters.length() - 1)
-						return;
-					
-					String pack= typeNameWithoutParameters.substring(0, lastDot);
-					if (validatePackageName(pack, null).getSeverity() == IStatus.ERROR)
-						return;
-					
-					fPackageDialogField.setText(pack);
-					e.text= e.text.substring(lastDot + 1);
-				}
+
+		text.addVerifyListener(e -> {
+			if (fCanModifyPackage && ! fEnclosingTypeSelection.isSelected() && e.start == 0 && e.end == ((Text) e.widget).getCharCount()) {
+				String typeNameWithoutParameters= getTypeNameWithoutParameters(getTypeNameWithoutExtension(e.text));
+				int lastDot= typeNameWithoutParameters.lastIndexOf('.');
+				if (lastDot == -1 || lastDot == typeNameWithoutParameters.length() - 1)
+					return;
+
+				String pack= typeNameWithoutParameters.substring(0, lastDot);
+				if (validatePackageName(pack, null).getSeverity() == IStatus.ERROR)
+					return;
+
+				fPackageDialogField.setText(pack);
+				e.text= e.text.substring(lastDot + 1);
 			}
 		});
 	}
@@ -981,7 +986,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 				BidiUtils.applyBidiProcessing(text, StructuredTextTypeHandlerFactory.JAVA);
 				return control;
 			}
-			
+
 		    @Override
 			protected void doSetFocus() {
 		        if (text != null) {
@@ -1065,7 +1070,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		fAddCommentButton.doFillIntoGrid(composite, nColumns - 1);
 	}
 	/**
-	  * Creates the comment and link in the single line for the preference page links. Expects a 
+	  * Creates the comment and link in the single line for the preference page links. Expects a
 	  * <code>GridLayout</code> with at least 2 columns.
 	 *
 	 * @param composite the parent composite
@@ -1247,7 +1252,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	@Override
 	protected void handleFieldChanged(String fieldName) {
 		super.handleFieldChanged(fieldName);
-		if (fieldName == CONTAINER) {
+		if (CONTAINER.equals(fieldName)) {
 			fPackageStatus= packageChanged();
 			fEnclosingTypeStatus= enclosingTypeChanged();
 			fTypeNameStatus= typeNameChanged();
@@ -1485,8 +1490,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	public List<String> getSuperInterfaces() {
 		List<InterfaceWrapper> interfaces= fSuperInterfacesDialogField.getElements();
 		ArrayList<String> result= new ArrayList<>(interfaces.size());
-		for (Iterator<InterfaceWrapper> iter= interfaces.iterator(); iter.hasNext();) {
-			InterfaceWrapper wrapper= iter.next();
+		for (InterfaceWrapper wrapper : interfaces) {
 			result.add(wrapper.interfaceName);
 		}
 		return result;
@@ -1502,8 +1506,8 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	 */
 	public void setSuperInterfaces(List<String> interfacesNames, boolean canBeModified) {
 		ArrayList<InterfaceWrapper> interfaces= new ArrayList<>(interfacesNames.size());
-		for (Iterator<String> iter= interfacesNames.iterator(); iter.hasNext();) {
-			interfaces.add(new InterfaceWrapper(iter.next()));
+		for (String string : interfacesNames) {
+			interfaces.add(new InterfaceWrapper(string));
 		}
 		fSuperInterfacesDialogField.setElements(interfaces);
 		fSuperInterfacesDialogField.setEnabled(canBeModified);
@@ -1594,7 +1598,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		if ((fTypeKind == ANNOTATION_TYPE || fTypeKind == ENUM_TYPE) && !status.matches(IStatus.ERROR)) {
 	    	if (root != null && !JavaModelUtil.is50OrHigher(root.getJavaProject())) {
 	    		// error as createType will fail otherwise (bug 96928)
-				return new StatusInfo(IStatus.ERROR, Messages.format(NewWizardMessages.NewTypeWizardPage_warning_NotJDKCompliant, BasicElementLabels.getJavaElementName(root.getJavaProject().getElementName())));
+	    		return new StatusInfo(IStatus.ERROR, Messages.format(NewWizardMessages.NewTypeWizardPage_warning_NotJDKCompliant, BasicElementLabels.getJavaElementName(root.getJavaProject().getElementName())));
 	    	}
 	    	if (fTypeKind == ENUM_TYPE) {
 		    	try {
@@ -1604,6 +1608,24 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		    	} catch (JavaModelException e) {
 		    	    JavaPlugin.log(e);
 		    	}
+	    	}
+	    }
+		if ((fTypeKind == RECORD_TYPE) && !status.matches(IStatus.ERROR)) {
+	    	if (root != null) {
+	    		if (!JavaModelUtil.is14OrHigher(root.getJavaProject())) {
+	    			return new StatusInfo(IStatus.ERROR, Messages.format(NewWizardMessages.NewTypeWizardPage_warning_NotJDKCompliant2, new String[] {BasicElementLabels.getJavaElementName(root.getJavaProject().getElementName()), "14" })); //$NON-NLS-1$
+	    		} else if (!PreviewFeaturesSubProcessor.isPreviewFeatureEnabled(root.getJavaProject())) {
+	    			return new StatusInfo(IStatus.ERROR, Messages.format(NewWizardMessages.NewTypeWizardPage_warning_PreviewFeatureNotEnabled, BasicElementLabels.getJavaElementName(root.getJavaProject().getElementName())));
+	    		}
+	    		try {
+		    	    // if findType(...) == null then Record is unavailable
+		    	    if (findType(root.getJavaProject(), "java.lang.Record") == null) //$NON-NLS-1$
+		    	        return new StatusInfo(IStatus.WARNING, NewWizardMessages.NewTypeWizardPage_warning_RecordClassNotFound);
+		    	} catch (JavaModelException e) {
+		    	    JavaPlugin.log(e);
+		    	}
+	    	} else {
+	    		return new StatusInfo(IStatus.WARNING, NewWizardMessages.NewTypeWizardPage_warning_RecordClassNotFound);
 	    	}
 	    }
 
@@ -1970,9 +1992,8 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 
 		if (root != null) {
 			List<InterfaceWrapper> elements= fSuperInterfacesDialogField.getElements();
-			int nElements= elements.size();
-			for (int i= 0; i < nElements; i++) {
-				String intfname= elements.get(i).interfaceName;
+			for (InterfaceWrapper element : elements) {
+				String intfname= element.interfaceName;
 				Type type= TypeContextChecker.parseSuperInterface(intfname);
 				if (type == null) {
 					status.setError(Messages.format(NewWizardMessages.NewTypeWizardPage_error_InvalidSuperInterfaceName, BasicElementLabels.getJavaElementName(intfname)));
@@ -2055,7 +2076,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 
 		IPackageFragment pack= getPackageFragment();
 		if (pack != null) {
-			dialog.setInitialSelections(new Object[] { pack });
+			dialog.setInitialSelections(pack);
 		}
 
 		if (dialog.open() == Window.OK) {
@@ -2252,9 +2273,8 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 
 
 				// add imports that will be removed again. Having the imports solves 14661
-				IType[] topLevelTypes= parentCU.getTypes();
-				for (int i= 0; i < topLevelTypes.length; i++) {
-					imports.addImport(topLevelTypes[i].getFullyQualifiedName('.'));
+				for (IType topLevelType : parentCU.getTypes()) {
+					imports.addImport(topLevelType.getFullyQualifiedName('.'));
 				}
 
 				lineDelimiter= StubUtility.getLineDelimiterUsed(enclosingType);
@@ -2271,9 +2291,9 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 				if (enclosingType.isEnum()) {
 					IField[] fields = enclosingType.getFields();
 					if (fields.length > 0) {
-						for (int i = 0, max = fields.length; i < max; i++) {
-							if (!fields[i].isEnumConstant()) {
-								sibling = fields[i];
+						for (IField field : fields) {
+							if (!field.isEnumConstant()) {
+								sibling = field;
 								break;
 							}
 						}
@@ -2359,8 +2379,8 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	private Set<String> getExistingImports(CompilationUnit root) {
 		List<ImportDeclaration> imports= root.imports();
 		Set<String> res= new HashSet<>(imports.size());
-		for (int i= 0; i < imports.size(); i++) {
-			res.add(ASTNodes.asString(imports.get(i)));
+		for (ImportDeclaration import1 : imports) {
+			res.add(ASTNodes.asString(import1));
 		}
 		return res;
 	}
@@ -2382,15 +2402,12 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		ImportsManager imports= new ImportsManager(root);
 
 		int importsEnd= ASTNodes.getExclusiveEnd(importsDecls.get(importsDecls.size() - 1));
-		IProblem[] problems= root.getProblems();
-		for (int i= 0; i < problems.length; i++) {
-			IProblem curr= problems[i];
+		for (IProblem curr : root.getProblems()) {
 			if (curr.getSourceEnd() < importsEnd) {
 				int id= curr.getID();
 				if (id == IProblem.UnusedImport || id == IProblem.NotVisibleType) { // not visible problems hide unused -> remove both
 					int pos= curr.getSourceStart();
-					for (int k= 0; k < importsDecls.size(); k++) {
-						ImportDeclaration decl= importsDecls.get(k);
+					for (ImportDeclaration decl : importsDecls) {
 						if (decl.getStartPosition() <= pos && pos < decl.getStartPosition() + decl.getLength()) {
 							if (existingImports.isEmpty() || !existingImports.contains(ASTNodes.asString(decl))) {
 								String name= decl.getName().getFullyQualifiedName();
@@ -2415,7 +2432,7 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	/**
 	 * Uses the New Java file template from the code template page to generate a
 	 * compilation unit with the given type content.
-	 * 
+	 *
 	 * @param cu The new created compilation unit
 	 * @param typeContent The content of the type, including signature and type
 	 * body.
@@ -2551,9 +2568,16 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 				type= "@interface "; //$NON-NLS-1$
 				templateID= CodeGeneration.ANNOTATION_BODY_TEMPLATE_ID;
 				break;
+			case RECORD_TYPE:
+				type= "record "; //$NON-NLS-1$
+				templateID= CodeGeneration.RECORD_BODY_TEMPLATE_ID;
+				break;
 		}
 		buf.append(type);
 		buf.append(getTypeName());
+		if (fTypeKind == RECORD_TYPE) {
+			buf.append("()"); //$NON-NLS-1$
+		}
 		writeSuperClass(buf, imports);
 		writeSuperInterfaces(buf, imports);
 
@@ -2716,13 +2740,9 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		try {
 			Template template= JavaPlugin.getDefault().getTemplateStore().findTemplate(name);
 			if (template != null) {
-				return JavaContext.evaluateTemplate(template, parentCU, pos);
+				return TemplateUtils.evaluateTemplate(template, parentCU, pos);
 			}
-		} catch (CoreException e) {
-			JavaPlugin.log(e);
-		} catch (BadLocationException e) {
-			JavaPlugin.log(e);
-		} catch (TemplateException e) {
+		} catch (CoreException | BadLocationException | TemplateException e) {
 			JavaPlugin.log(e);
 		}
 		return null;
@@ -2747,8 +2767,9 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 		JavaModelUtil.reconcile(cu);
 		IMethod[] typeMethods= type.getMethods();
 		Set<String> handleIds= new HashSet<>(typeMethods.length);
-		for (int index= 0; index < typeMethods.length; index++)
-			handleIds.add(typeMethods[index].getHandleIdentifier());
+		for (IMethod typeMethod : typeMethods) {
+			handleIds.add(typeMethod.getHandleIdentifier());
+		}
 		ArrayList<IMethod> newMethods= new ArrayList<>();
 		CodeGenerationSettings settings= JavaPreferencesSettings.getCodeGenerationSettings(type.getJavaProject());
 		settings.createComments= isAddComments();
@@ -2773,18 +2794,20 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 			}
 		}
 		JavaModelUtil.reconcile(cu);
-		typeMethods= type.getMethods();
-		for (int index= 0; index < typeMethods.length; index++)
-			if (!handleIds.contains(typeMethods[index].getHandleIdentifier()))
-				newMethods.add(typeMethods[index]);
+		for (IMethod typeMethod : type.getMethods()) {
+			if (!handleIds.contains(typeMethod.getHandleIdentifier())) {
+				newMethods.add(typeMethod);
+			}
+		}
 		IMethod[] methods= new IMethod[newMethods.size()];
 		newMethods.toArray(methods);
 		return methods;
 	}
 
 	private void createImports(ImportsManager imports, String[] createdImports) {
-		for (int index= 0; index < createdImports.length; index++)
-			imports.addImport(createdImports[index]);
+		for (String createdImport : createdImports) {
+			imports.addImport(createdImport);
+		}
 	}
 
 
@@ -2797,17 +2820,14 @@ public abstract class NewTypeWizardPage extends NewContainerWizardPage {
 	 * @return the runnable to create the new type
 	 */
 	public IRunnableWithProgress getRunnable() {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-				try {
-					if (monitor == null) {
-						monitor= new NullProgressMonitor();
-					}
-					createType(monitor);
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
+		return monitor -> {
+			try {
+				if (monitor == null) {
+					monitor= new NullProgressMonitor();
 				}
+				createType(monitor);
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
 			}
 		};
 	}

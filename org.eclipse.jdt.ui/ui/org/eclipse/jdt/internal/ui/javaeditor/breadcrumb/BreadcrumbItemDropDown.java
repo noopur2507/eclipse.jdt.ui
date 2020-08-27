@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2014 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,8 +18,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseAdapter;
@@ -41,7 +39,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -60,12 +57,10 @@ import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.resource.CompositeImageDescriptor;
 import org.eclipse.jface.util.OpenStrategy;
 import org.eclipse.jface.util.Util;
-import org.eclipse.jface.viewers.IOpenListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeViewerListener;
-import org.eclipse.jface.viewers.OpenEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -124,13 +119,23 @@ class BreadcrumbItemDropDown {
 				image.dispose();
 				int zoomedArrowSize= ARROW_SIZE * zoom / 100;
 				for (int y1= 0; y1 < zoomedArrowSize; y1++) {
+					// set opaque pixels for top half of the breadcrumb arrow
 					for (int x1= 0; x1 <= y1; x1++) {
 						imageData.setAlpha(fLTR ? x1 : zoomedArrowSize - x1 - 1, y1, 255);
 					}
+					// set transparent pixels for top half of the breadcrumbe arrow
+					for (int x1= y1+1; x1 < zoomedArrowSize; x1++) {
+						imageData.setAlpha(fLTR ? x1 : zoomedArrowSize - x1 - 1, y1, 0);
+					}
 				}
 				for (int y2= 0; y2 < zoomedArrowSize; y2++) {
+					// set opaque pixels for bottom half of the breadcrumb arrow
 					for (int x2= 0; x2 <= y2; x2++) {
 						imageData.setAlpha(fLTR ? x2 : zoomedArrowSize - x2 - 1, zoomedArrowSize * 2 - y2 - 1, 255);
+					}
+					// set transparent pixels for bottom half of the breadcrumbe arrow
+					for (int x2= y2+1; x2 < zoomedArrowSize; x2++) {
+						imageData.setAlpha(fLTR ? x2 : zoomedArrowSize - x2 - 1, zoomedArrowSize * 2 - y2 - 1, 0);
 					}
 				}
 				return imageData;
@@ -325,22 +330,19 @@ class BreadcrumbItemDropDown {
 			}
 		});
 
-		fDropDownViewer.addOpenListener(new IOpenListener() {
-			@Override
-			public void open(OpenEvent event) {
-				if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-					System.out.println("BreadcrumbItemDropDown.showMenu()$treeViewer>open"); //$NON-NLS-1$
+		fDropDownViewer.addOpenListener(event -> {
+			if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
+				System.out.println("BreadcrumbItemDropDown.showMenu()$treeViewer>open"); //$NON-NLS-1$
 
-				ISelection selection= event.getSelection();
-				if (!(selection instanceof IStructuredSelection))
-					return;
+			ISelection selection= event.getSelection();
+			if (!(selection instanceof IStructuredSelection))
+				return;
 
-				Object element= ((IStructuredSelection) selection).getFirstElement();
-				if (element == null)
-					return;
+			Object element= ((IStructuredSelection) selection).getFirstElement();
+			if (element == null)
+				return;
 
-				openElement(element);
-			}
+			openElement(element);
 		});
 
 		tree.addMouseListener(new MouseListener() {
@@ -472,17 +474,14 @@ class BreadcrumbItemDropDown {
 			@Override
 			public void treeExpanded(TreeExpansionEvent event) {
 				tree.setRedraw(false);
-				fShell.getDisplay().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						if (fShell.isDisposed())
-							return;
+				fShell.getDisplay().asyncExec(() -> {
+					if (fShell.isDisposed())
+						return;
 
-						try {
-							resizeShell(fShell);
-						} finally {
-							tree.setRedraw(true);
-						}
+					try {
+						resizeShell(fShell);
+					} finally {
+						tree.setRedraw(true);
 					}
 				});
 			}
@@ -552,39 +551,36 @@ class BreadcrumbItemDropDown {
 	 * @param shell the shell to install the closer to
 	 */
 	private void installCloser(final Shell shell) {
-		final Listener focusListener= new Listener() {
-			@Override
-			public void handleEvent(Event event) {
-				Widget focusElement= event.widget;
-				boolean isFocusBreadcrumbTreeFocusWidget= focusElement == shell || focusElement instanceof Tree && ((Tree)focusElement).getShell() == shell;
-				boolean isFocusWidgetParentShell= focusElement instanceof Control && ((Control)focusElement).getShell().getParent() == shell;
+		final Listener focusListener= event -> {
+			Widget focusElement= event.widget;
+			boolean isFocusBreadcrumbTreeFocusWidget= focusElement == shell || focusElement instanceof Tree && ((Tree)focusElement).getShell() == shell;
+			boolean isFocusWidgetParentShell= focusElement instanceof Control && ((Control)focusElement).getShell().getParent() == shell;
 
-				switch (event.type) {
-					case SWT.FocusIn:
+			switch (event.type) {
+				case SWT.FocusIn:
+					if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
+						System.out.println("focusIn - is breadcrumb tree: " + isFocusBreadcrumbTreeFocusWidget); //$NON-NLS-1$
+
+					if (!isFocusBreadcrumbTreeFocusWidget && !isFocusWidgetParentShell) {
 						if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-							System.out.println("focusIn - is breadcrumb tree: " + isFocusBreadcrumbTreeFocusWidget); //$NON-NLS-1$
+							System.out.println("==> closing shell since focus in other widget"); //$NON-NLS-1$
+						shell.close();
+					}
+					break;
 
-						if (!isFocusBreadcrumbTreeFocusWidget && !isFocusWidgetParentShell) {
-							if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-								System.out.println("==> closing shell since focus in other widget"); //$NON-NLS-1$
-							shell.close();
-						}
-						break;
+				case SWT.FocusOut:
+					if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
+						System.out.println("focusOut - is breadcrumb tree: " + isFocusBreadcrumbTreeFocusWidget); //$NON-NLS-1$
 
-					case SWT.FocusOut:
+					if (event.display.getActiveShell() == null) {
 						if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-							System.out.println("focusOut - is breadcrumb tree: " + isFocusBreadcrumbTreeFocusWidget); //$NON-NLS-1$
+							System.out.println("==> closing shell since event.display.getActiveShell() == null"); //$NON-NLS-1$
+						shell.close();
+					}
+					break;
 
-						if (event.display.getActiveShell() == null) {
-							if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-								System.out.println("==> closing shell since event.display.getActiveShell() == null"); //$NON-NLS-1$
-							shell.close();
-						}
-						break;
-
-					default:
-						Assert.isTrue(false);
-				}
+				default:
+					Assert.isTrue(false);
 			}
 		};
 
@@ -605,18 +601,15 @@ class BreadcrumbItemDropDown {
 		};
 		fToolBar.getShell().addControlListener(controlListener);
 
-		shell.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
-					System.out.println("==> shell disposed"); //$NON-NLS-1$
+		shell.addDisposeListener(e -> {
+			if (JavaPlugin.DEBUG_BREADCRUMB_ITEM_DROP_DOWN)
+				System.out.println("==> shell disposed"); //$NON-NLS-1$
 
-				display.removeFilter(SWT.FocusIn, focusListener);
-				display.removeFilter(SWT.FocusOut, focusListener);
+			display.removeFilter(SWT.FocusIn, focusListener);
+			display.removeFilter(SWT.FocusOut, focusListener);
 
-				if (!fToolBar.isDisposed()) {
-					fToolBar.getShell().removeControlListener(controlListener);
-				}
+			if (!fToolBar.isDisposed()) {
+				fToolBar.getShell().removeControlListener(controlListener);
 			}
 		});
 		shell.addShellListener(new ShellListener() {

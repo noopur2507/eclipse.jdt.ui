@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -42,6 +42,8 @@ import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.ui.PreferenceConstants;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.actions.IndentAction;
+import org.eclipse.jdt.internal.ui.text.correction.PreviewFeaturesSubProcessor;
 
 
 /**
@@ -49,8 +51,10 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  */
 public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrategy {
 
-	private String fPartitioning;
-	private IJavaProject fProject;
+	protected String fPartitioning;
+	protected IJavaProject fProject;
+
+	private JavaMultiLineStringAutoIndentStrategy jmlsStrategy;
 
 	/**
 	 * The input string doesn't contain any line delimiter.
@@ -60,7 +64,7 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 	 * @param delimiter the line delimiter
 	 * @return the display string
 	 */
-	private String displayString(String inputString, String indentation, String delimiter, boolean escapeNonAscii) {
+	protected String displayString(String inputString, String indentation, String delimiter, boolean escapeNonAscii) {
 
 		int length = inputString.length();
 		StringBuilder buffer = new StringBuilder(length);
@@ -74,23 +78,17 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 					token = tokenizer.nextToken();
 					if (token.equals("\n")) { //$NON-NLS-1$
 						buffer.append("\\n"); //$NON-NLS-1$
-						buffer.append("\" + " + delimiter); //$NON-NLS-1$
-						buffer.append(indentation);
-						buffer.append("\""); //$NON-NLS-1$
+						appendToBuffer(buffer, indentation, delimiter);
 						continue;
 					} else {
-						buffer.append("\" + " + delimiter); //$NON-NLS-1$
-						buffer.append(indentation);
-						buffer.append("\""); //$NON-NLS-1$
+						appendToBuffer(buffer, indentation, delimiter);
 					}
 				} else {
 					continue;
 				}
 			} else if (token.equals("\n")) { //$NON-NLS-1$
 				buffer.append("\\n"); //$NON-NLS-1$
-				buffer.append("\" + " + delimiter); //$NON-NLS-1$
-				buffer.append(indentation);
-				buffer.append("\""); //$NON-NLS-1$
+				appendToBuffer(buffer, indentation, delimiter);
 				continue;
 			}
 
@@ -139,7 +137,20 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		return buffer.toString();
 	}
 
-	/**
+	private void appendToBuffer(StringBuilder buffer, String indentation, String delimiter) {
+		if (buffer != null) {
+			if (isWrappingBeforeBinaryOperator()) {
+				buffer.append("\"" + delimiter); //$NON-NLS-1$
+				buffer.append(indentation + "+ \""); //$NON-NLS-1$
+			} else {
+				buffer.append("\" + " + delimiter); //$NON-NLS-1$
+				buffer.append(indentation);
+				buffer.append("\""); //$NON-NLS-1$
+			}
+		}
+	}
+
+ 	/**
 	 * Creates a new Java string auto indent strategy for the given document partitioning.
 	 *
 	 * @param partitioning the document partitioning
@@ -151,14 +162,14 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		fProject= project;
 	}
 
-	private boolean isLineDelimiter(IDocument document, String text) {
+	protected boolean isLineDelimiter(IDocument document, String text) {
 		String[] delimiters= document.getLegalLineDelimiters();
 		if (delimiters != null)
 			return TextUtilities.equals(delimiters, text) > -1;
 		return false;
 	}
 
-	private String getLineIndentation(IDocument document, int offset) throws BadLocationException {
+	protected String getLineIndentation(IDocument document, int offset) throws BadLocationException {
 
 		// find start of line
 		int adjustedOffset= (offset == document.getLength() ? offset  - 1 : offset);
@@ -171,7 +182,7 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		return document.get(start, end - start);
 	}
 
-	private String getModifiedText(String string, String indentation, String delimiter, boolean escapeNonAscii) {
+	protected String getModifiedText(String string, String indentation, String delimiter, boolean escapeNonAscii) {
 		return displayString(string, indentation, delimiter, escapeNonAscii);
 	}
 
@@ -189,10 +200,16 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 
 		IRegion line= document.getLineInformationOfOffset(offset);
 		String string= document.get(line.getOffset(), offset - line.getOffset()).trim();
+		boolean isLineDelimiter= isLineDelimiter(document, command.text);
+		boolean isTextBlock= PreviewFeaturesSubProcessor.isPreviewFeatureEnabled(fProject) && string.endsWith(IndentAction.POTENTIAL_TEXT_BLOCK_STR) && isLineDelimiter;
+		if (isTextBlock) {
+			JavaMultiLineStringAutoIndentStrategy mlsStrategy= getMultiLineStringAutoIndentStrategy();
+			mlsStrategy.customizeDocumentCommand(document, command);
+			return;
+		}
 		if (string.length() != 0 && !string.equals("+")) //$NON-NLS-1$
 			indentation += getExtraIndentAfterNewLine();
-		
-		boolean isLineDelimiter= isLineDelimiter(document, command.text);
+
 		if (isEditorWrapStrings() && isLineDelimiter) {
 			if (isWrappingBeforeBinaryOperator()) {
 				command.text= "\"" + command.text + indentation + "+ \"";  //$NON-NLS-1$//$NON-NLS-2$
@@ -204,17 +221,17 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		}
 	}
 
-	private boolean isEditorWrapStrings() {
+	protected boolean isEditorWrapStrings() {
 		IPreferenceStore preferenceStore= JavaPlugin.getDefault().getPreferenceStore();
 		return preferenceStore.getBoolean(PreferenceConstants.EDITOR_WRAP_STRINGS);
 	}
 
-	private boolean isEditorEscapeStrings() {
+	protected boolean isEditorEscapeStrings() {
 		IPreferenceStore preferenceStore= JavaPlugin.getDefault().getPreferenceStore();
 		return preferenceStore.getBoolean(PreferenceConstants.EDITOR_ESCAPE_STRINGS);
 	}
-	
-	private boolean isEditorEscapeStringsNonAscii() {
+
+	protected boolean isEditorEscapeStringsNonAscii() {
 		IPreferenceStore preferenceStore= JavaPlugin.getDefault().getPreferenceStore();
 		return preferenceStore.getBoolean(PreferenceConstants.EDITOR_ESCAPE_STRINGS_NON_ASCII);
 	}
@@ -241,7 +258,7 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		}
 		return formatterContinuationIndentationSize;
 	}
-	
+
 	private int getBinaryOperatorAlignmentStyle() {
 		String binaryAlignmentValue= getCoreFormatterOption(
 				DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_STRING_CONCATENATION);
@@ -254,11 +271,11 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 	 *
 	 * @return two tabs or equivalent number of spaces
 	 */
-	private String getExtraIndentAfterNewLine() {
+	protected String getExtraIndentAfterNewLine() {
 		// read settings
 		int formatterContinuationIndentationSize= getContinuationIndentationSize();
 		int binaryAlignmentValue= getBinaryOperatorAlignmentStyle();
-		
+
 		// work out indent
 		int indentSize= formatterContinuationIndentationSize;
 		if (binaryAlignmentValue == DefaultCodeFormatterConstants.INDENT_BY_ONE) {
@@ -266,12 +283,12 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 		} else if (binaryAlignmentValue == DefaultCodeFormatterConstants.INDENT_ON_COLUMN) {
 			// there is no obvious way to work out the current column indent
 		}
-		
+
 		// generate indentation string with correct size
 		return CodeFormatterUtil.createIndentString(indentSize, fProject);
 	}
 
-	private boolean isSmartMode() {
+	protected boolean isSmartMode() {
 		IWorkbenchPage page= JavaPlugin.getActivePage();
 		if (page != null)  {
 			IEditorPart part= page.getActiveEditor();
@@ -295,5 +312,12 @@ public class JavaStringAutoIndentStrategy extends DefaultIndentLineAutoEditStrat
 				javaStringIndentAfterNewLine(document, command);
 		} catch (BadLocationException e) {
 		}
+	}
+
+	private JavaMultiLineStringAutoIndentStrategy getMultiLineStringAutoIndentStrategy() {
+		if (jmlsStrategy != null) {
+			return jmlsStrategy;
+		}
+		return new JavaMultiLineStringAutoIndentStrategy(fPartitioning, fProject);
 	}
 }

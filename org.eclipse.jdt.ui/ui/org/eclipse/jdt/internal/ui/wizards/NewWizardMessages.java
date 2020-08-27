@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -115,7 +115,10 @@ public final class NewWizardMessages extends NLS {
 	public static String NewTypeWizardPage_warning_DiscouragedPackageName;
 	public static String NewTypeWizardPage_warning_DefaultPackageDiscouraged;
 	public static String NewTypeWizardPage_warning_NotJDKCompliant;
+	public static String NewTypeWizardPage_warning_NotJDKCompliant2;
 	public static String NewTypeWizardPage_warning_EnumClassNotFound;
+	public static String NewTypeWizardPage_warning_RecordClassNotFound;
+	public static String NewTypeWizardPage_warning_PreviewFeatureNotEnabled;
 	public static String NewTypeWizardPage_default;
 	public static String NewTypeWizardPage_ChoosePackageDialog_title;
 	public static String NewTypeWizardPage_ChoosePackageDialog_description;
@@ -189,6 +192,12 @@ public final class NewWizardMessages extends NLS {
 	public static String NewClassWizardPage_methods_constructors;
 	public static String NewClassWizardPage_methods_inherited;
 
+	public static String NewRecordCreationWizard_title;
+	public static String NewRecordWizardPage_title;
+	public static String NewRecordWizardPage_description;
+	public static String NewRecordWizardPage_methods_label;
+	public static String NewRecordWizardPage_methods_inherited;
+
 	public static String NewInterfaceCreationWizard_title;
 	public static String NewInterfaceWizardPage_title;
 	public static String NewInterfaceWizardPage_description;
@@ -218,6 +227,7 @@ public final class NewWizardMessages extends NLS {
 	public static String NewJavaProjectWizardPageOne_dialog_title;
 	public static String NewJavaProjectWizardPageOne_directory_message;
 	public static String NewJavaProjectWizardPageOne_JREGroup_link_description;
+	public static String NewJavaProjectWizardPageOne_JREGroup_unspecified_compliance;
 	public static String NewJavaProjectWizardPageOne_JREGroup_default_compliance;
 	public static String NewJavaProjectWizardPageOne_JREGroup_specific_compliance;
 	public static String NewJavaProjectWizardPageOne_JREGroup_specific_EE;
@@ -564,7 +574,7 @@ public final class NewWizardMessages extends NLS {
 	public static String ModuleDependenciesPage_removeCurrentModule_error;
 	public static String ModuleDependenciesPage_removeModule_error_with_hint;
 	public static String ModuleDependenciesPage_removeSystemModule_error_hint;
-	public static String ModuleDependenciesPage_moduleIsRequired_error_hint;
+	public static String ModuleDependenciesPage_moduleIsRequired_warning;
 
 	public static String ModuleDependenciesAdapter_patchConflict_title;
 	public static String ModuleDependenciesAdapter_patchConflict_message;
@@ -772,7 +782,7 @@ public final class NewWizardMessages extends NLS {
 	public static String CPListLabelProvider_without_test_code_label;
 	public static String CPListLabelProvider_test_yes;
 	public static String CPListLabelProvider_test_no;
-	
+
 	public static String HintTextGroup_NoAction;
 
 	public static String NewSourceContainerWorkbookPage_HintTextGroup_title;
@@ -929,7 +939,7 @@ public final class NewWizardMessages extends NLS {
 	public static String EditVariableEntryDialog_filename_empty;
 
 	public static String CPListLabelProvider_external_annotations_location_label;
-	
+
 	public static String NewModuleInfoWizard_title;
 	public static String NewModuleInfoWizard_updateProject_job;
 	public static String NewModuleInfoWizardPage_title;

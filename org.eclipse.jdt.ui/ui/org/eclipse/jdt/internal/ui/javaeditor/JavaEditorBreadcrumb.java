@@ -14,6 +14,7 @@
 package org.eclipse.jdt.internal.ui.javaeditor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -31,11 +32,9 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -171,8 +170,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 			Object[] changed= event.getElements();
 			if (changed != null && !fResourceToItemsMapper.isEmpty()) {
 				ArrayList<Object> others= new ArrayList<>(changed.length);
-				for (int i= 0; i < changed.length; i++) {
-					Object curr= changed[i];
+				for (Object curr : changed) {
 					if (curr instanceof IResource) {
 						fResourceToItemsMapper.resourceChanged((IResource) curr);
 					} else {
@@ -274,11 +272,9 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 					fElements= new Object[0];
 				}
 			} else if (inputElement instanceof IPackageFragmentRoot) {
-				Object[] fragments= fParent.getChildren(inputElement);
 
 				ArrayList<Object> packages= new ArrayList<>();
-				for (int i= 0; i < fragments.length; i++) {
-					Object object= fragments[i];
+				for (Object object : fParent.getChildren(inputElement)) {
 					if (object instanceof IPackageFragment) {
 						try {
 							if (((IPackageFragment) object).hasChildren())
@@ -324,13 +320,12 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 				return fParent.getChildren(model);
 			}
 			ArrayList<IAdaptable> result= new ArrayList<>(javaProjects.length + nonJavaResources.length);
-			for (int i= 0; i < nonJavaResources.length; i++) {
-				IProject project= (IProject)nonJavaResources[i];
+			for (Object nonJavaResource : nonJavaResources) {
+				IProject project= (IProject) nonJavaResource;
 				if (project.isAccessible())
 					result.add(project);
 			}
-			for (int i= 0; i < javaProjects.length; i++) {
-				IJavaProject javaProject= javaProjects[i];
+			for (IJavaProject javaProject : javaProjects) {
 				if (javaProject.getProject().isAccessible())
 					result.add(javaProject);
 			}
@@ -392,27 +387,25 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 		private Object[] getPackageContent(IPackageFragment pack) {
 			ArrayList<Object> result= new ArrayList<>();
 			try {
-				ICompilationUnit[] units= pack.getCompilationUnits();
-				for (int i= 0; i < units.length; i++) {
-					if (JavaModelUtil.isPackageInfo(units[i]))
-						result.add(units[i]);
-					IType[] types= units[i].getTypes();
-					for (int j= 0; j < types.length; j++) {
-						if (isValidType(types[j]))
-							result.add(types[j]);
+				for (ICompilationUnit unit : pack.getCompilationUnits()) {
+					if (JavaModelUtil.isPackageInfo(unit)) {
+						result.add(unit);
+					}
+					for (IType type : unit.getTypes()) {
+						if (isValidType(type)) {
+							result.add(type);
+						}
 					}
 				}
 
-				IOrdinaryClassFile[] classFiles= pack.getOrdinaryClassFiles();
-				for (int i= 0; i < classFiles.length; i++) {
-					if (isValidType(classFiles[i].getType()))
-						result.add(classFiles[i].getType());
+				for (IOrdinaryClassFile classFile : pack.getOrdinaryClassFiles()) {
+					if (isValidType(classFile.getType())) {
+						result.add(classFile.getType());
+					}
 				}
 
 				Object[] nonJavaResources= pack.getNonJavaResources();
-				for (int i= 0; i < nonJavaResources.length; i++) {
-					result.add(nonJavaResources[i]);
-				}
+				result.addAll(Arrays.asList(nonJavaResources));
 			} catch (JavaModelException e) {
 				JavaPlugin.log(e);
 			}
@@ -475,19 +468,16 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 			if (changedElement == null)
 				return;
 
-			fRunnable= new Runnable() {
-				@Override
-				public void run() {
-					if (fViewer == null)
-						return;
+			fRunnable= () -> {
+				if (fViewer == null)
+					return;
 
-					Object newInput= getCurrentInput();
-					if (newInput instanceof IJavaElement)
-						newInput= getInput((IJavaElement) newInput);
+				Object newInput= getCurrentInput();
+				if (newInput instanceof IJavaElement)
+					newInput= getInput((IJavaElement) newInput);
 
-					fViewer.setInput(newInput);
-					fRunnable= null;
-				}
+				fViewer.setInput(newInput);
+				fRunnable= null;
 			};
 			fViewer.getControl().getDisplay().asyncExec(fRunnable);
 		}
@@ -518,9 +508,8 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 					return element;
 			}
 
-			IJavaElementDelta[] affectedChildren= delta.getAffectedChildren();
-			for (int i= 0; i < affectedChildren.length; i++) {
-				IJavaElement res= getChangedParentElement(input, affectedChildren[i]);
+			for (IJavaElementDelta affectedChild : delta.getAffectedChildren()) {
+				IJavaElement res= getChangedParentElement(input, affectedChild);
 				if (res != null)
 					return res;
 			}
@@ -605,12 +594,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 		fViewer.setToolTipLabelProvider(createToolTipLabelProvider());
 
 		fViewer.setContentProvider(createContentProvider());
-		fViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				fBreadcrumbActionGroup.setContext(new ActionContext(fViewer.getSelection()));
-			}
-		});
+		fViewer.addSelectionChangedListener(event -> fBreadcrumbActionGroup.setContext(new ActionContext(fViewer.getSelection())));
 
 		fBreadcrumbActionGroup= new JavaEditorBreadcrumbActionGroup(getJavaEditor(), fViewer);
 
@@ -634,7 +618,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 
 	/**
 	 * Create a new instance of the content provider to use for the Java editor breadcrumb.
-	 * 
+	 *
 	 * @return a new content provider
 	 * @since 3.5
 	 */
@@ -654,9 +638,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 
 				List<Object> result= new ArrayList<>();
 
-				IPackageFragmentRoot[] roots= project.getPackageFragmentRoots();
-				for (int i= 0; i < roots.length; i++) {
-					IPackageFragmentRoot root= roots[i];
+				for (IPackageFragmentRoot root : project.getPackageFragmentRoots()) {
 					IClasspathEntry classpathEntry= JavaModelUtil.getClasspathEntry(root);
 					int entryKind= classpathEntry.getEntryKind();
 					if (entryKind == IClasspathEntry.CPE_CONTAINER) {
@@ -668,9 +650,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 							// filter out package fragments that correspond to projects and
 							// replace them with the package fragments directly
 							Object[] fragments= getPackageFragmentRootContent(root);
-							for (int j= 0; j < fragments.length; j++) {
-								result.add(fragments[j]);
-							}
+							result.addAll(Arrays.asList(fragments));
 						} else {
 							result.add(root);
 						}
@@ -682,17 +662,13 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 				}
 
 				// separate loop to make sure all containers are on the classpath
-				IClasspathEntry[] rawClasspath= project.getRawClasspath();
-				for (int i= 0; i < rawClasspath.length; i++) {
-					IClasspathEntry classpathEntry= rawClasspath[i];
+				for (IClasspathEntry classpathEntry : project.getRawClasspath()) {
 					if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
 						result.add(new ClassPathContainer(project, classpathEntry));
 					}
 				}
 				Object[] resources= project.getNonJavaResources();
-				for (int i= 0; i < resources.length; i++) {
-					result.add(resources[i]);
-				}
+				result.addAll(Arrays.asList(resources));
 				return result.toArray();
 			}
 
@@ -876,7 +852,7 @@ public class JavaEditorBreadcrumb extends EditorBreadcrumb {
 
 			if (element instanceof IOrdinaryClassFile)
 				element= ((IOrdinaryClassFile) element).getType();
-			
+
 			if (element instanceof IModularClassFile)
 				element= ((IModularClassFile) element).getModule();
 

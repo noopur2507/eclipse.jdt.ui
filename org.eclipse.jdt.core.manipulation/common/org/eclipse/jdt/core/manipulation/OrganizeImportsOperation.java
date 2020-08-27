@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -44,6 +44,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.SourceRange;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -52,6 +53,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -64,6 +66,7 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.TypeNameMatch;
 
 import org.eclipse.jdt.internal.core.manipulation.JavaManipulationMessages;
+import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
 import org.eclipse.jdt.internal.core.manipulation.Messages;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
@@ -350,8 +353,8 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 				}
 				char[][] allTypes= new char[nUnresolved][];
 				int i= 0;
-				for (Iterator<String> iter= fUnresolvedTypes.keySet().iterator(); iter.hasNext();) {
-					allTypes[i++]= iter.next().toCharArray();
+				for (String string : fUnresolvedTypes.keySet()) {
+					allTypes[i++]= string.toCharArray();
 				}
 				final ArrayList<TypeNameMatch> typesFound= new ArrayList<>();
 				final IJavaProject project= fCurrPackage.getJavaProject();
@@ -362,8 +365,7 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 
 				boolean is50OrHigher= JavaModelUtil.is50OrHigher(project);
 
-				for (i= 0; i < typesFound.size(); i++) {
-					TypeNameMatch curr= typesFound.get(i);
+				for (TypeNameMatch curr : typesFound) {
 					UnresolvedTypeData data= fUnresolvedTypes.get(curr.getSimpleTypeName());
 					if (data != null && isVisible(curr) && isOfKind(curr, data.typeKinds, is50OrHigher)) {
 						if (fAllowDefaultPackageImports || curr.getPackageName().length() > 0) {
@@ -373,7 +375,7 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 				}
 
 				for (Entry<String, UnresolvedTypeData> entry : fUnresolvedTypes.entrySet()) {
-					if (entry.getValue().foundInfos.size() == 0) { // No result found in search
+					if (entry.getValue().foundInfos.isEmpty()) { // No result found in search
 						Set<String> matchingUnresolvableImports= fUnresolvableImportMatcher.matchTypeImports(entry.getKey());
 						if (!matchingUnresolvableImports.isEmpty()) {
 							// If there are matching unresolvable import(s), rely on them to provide the type.
@@ -386,8 +388,7 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 
 				ArrayList<TypeNameMatch[]> openChoices= new ArrayList<>(nUnresolved);
 				ArrayList<SourceRange> sourceRanges= new ArrayList<>(nUnresolved);
-				for (Iterator<UnresolvedTypeData> iter= fUnresolvedTypes.values().iterator(); iter.hasNext();) {
-					UnresolvedTypeData data= iter.next();
+				for (UnresolvedTypeData data : fUnresolvedTypes.values()) {
 					TypeNameMatch[] openChoice= processTypeInfo(data.foundInfos);
 					if (openChoice != null) {
 						openChoices.add(openChoice);
@@ -560,7 +561,7 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 		CompilationUnit astRoot= fASTRoot;
 		if (astRoot == null) {
 			astRoot= CoreASTProvider.getInstance().getAST(fCompilationUnit, CoreASTProvider.WAIT_YES, subMonitor.split(2));
-		} 
+		}
 		subMonitor.setWorkRemaining(7);
 
 		ImportRewrite importsRewrite= CodeStyleConfiguration.createImportRewrite(astRoot, false);
@@ -634,15 +635,13 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
   		importsAdded.addAll(Arrays.asList(importsStructure.getCreatedImports()));
   		importsAdded.addAll(Arrays.asList(importsStructure.getCreatedStaticImports()));
 
-		Object[] content= oldSingleImports.toArray();
-	    for (int i= 0; i < content.length; i++) {
-	        String importName= (String) content[i];
+  		for (Object element : oldSingleImports.toArray()) {
+	        String importName= (String) element;
 	        if (importsAdded.remove(importName))
 	            oldSingleImports.remove(importName);
 	    }
-	    content= oldDemandImports.toArray();
-	    for (int i= 0; i < content.length; i++) {
-	        String importName= (String) content[i];
+	    for (Object element : oldDemandImports.toArray()) {
+	        String importName= (String) element;
 	        if (importsAdded.remove(importName + ".*")) //$NON-NLS-1$
 	            oldDemandImports.remove(importName);
 	    }
@@ -674,6 +673,24 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 						importRewrite.addStaticImport(declaringTypeName, simpleName, isField, UNRESOLVABLE_IMPORT_CONTEXT);
 					}
 				}
+				if (unresolvableImports.isEmpty()) {
+					String pref= JavaManipulation.getPreference(JavaManipulationPlugin.CODEASSIST_FAVORITE_STATIC_MEMBERS, importRewrite.getCompilationUnit().getJavaProject());
+					String[] favourites= pref.split(";"); //$NON-NLS-1$
+					if (favourites.length == 0) {
+						return;
+					}
+					try {
+						// check favourite static imports
+						boolean isMethod= name.getParent() instanceof MethodInvocation;
+						String[] staticFavourites= JavaModelUtil.getStaticImportFavorites(importRewrite.getCompilationUnit(), identifier, isMethod, favourites);
+						if (staticFavourites.length > 0) {
+							String qualifiedTypeName= Signature.getQualifier(staticFavourites[0]);
+							importRewrite.addStaticImport(qualifiedTypeName, identifier, !isMethod);
+						}
+					} catch (JavaModelException e) {
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -682,18 +699,15 @@ public class OrganizeImportsOperation implements IWorkspaceRunnable {
 	// find type references in a compilation unit
 	private boolean collectReferences(CompilationUnit astRoot, List<SimpleName> typeReferences, List<SimpleName> staticReferences, Set<String> oldSingleImports, Set<String> oldDemandImports) {
 		if (!fAllowSyntaxErrors) {
-			IProblem[] problems= astRoot.getProblems();
-			for (int i= 0; i < problems.length; i++) {
-				IProblem curr= problems[i];
+			for (IProblem curr : astRoot.getProblems()) {
 				if (curr.isError() && (curr.getID() & IProblem.Syntax) != 0) {
-					fParsingError= problems[i];
+					fParsingError= curr;
 					return false;
 				}
 			}
 		}
 		List<ImportDeclaration> imports= astRoot.imports();
-		for (int i= 0; i < imports.size(); i++) {
-			ImportDeclaration curr= imports.get(i);
+		for (ImportDeclaration curr : imports) {
 			String id= ASTResolving.getFullName(curr.getName());
 			if (curr.isOnDemand()) {
 				oldDemandImports.add(id);

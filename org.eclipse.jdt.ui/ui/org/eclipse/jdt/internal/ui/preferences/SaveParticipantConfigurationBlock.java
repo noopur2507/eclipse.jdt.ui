@@ -15,7 +15,6 @@ package org.eclipse.jdt.internal.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 
 import com.ibm.icu.text.Collator;
 
@@ -80,16 +79,10 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 		if (descriptors.length == 0)
 			return composite;
 
-		Arrays.sort(descriptors, new Comparator<SaveParticipantDescriptor>() {
-			@Override
-			public int compare(SaveParticipantDescriptor d1, SaveParticipantDescriptor d2) {
-				return Collator.getInstance().compare(d1.getPostSaveListener().getName(), d2.getPostSaveListener().getName());
-			}
-		});
+		Arrays.sort(descriptors, (d1, d2) -> Collator.getInstance().compare(d1.getPostSaveListener().getName(), d2.getPostSaveListener().getName()));
 
 		IPreferencePageContainer container= fPreferencePage.getContainer();
-		for (int i= 0; i < descriptors.length; i++) {
-			final SaveParticipantDescriptor descriptor= descriptors[i];
+		for (SaveParticipantDescriptor descriptor : descriptors) {
 			ISaveParticipantPreferenceConfiguration configuration= descriptor.createPreferenceConfiguration();
 			configuration.createControl(composite, container);
 			fConfigurations.add(configuration);
@@ -103,12 +96,7 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void dispose() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.dispose();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::dispose);
 	}
 
 	/*
@@ -116,15 +104,12 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void initialize() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				IAdaptable element= null;
-				if (fPreferencePage instanceof PropertyAndPreferencePage) {
-					element= ((PropertyAndPreferencePage)fPreferencePage).getElement();
-				}
-				block.initialize(fContext, element);
+		delegateToPreferenceConfiguration(block -> {
+			IAdaptable element= null;
+			if (fPreferencePage instanceof PropertyAndPreferencePage) {
+				element= ((PropertyAndPreferencePage)fPreferencePage).getElement();
 			}
+			block.initialize(fContext, element);
 		});
 	}
 
@@ -133,12 +118,7 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void performDefaults() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.performDefaults();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::performDefaults);
 	}
 
 	/*
@@ -146,37 +126,21 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void performOk() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.performOk();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::performOk);
 	}
 
 	@Override
 	public void enableProjectSettings() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.enableProjectSettings();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::enableProjectSettings);
 	}
 
 	@Override
 	public void disableProjectSettings() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.disableProjectSettings();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::disableProjectSettings);
 	}
 
 	private void delegateToPreferenceConfiguration(IDelegateOperation op) {
-		for (int i= 0; i < fConfigurations.size(); i++) {
-	        ISaveParticipantPreferenceConfiguration block= fConfigurations.get(i);
+		for (ISaveParticipantPreferenceConfiguration block : fConfigurations) {
 	        op.run(block);
         }
 	}

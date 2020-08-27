@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.junit.wizards;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 
 import org.eclipse.jdt.junit.wizards.NewTestSuiteWizardPage;
@@ -156,7 +155,7 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 			} else {
 				noSuiteError();
 			}
-			
+
 		} else{
 			/* find TestClasses already in Test Suite */
 			IType testSuiteType= fTestSuite.findPrimaryType();
@@ -219,7 +218,7 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 				if (primaryType != null) {
 					fIsJunit4 = primaryType.getAnnotation("RunWith").exists(); //$NON-NLS-1$
 				}
-				
+
 			}
 		}
 	}
@@ -249,7 +248,7 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 			monitor.done();
 		}
 	}
-	
+
 	public static void updateTestCasesInSuite(IProgressMonitor monitor, ICompilationUnit testSuite, IMethod suiteMethod, Object[] selectedTestCases) throws JavaModelException {
 		try {
 			monitor.beginTask(WizardMessages.UpdateAllTests_beginTask, 5);
@@ -294,8 +293,8 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 		end += NewTestSuiteWizardPage.NON_COMMENT_END_MARKER.length();
 		return new TestSuiteClassListRange(start, end);
 	}
-	
-	
+
+
 
 	/*
 	 * Returns the new code to be included in a new suite() or which replaces old code in an existing suite().
@@ -317,7 +316,7 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 		suite.append("\n"+NewTestSuiteWizardPage.END_MARKER); //$NON-NLS-1$
 		return suite.toString();
 	}
-	
+
 	/*
 	 * Returns the new test suite annotations which replace old annotations in the existing suite
 	 */
@@ -361,22 +360,19 @@ public class UpdateTestSuite implements IObjectActionDelegate {
 	}
 
 	public IRunnableWithProgress getRunnable() {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-				if (monitor == null) {
-					monitor= new NullProgressMonitor();
-				}
-				if (! checkValidateEditStatus(fTestSuite, fShell))
-					return;
-				try {
-					if (fIsJunit4)
-						updateTestCasesInJunit4Suite(monitor, fTestSuite, fSuiteClasses, fSelectedTestCases);
-					else
-						updateTestCasesInSuite(monitor, fTestSuite, fSuiteMethod, fSelectedTestCases);
-				} catch (JavaModelException e) {
-					ExceptionHandler.handle(e, fShell, WizardMessages.UpdateTestSuite_update, WizardMessages.UpdateTestSuite_error);
-				}
+		return monitor -> {
+			if (monitor == null) {
+				monitor= new NullProgressMonitor();
+			}
+			if (! checkValidateEditStatus(fTestSuite, fShell))
+				return;
+			try {
+				if (fIsJunit4)
+					updateTestCasesInJunit4Suite(monitor, fTestSuite, fSuiteClasses, fSelectedTestCases);
+				else
+					updateTestCasesInSuite(monitor, fTestSuite, fSuiteMethod, fSelectedTestCases);
+			} catch (JavaModelException e) {
+				ExceptionHandler.handle(e, fShell, WizardMessages.UpdateTestSuite_update, WizardMessages.UpdateTestSuite_error);
 			}
 		};
 	}

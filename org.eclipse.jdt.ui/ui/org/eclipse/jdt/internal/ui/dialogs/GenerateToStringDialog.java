@@ -25,13 +25,10 @@ import java.util.List;
 import com.ibm.icu.text.Collator;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -56,13 +53,9 @@ import org.eclipse.jface.fieldassist.IContentProposal;
 import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.TextContentAdapter;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 
@@ -108,7 +101,7 @@ import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
 
 /**
  * Dialog for the generate toString() action.
- * 
+ *
  * @since 3.5
  */
 public class GenerateToStringDialog extends SourceActionDialog {
@@ -310,11 +303,12 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			}
 
 			int countFields= 0, countMethods= 0;
-			for (int index= 0; index < selection.length; index++) {
-				if (selection[index] instanceof IVariableBinding)
+			for (Object s : selection) {
+				if (s instanceof IVariableBinding) {
 					countFields++;
-				else if (selection[index] instanceof IMethodBinding)
+				} else if (s instanceof IMethodBinding) {
 					countMethods++;
+				}
 			}
 
 			return new StatusInfo(IStatus.INFO, Messages.format(JavaUIMessages.GenerateToStringDialog_selectioninfo_more, new String[] { String.valueOf(countFields), String.valueOf(fNumFields),
@@ -395,20 +389,12 @@ public class GenerateToStringDialog extends SourceActionDialog {
 				}
 				templateName.setSelection(0, templateName.getText().length());
 
-				templateName.addModifyListener(new ModifyListener() {
-					@Override
-					public void modifyText(ModifyEvent e) {
-						validate(templateName.getText());
-					}
-				});
+				templateName.addModifyListener(e -> validate(templateName.getText()));
 
 				//Ctrl+Enter should execute the default button, workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=145959
-				template.addTraverseListener(new TraverseListener() {
-					@Override
-					public void keyTraversed(TraverseEvent e) {
-						if (e.detail == SWT.TRAVERSE_RETURN && (e.stateMask & SWT.MODIFIER_MASK) != 0) {
-							buttonPressed(((Integer)getShell().getDefaultButton().getData()).intValue());
-						}
+				template.addTraverseListener(e -> {
+					if (e.detail == SWT.TRAVERSE_RETURN && (e.stateMask & SWT.MODIFIER_MASK) != 0) {
+						buttonPressed(((Integer)getShell().getDefaultButton().getData()).intValue());
 					}
 				});
 
@@ -517,11 +503,12 @@ public class GenerateToStringDialog extends SourceActionDialog {
 				List<Proposal> secondaryProposals= new ArrayList<>();
 				String[] proposalStrings= parser.getVariables();
 				String contentToCursor= contents.substring(0, position);
-				for (int i= 0; i < proposalStrings.length; i++) {
-					if (stringOverlap(contentToCursor, proposalStrings[i]) > 0)
-						primaryProposals.add(new Proposal(proposalStrings[i]));
-					else
-						secondaryProposals.add(new Proposal(proposalStrings[i]));
+				for (String proposalString : proposalStrings) {
+					if (stringOverlap(contentToCursor, proposalString) > 0) {
+						primaryProposals.add(new Proposal(proposalString));
+					} else {
+						secondaryProposals.add(new Proposal(proposalString));
+					}
 				}
 
 				this.latestContents= contents;
@@ -534,7 +521,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			/**
 			 * Checks if the end of the first string is equal to the beginning of of the second
 			 * string.
-			 * 
+			 *
 			 * @param s1 first String
 			 * @param s2 second String
 			 * @return length of overlapping segment (0 if strings don't overlap)
@@ -764,11 +751,10 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			}
 
 			try {
-				IMethod[] methods= type.getMethods();
 				boolean foundConstructor= false;
-				for (int i= 0; i < methods.length; i++) {
-					if (methods[i].isConstructor() && Flags.isPublic(methods[i].getFlags())) {
-						String[] parameterTypes= methods[i].getParameterTypes();
+				for (IMethod method : type.getMethods()) {
+					if (method.isConstructor() && Flags.isPublic(method.getFlags())) {
+						String[] parameterTypes= method.getParameterTypes();
 						if (parameterTypes.length == 1 && "java.lang.Object".equals(JavaModelUtil.getResolvedTypeName(parameterTypes[0], type))) { //$NON-NLS-1$
 							foundConstructor= true;
 							break;
@@ -809,8 +795,9 @@ public class GenerateToStringDialog extends SourceActionDialog {
 				IType type= findType(builderSettings.className);
 
 				if (type == null || !type.exists()) {
-					return new StatusInfo(IStatus.ERROR, MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidClassError,
-							new Object[] { builderSettings.className }));
+					return new StatusInfo(IStatus.ERROR,
+							MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidClassError,
+									builderSettings.className));
 				}
 
 				IStatus typeValidation= validateBuilderType(type);
@@ -818,16 +805,19 @@ public class GenerateToStringDialog extends SourceActionDialog {
 					return typeValidation;
 
 				if (!getAppendMethodSuggestions(type).contains(builderSettings.appendMethod))
-					return new StatusInfo(IStatus.ERROR, MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidAppendMethodError,
-							new Object[] { builderSettings.appendMethod }));
+					return new StatusInfo(IStatus.ERROR,
+							MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidAppendMethodError,
+									builderSettings.appendMethod));
 
 				if (!getResultMethodSuggestions(type).contains(builderSettings.resultMethod))
-					return new StatusInfo(IStatus.ERROR, MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidResultMethodError,
-							new Object[] { builderSettings.resultMethod }));
+					return new StatusInfo(IStatus.ERROR,
+							MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidResultMethodError,
+									builderSettings.resultMethod));
 
 				if (!isValidJavaIdentifier(builderSettings.variableName))
-					return new StatusInfo(IStatus.ERROR, MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidVariableNameError,
-							new Object[] { builderSettings.variableName }));
+					return new StatusInfo(IStatus.ERROR,
+							MessageFormat.format(JavaUIMessages.GenerateToStringDialog_customBuilderConfig_invalidVariableNameError,
+									builderSettings.variableName));
 
 			} catch (JavaModelException e) {
 				return new StatusInfo(IStatus.WARNING, JavaUIMessages.GenerateToStringDialog_customBuilderConfig_dataValidationError);
@@ -847,28 +837,25 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			if (fLastValidBuilderType != null && fLastValidBuilderType.equals(type)) {
 				return fLastValidAppendMethodSuggestions;
 			}
-			return getMethodSuggestions(type, new MethodChecker() {
-				@Override
-				public boolean isMethodOK(IMethod method) throws JavaModelException {
-					if (!Flags.isPublic(method.getFlags()) || method.isConstructor())
-						return false;
-					/* To be an append method, it must take exactly one
-					 * Object parameter, and optionally one String parameter. */
-					String[] parameterTypes= method.getParameterTypes();
-					if (parameterTypes.length == 0 || parameterTypes.length > 2) {
-						return false;
-					}
-					int countObjects= 0, countStrings= 0;
-					for (int i= 0; i < parameterTypes.length; i++) {
-						String resolvedParameterTypeName= JavaModelUtil.getResolvedTypeName(parameterTypes[i], type);
-						if ("java.lang.Object".equals(resolvedParameterTypeName))//$NON-NLS-1$
-							countObjects++;
-						if ("java.lang.String".equals(resolvedParameterTypeName))//$NON-NLS-1$
-							countStrings++;
-					}
-					return countObjects == 1 && countObjects + countStrings == parameterTypes.length;
-
+			return getMethodSuggestions(type, method -> {
+				if (!Flags.isPublic(method.getFlags()) || method.isConstructor())
+					return false;
+				/* To be an append method, it must take exactly one
+				 * Object parameter, and optionally one String parameter. */
+				String[] parameterTypes= method.getParameterTypes();
+				if (parameterTypes.length == 0 || parameterTypes.length > 2) {
+					return false;
 				}
+				int countObjects= 0, countStrings= 0;
+				for (String parameterType : parameterTypes) {
+					String resolvedParameterTypeName= JavaModelUtil.getResolvedTypeName(parameterType, type);
+					if ("java.lang.Object".equals(resolvedParameterTypeName))//$NON-NLS-1$
+						countObjects++;
+					if ("java.lang.String".equals(resolvedParameterTypeName))//$NON-NLS-1$
+						countStrings++;
+				}
+				return countObjects == 1 && countObjects + countStrings == parameterTypes.length;
+
 			});
 		}
 
@@ -876,12 +863,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			if (fLastValidBuilderType != null && fLastValidBuilderType.equals(type)) {
 				return fLastValidResultMethodSuggestions;
 			}
-			return getMethodSuggestions(type, new MethodChecker() {
-				@Override
-				public boolean isMethodOK(IMethod method) throws JavaModelException {
-					return Flags.isPublic(method.getFlags()) && method.getParameterTypes().length == 0 && "java.lang.String".equals(JavaModelUtil.getResolvedTypeName(method.getReturnType(), type)); //$NON-NLS-1$
-				}
-			});
+			return getMethodSuggestions(type, method -> Flags.isPublic(method.getFlags()) && method.getParameterTypes().length == 0 && "java.lang.String".equals(JavaModelUtil.getResolvedTypeName(method.getReturnType(), type)));
 		}
 
 		private interface MethodChecker {
@@ -890,12 +872,10 @@ public class GenerateToStringDialog extends SourceActionDialog {
 
 		private List<String> getMethodSuggestions(IType type, MethodChecker checker) throws JavaModelException {
 			ArrayList<String> result= new ArrayList<>();
-			IType[] classes= type.newSupertypeHierarchy(null).getAllClasses();
-			for (int i= 0; i < classes.length; i++) {
-				IMethod[] methods= classes[i].getMethods();
-				for (int j= 0; j < methods.length; j++) {
-					if (checker.isMethodOK(methods[j])) {
-						String name= methods[j].getElementName();
+			for (IType classe : type.newSupertypeHierarchy(null).getAllClasses()) {
+				for (IMethod method : classe.getMethods()) {
+					if (checker.isMethodOK(method)) {
+						String name= method.getElementName();
 						if (!result.contains(name))
 							result.add(name);
 					}
@@ -926,21 +906,17 @@ public class GenerateToStringDialog extends SourceActionDialog {
 		/**
 		 * Listener for text fields - updates combos and validates entered data
 		 */
-		private final ModifyListener modifyListener= new ModifyListener() {
+		private final ModifyListener modifyListener= e -> {
+			if (e.widget == this.fBuilderClassName) {
+				this.fBuilderSettings.className= this.fBuilderClassName.getText();
+				updateCombos();
+			} else if (e.widget == this.fBuilderVariableName)
+				this.fBuilderSettings.variableName= this.fBuilderVariableName.getText();
 
-			@Override
-			public void modifyText(ModifyEvent e) {
-				if (e.widget == fBuilderClassName) {
-					fBuilderSettings.className= fBuilderClassName.getText();
-					updateCombos();
-				} else if (e.widget == fBuilderVariableName)
-					fBuilderSettings.variableName= fBuilderVariableName.getText();
+			IStatus status= getValidator().revalidateAll(this.fBuilderSettings);
+			updateStatus(status);
 
-				IStatus status= getValidator().revalidateAll(fBuilderSettings);
-				updateStatus(status);
-
-				enableApplyButton();
-			}
+			enableApplyButton();
 		};
 
 		private final CustomBuilderValidator fValidator= new CustomBuilderValidator(getType().getJavaProject());
@@ -1006,19 +982,16 @@ public class GenerateToStringDialog extends SourceActionDialog {
 			fResultMethodName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
 			updateCombos();
-			ModifyListener comboListener= new ModifyListener() {
-				@Override
-				public void modifyText(ModifyEvent e) {
-					Combo c= (Combo)e.widget;
-					if (c.getText().length() > 0) {
-						if (c == fAppendMethodName)
-							fBuilderSettings.appendMethod= c.getText();
-						if (c == fResultMethodName)
-							fBuilderSettings.resultMethod= c.getText();
-					}
-					updateStatus(fValidator.revalidateAll(fBuilderSettings));
-					enableApplyButton();
+			ModifyListener comboListener= e -> {
+				Combo c= (Combo)e.widget;
+				if (c.getText().length() > 0) {
+					if (c == fAppendMethodName)
+						fBuilderSettings.appendMethod= c.getText();
+					if (c == fResultMethodName)
+						fBuilderSettings.resultMethod= c.getText();
 				}
+				updateStatus(fValidator.revalidateAll(fBuilderSettings));
+				enableApplyButton();
 			};
 			fAppendMethodName.addModifyListener(comboListener);
 			fResultMethodName.addModifyListener(comboListener);
@@ -1155,7 +1128,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 	private static final int DOWN_BUTTON= IDialogConstants.CLIENT_ID + 2;
 
 	private static final int UP_BUTTON= IDialogConstants.CLIENT_ID + 1;
-	
+
 	private static final int SORT_BUTTON= IDialogConstants.CLIENT_ID + 3;
 
 	protected Button[] fButtonControls;
@@ -1233,9 +1206,9 @@ public class GenerateToStringDialog extends SourceActionDialog {
 	public Object[] getResult() {
 		Object[] oldResult= super.getResult();
 		List<Object> newResult= new ArrayList<>();
-		for (int i= 0; i < oldResult.length; i++) {
-			if (!(oldResult[i] instanceof String)) {
-				newResult.add(oldResult[i]);
+		for (Object r : oldResult) {
+			if (!(r instanceof String)) {
+				newResult.add(r);
 			}
 		}
 		return newResult.toArray();
@@ -1259,43 +1232,36 @@ public class GenerateToStringDialog extends SourceActionDialog {
 		treeViewer.collapseAll();
 		treeViewer.expandToLevel(GenerateToStringContentProvider.fieldsNode, 1);
 
-		treeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				IStructuredSelection selection= (IStructuredSelection)getTreeViewer().getSelection();
+		treeViewer.addSelectionChangedListener(event -> {
+			IStructuredSelection selection= (IStructuredSelection)getTreeViewer().getSelection();
 
-				Object selected= selection.size() > 0 ? selection.toList().get(0) : null;
-				GenerateToStringContentProvider cp= (GenerateToStringContentProvider)getContentProvider();
+			Object selected= selection.size() > 0 ? selection.toList().get(0) : null;
+			GenerateToStringContentProvider cp= (GenerateToStringContentProvider)getContentProvider();
 
-				fButtonControls[UP_INDEX].setEnabled(cp.canMoveUp(selected));
-				fButtonControls[DOWN_INDEX].setEnabled(cp.canMoveDown(selected));
-			}
-
+			fButtonControls[UP_INDEX].setEnabled(cp.canMoveUp(selected));
+			fButtonControls[DOWN_INDEX].setEnabled(cp.canMoveDown(selected));
 		});
-		treeViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				getTreeViewer().setSubtreeChecked(event.getElement(), event.getChecked());
-				getTreeViewer().setGrayed(event.getElement(), false);
-				Object parentElement= ((ITreeContentProvider)(getTreeViewer().getContentProvider())).getParent(event.getElement());
-				if (parentElement != null) {
-					Object[] siblings= ((ITreeContentProvider)(getTreeViewer().getContentProvider())).getChildren(parentElement);
-					int count= 0;
-					for (int i= 0; i < siblings.length; i++) {
-						if (getTreeViewer().getChecked(siblings[i]))
-							count++;
+		treeViewer.addCheckStateListener(event -> {
+			getTreeViewer().setSubtreeChecked(event.getElement(), event.getChecked());
+			getTreeViewer().setGrayed(event.getElement(), false);
+			Object parentElement= ((ITreeContentProvider)(getTreeViewer().getContentProvider())).getParent(event.getElement());
+			if (parentElement != null) {
+				Object[] siblings= ((ITreeContentProvider)(getTreeViewer().getContentProvider())).getChildren(parentElement);
+				int count= 0;
+				for (Object sibling : siblings) {
+					if (getTreeViewer().getChecked(sibling)) {
+						count++;
 					}
-					if (count == 0)
-						getTreeViewer().setGrayChecked(parentElement, false);
-					else if (count == siblings.length) {
-						getTreeViewer().setChecked(parentElement, true);
-						getTreeViewer().setGrayed(parentElement, false);
-					} else
-						getTreeViewer().setGrayChecked(parentElement, true);
 				}
-				updateOKStatus();
+				if (count == 0)
+					getTreeViewer().setGrayChecked(parentElement, false);
+				else if (count == siblings.length) {
+					getTreeViewer().setChecked(parentElement, true);
+					getTreeViewer().setGrayed(parentElement, false);
+				} else
+					getTreeViewer().setGrayChecked(parentElement, true);
 			}
-
+			updateOKStatus();
 		});
 		return treeViewer;
 	}
@@ -1308,7 +1274,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 		buttonComposite.setLayout(layout);
 
 		createUpDownButtons(buttonComposite);
-		
+
 		createButton(buttonComposite, SORT_BUTTON, JavaUIMessages.GenerateToStringDialog_sort_button, false);
 
 		layout.marginHeight= 0;
@@ -1323,7 +1289,7 @@ public class GenerateToStringDialog extends SourceActionDialog {
 		createButton(parent, IDialogConstants.OK_ID, JavaUIMessages.GenerateToStringDialog_generate_button, true);
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
-	
+
 	@Override
 	protected void buttonPressed(int buttonId) {
 		super.buttonPressed(buttonId);

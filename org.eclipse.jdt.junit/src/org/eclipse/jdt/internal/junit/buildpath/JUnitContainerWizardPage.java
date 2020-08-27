@@ -16,8 +16,6 @@ package org.eclipse.jdt.internal.junit.buildpath;
 import org.eclipse.jdt.junit.JUnitCore;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -122,11 +120,7 @@ public class JUnitContainerWizardPage extends NewElementWizardPage implements IC
 		label.setText(JUnitMessages.JUnitContainerWizardPage_combo_label);
 
 		fVersionCombo= new Combo(composite, SWT.READ_ONLY);
-		fVersionCombo.setItems(new String[] {
-				JUnitMessages.JUnitContainerWizardPage_option_junit3,
-				JUnitMessages.JUnitContainerWizardPage_option_junit4,
-				JUnitMessages.JUnitContainerWizardPage_option_junit5
-		});
+		fVersionCombo.setItems(JUnitMessages.JUnitContainerWizardPage_option_junit3, JUnitMessages.JUnitContainerWizardPage_option_junit4, JUnitMessages.JUnitContainerWizardPage_option_junit5);
 		fVersionCombo.setFont(composite.getFont());
 
 		GridData data= new GridData(GridData.BEGINNING, GridData.CENTER, false, false, 1, 1);
@@ -140,12 +134,7 @@ public class JUnitContainerWizardPage extends NewElementWizardPage implements IC
 		} else {
 			fVersionCombo.select(2);
 		}
-		fVersionCombo.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doSelectionChanged();
-			}
-		});
+		fVersionCombo.addModifyListener(e -> doSelectionChanged());
 
 		label= new Label(composite, SWT.NONE);
 		label.setFont(composite.getFont());
@@ -175,7 +164,7 @@ public class JUnitContainerWizardPage extends NewElementWizardPage implements IC
 
 		setControl(composite);
 	}
-	
+
 	@Override
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);

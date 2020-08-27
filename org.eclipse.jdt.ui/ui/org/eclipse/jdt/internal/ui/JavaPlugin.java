@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,9 +14,12 @@
 package org.eclipse.jdt.internal.ui;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -39,6 +42,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 
 import org.eclipse.core.resources.IFile;
@@ -53,7 +57,6 @@ import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 
 import org.eclipse.jface.text.templates.ContextTypeRegistry;
 import org.eclipse.jface.text.templates.TemplateContextType;
@@ -93,6 +96,7 @@ import org.eclipse.jdt.internal.corext.callhierarchy.MethodWrapperDynamic;
 import org.eclipse.jdt.internal.corext.fix.CleanUpRegistry;
 import org.eclipse.jdt.internal.corext.template.java.AbstractJavaContextType;
 import org.eclipse.jdt.internal.corext.template.java.JavaContextType;
+import org.eclipse.jdt.internal.corext.template.java.JavaPostfixContextType;
 import org.eclipse.jdt.internal.corext.template.java.SWTContextType;
 import org.eclipse.jdt.internal.corext.util.OpenTypeHistory;
 import org.eclipse.jdt.internal.corext.util.QualifiedTypeNameHistory;
@@ -139,6 +143,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 	 * The view id for the workbench's Resource Navigator standard component.
 	 * @since 3.6
 	 */
+	@Deprecated
 	public static final String ID_RES_NAV= IPageLayout.ID_RES_NAV;
 
 	/**
@@ -200,6 +205,8 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 
 	private WorkingCopyManager fWorkingCopyManager;
+
+	private static final String CODE_ASSIST_MIGRATED= "code_assist_migrated"; //$NON-NLS-1$
 
 	/**
 	 * @deprecated to avoid deprecation warning
@@ -293,7 +300,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 	}
 
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
-		return getDefault().getWorkbench().getActiveWorkbenchWindow();
+		return PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 	}
 
 	public static Shell getActiveWorkbenchShell() {
@@ -412,12 +419,9 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 			// Initialize AST provider
 			getASTProvider();
 
-			fThemeListener= new IPropertyChangeListener() {
-				@Override
-				public void propertyChange(PropertyChangeEvent event) {
-					if (IThemeManager.CHANGE_CURRENT_THEME.equals(event.getProperty()))
-						JavaUIPreferenceInitializer.setThemeBasedPreferences(PreferenceConstants.getPreferenceStore(), true);
-				}
+			fThemeListener= event -> {
+				if (IThemeManager.CHANGE_CURRENT_THEME.equals(event.getProperty()))
+					JavaUIPreferenceInitializer.setThemeBasedPreferences(PreferenceConstants.getPreferenceStore(), true);
 			};
 			PlatformUI.getWorkbench().getThemeManager().addPropertyChangeListener(fThemeListener);
 
@@ -429,6 +433,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 		JavaManipulation.setCodeTemplateStore(getCodeTemplateStore());
 		JavaManipulation.setCodeTemplateContextRegistry(getCodeTemplateContextRegistry());
+		disableNewCodeAssistCategoryPreferences();
 	}
 
 	private void createOrUpdateWorkingSet(String name, String oldname, String label, final String id) {
@@ -445,7 +450,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 					workingSet.setLabel(label);
 			} else {
 				logErrorMessage("found existing workingset with name=\"" + name + "\" but id=\"" + workingSet.getId() + "\""); //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
-			}			
+			}
 		}
 		IWorkingSet oldWorkingSet= workingSetManager.getWorkingSet(oldname);
 		if (oldWorkingSet != null && id.equals(oldWorkingSet.getId())) {
@@ -558,7 +563,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 	}
 
 	private IWorkbenchPage internalGetActivePage() {
-		IWorkbenchWindow window= getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchWindow window= PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (window == null)
 			return null;
 		return window.getActivePage();
@@ -566,7 +571,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 	/**
 	 * Private deprecated method to avoid deprecation warnings
-	 * 
+	 *
 	 * @return the deprecated buffer factory
 	 * @deprecated to avoid deprecation warnings
 	 */
@@ -624,7 +629,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 	/**
 	 * Returns the Java Core plug-in preferences.
-	 * 
+	 *
 	 * @return the Java Core plug-in preferences
 	 * @since 3.7
 	 */
@@ -755,12 +760,16 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 			registerJavaContext(registry, JavaContextType.ID_MEMBERS, all_contextType);
 			registerJavaContext(registry, JavaContextType.ID_STATEMENTS, all_contextType);
 			registerJavaContext(registry, JavaContextType.ID_MODULE, all_contextType);
+			registerJavaContext(registry, JavaContextType.ID_EMPTY, all_contextType);
 
 			registerJavaContext(registry, SWTContextType.ID_ALL, all_contextType);
 			all_contextType= registry.getContextType(SWTContextType.ID_ALL);
 
 			registerJavaContext(registry, SWTContextType.ID_MEMBERS, all_contextType);
 			registerJavaContext(registry, SWTContextType.ID_STATEMENTS, all_contextType);
+
+			registerJavaContext(registry, JavaPostfixContextType.ID_ALL, all_contextType);
+			all_contextType= registry.getContextType(JavaPostfixContextType.ID_ALL);
 
 			fContextTypeRegistry= registry;
 		}
@@ -869,7 +878,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 
 	/**
 	 * Flushes the instance scope of this plug-in.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	public static void flushInstanceScope() {
@@ -883,7 +892,7 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 	/**
 	 * Returns the registry of the extensions to the
 	 * <code>org.eclipse.jdt.ui.javaFoldingStructureProvider</code> extension point.
-	 * 
+	 *
 	 * @return the registry of contributed <code>IJavaFoldingStructureProvider</code>
 	 * @since 3.0
 	 */
@@ -1019,5 +1028,81 @@ public class JavaPlugin extends AbstractUIPlugin implements DebugOptionsListener
 		DEBUG_BREADCRUMB_ITEM_DROP_DOWN= options.getBooleanOption("org.eclipse.jdt.ui/debug/BreadcrumbItemDropDown", false); //$NON-NLS-1$
 		DEBUG_TYPE_CONSTRAINTS= options.getBooleanOption("org.eclipse.jdt.ui/debug/TypeConstraints", false); //$NON-NLS-1$
 		DEBUG_RESULT_COLLECTOR= options.getBooleanOption("org.eclipse.jdt.ui/debug/ResultCollector", false); //$NON-NLS-1$
+	}
+
+	/**
+	 * Add only 'initializeCodeAssistCategoryDisabled(String)' calls here for
+	 * proposal category id of *NEW* features meant to be disabled by deafult.
+	 *
+	 * Eg. initializeCodeAssistCategoryDisabled("org.eclipse.jdt.ui.javaPostfixProposalCategory"); //$NON-NLS-1$
+	 *
+	 * The call must be added here in addition to setting default disablement in
+	 * {@link PreferenceConstants} CODEASSIST_EXCLUDED_CATEGORIES and CODEASSIST_CATEGORY_ORDER.
+	 * This will only work correctly for newly added proposal categories for a given release.
+	 */
+	private static void disableNewCodeAssistCategoryPreferences() {
+		// Eg. initializeCodeAssistCategoryDisabled("org.eclipse.jdt.ui.javaPostfixProposalCategory"); //$NON-NLS-1$
+	}
+
+	/**
+	 * Disable (by default) the given category id for both the default content
+	 * assist list (CODEASSIST_EXCLUDED_CATEGORIES) and the cycling content
+	 * assist list (CODEASSIST_CATEGORY_ORDER)
+	 *
+	 * @param id The category id for the proposal feature to disable by default
+	 */
+	@SuppressWarnings("unused")
+	private static void initializeCodeAssistCategoryDisabled(String id) {
+		// If preference migrated, nothing to do
+		if (isCodeAssistMigrated(id)) {
+			return;
+		}
+
+		String currPrefExcludedValue= PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES);
+		Set<String> disabled= new HashSet<>();
+		StringTokenizer tok= new StringTokenizer(currPrefExcludedValue, "\0");  //$NON-NLS-1$
+		while (tok.hasMoreTokens()) {
+			disabled.add(tok.nextToken());
+		}
+
+		// preference not migrated, and not in user preferences
+		if (!disabled.isEmpty() && !disabled.contains(id)) {
+			String newPrefExcludedValue= currPrefExcludedValue + id + "\0"; //$NON-NLS-1$
+			PreferenceConstants.getPreferenceStore().setValue(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES, newPrefExcludedValue);
+
+			// retrieve the id=rank to add from CODEASSIST_CATEGORY_ORDER from the default preferences
+			String defPrefOrderValue= PreferenceConstants.getPreferenceStore().getDefaultString(PreferenceConstants.CODEASSIST_CATEGORY_ORDER);
+			tok= new StringTokenizer(defPrefOrderValue, "\0"); //$NON-NLS-1$
+			while (tok.hasMoreTokens()) {
+				StringTokenizer inner= new StringTokenizer(tok.nextToken(), ":"); //$NON-NLS-1$
+				String key= inner.nextToken();
+				int rank= Integer.parseInt(inner.nextToken());
+				if (id.equals(key)) {
+					String currPrefOrderValue= PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.CODEASSIST_CATEGORY_ORDER);
+					String newPreferenceOrderValue= currPrefOrderValue + id + ":" + rank + "\0"; //$NON-NLS-1$ //$NON-NLS-2$
+					PreferenceConstants.getPreferenceStore().setValue(PreferenceConstants.CODEASSIST_CATEGORY_ORDER, newPreferenceOrderValue);
+				}
+			}
+		}
+
+		// set as migrated
+		setCodeAssistMigrated(id);
+	}
+
+	private static boolean isCodeAssistMigrated(String id) {
+		String key= CODE_ASSIST_MIGRATED + "_" + id; //$NON-NLS-1$
+		boolean res= Platform.getPreferencesService().getBoolean(JavaPlugin.getPluginId(), key, false, null);
+		return res;
+	}
+
+	private static void setCodeAssistMigrated(String id) {
+		String key= CODE_ASSIST_MIGRATED + "_" + id; //$NON-NLS-1$
+		IEclipsePreferences preferences= InstanceScope.INSTANCE.getNode(JavaPlugin.getPluginId());
+		preferences.putBoolean(key, true);
+		try {
+			preferences.flush();
+		} catch (BackingStoreException e) {
+			JavaPlugin.log(e);
+		}
 	}
 }

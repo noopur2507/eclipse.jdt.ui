@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -67,15 +67,16 @@ public class SWTTestProject {
 
 		IProject project= createExistingProject(PROJECT);
 		fProject= JavaCore.create(project);
-		
+
 		/* Can't use the default system JRE:
 		 * - some classes in the archive are not 1.4 compliant, e.g. GridData uses 'enum' as identifier
 		 * - search engine reports wrong inaccurate matches, see bug 443411
 		 * - using the System JRE in a performance test is obviously wrong
 		 */
 		JavaProjectHelper.removeFromClasspath(fProject, new Path(JavaRuntime.JRE_CONTAINER));
-		JavaProjectHelper.addRTJar13(fProject);
-		
+		// rt13 is deprecated - use rt15 recommend to use instead
+		JavaProjectHelper.addRTJar15(fProject);
+
 		Assert.assertTrue(fProject.exists());
 	}
 

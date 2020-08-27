@@ -377,9 +377,10 @@ public class AddUnimplementedConstructorsAction extends SelectionDispatchAction 
 
 		private int countSelectedMethods(Object[] selection) {
 			int count= 0;
-			for (int i= 0; i < selection.length; i++) {
-				if (selection[i] instanceof IMethodBinding)
+			for (Object s : selection) {
+				if (s instanceof IMethodBinding) {
 					count++;
+				}
 			}
 			return count;
 		}
@@ -501,8 +502,6 @@ public class AddUnimplementedConstructorsAction extends SelectionDispatchAction 
 				run(shell, type, true);
 			else
 				MessageDialog.openInformation(shell, getDialogTitle(), ActionMessages.AddUnimplementedConstructorsAction_not_applicable);
-		} catch (JavaModelException e) {
-			ExceptionHandler.handle(e, getShell(), getDialogTitle(), null);
 		} catch (CoreException e) {
 			ExceptionHandler.handle(e, getShell(), getDialogTitle(), null);
 		}
@@ -548,8 +547,7 @@ public class AddUnimplementedConstructorsAction extends SelectionDispatchAction 
 			}
 
 			ArrayList<IMethodBinding> result= new ArrayList<>();
-			for (int i= 0; i < elements.length; i++) {
-				Object elem= elements[i];
+			for (Object elem : elements) {
 				if (elem instanceof IMethodBinding) {
 					result.add((IMethodBinding) elem);
 				}

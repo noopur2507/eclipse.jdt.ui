@@ -69,7 +69,7 @@ public abstract class AbstractSerialVersionOperationCore extends CompilationUnit
 
 	/**
 	 * Adds an initializer to the specified variable declaration fragment.
-	 * 
+	 *
 	 * @param fragment the variable declaration fragment to add an initializer
 	 * @param declarationNode the declartion node
 	 * @return false if no id could be calculated
@@ -89,9 +89,7 @@ public abstract class AbstractSerialVersionOperationCore extends CompilationUnit
 	public void rewriteAST(CompilationUnitRewrite cuRewrite, LinkedProposalModelCore positionGroups) throws CoreException {
 		final ASTRewrite rewrite= cuRewrite.getASTRewrite();
 		VariableDeclarationFragment fragment= null;
-		for (int i= 0; i < fNodes.length; i++) {
-			final ASTNode node= fNodes[i];
-
+		for (ASTNode node : fNodes) {
 			final AST ast= node.getAST();
 
 			fragment= ast.newVariableDeclarationFragment();

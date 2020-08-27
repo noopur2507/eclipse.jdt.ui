@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     David Saff (saff@mit.edu) - bug 102632: [JUnit] Support for JUnit 4.
@@ -170,7 +170,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			}
 
 			String mainTypeName= verifyMainTypeName(configuration);
-			
+
 
 			File workingDir = verifyWorkingDirectory(configuration);
 			String workingDirName = null;
@@ -221,7 +221,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			runConfig.setWorkingDirectory(workingDirName);
 			runConfig.setVMSpecificAttributesMap(vmAttributesMap);
 			runConfig.setPreviewEnabled(supportsPreviewFeatures(configuration));
-			
+
 			if (!JavaRuntime.isModularConfiguration(configuration)) {
 				// Bootpath
 				runConfig.setBootClassPath(getBootpath(configuration));
@@ -447,7 +447,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 				programArguments.add("-packageNameFile"); //$NON-NLS-1$
 				programArguments.add(fileName);
 				for (String pkgName : pkgNames) {
-					if (!DEFAULT.equals(pkgName)) { // skip --add-opens for default package 
+					if (!DEFAULT.equals(pkgName)) { // skip --add-opens for default package
 						collectAddOpensVmArgs(addOpensTargets, addOpensVmArgs, pkgName, configuration);
 					}
 				}
@@ -534,7 +534,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			IJavaProject javaProject= getJavaProject(configuration);
 			String sourceModuleName= javaProject.getModuleDescription().getElementName();
 			addOpensVmArgs.add("--add-opens"); //$NON-NLS-1$
-			addOpensVmArgs.add(sourceModuleName + "/" + pkgName + "=" + addOpensTargets); //$NON-NLS-1$ //$NON-NLS-2$			
+			addOpensVmArgs.add(sourceModuleName + "/" + pkgName + "=" + addOpensTargets); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -568,7 +568,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 				} else {
 					abort(JUnitMessages.JUnitLaunchConfigurationDelegate_error_wrong_input, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
 				}
-				if (pkgNames.size() == 0) {
+				if (pkgNames.isEmpty()) {
 					String msg= Messages.format(JUnitMessages.JUnitLaunchConfigurationDelegate_error_notests_kind, testRunnerKind.getDisplayName());
 					abort(msg, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
 				} else {
@@ -605,9 +605,9 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			File file= File.createTempFile("testNames", ".txt"); //$NON-NLS-1$ //$NON-NLS-2$
 			file.deleteOnExit();
 			try (BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));) {
-				for (int i= 0; i < testElements.length; i++) {
-					if (testElements[i] instanceof IType) {
-						IType type= (IType) testElements[i];
+				for (IJavaElement testElement : testElements) {
+					if (testElement instanceof IType) {
+						IType type= (IType) testElement;
 						String testName= type.getFullyQualifiedName();
 						bw.write(testName);
 						bw.newLine();
@@ -648,7 +648,7 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 	 *             launch(...)} has been replaced with the call to
 	 *             {@link JUnitLaunchConfigurationDelegate#getClasspathAndModulepath(ILaunchConfiguration)
 	 *             getClasspathAndModulepath(ILaunchConfiguration)}.
-	 * 
+	 *
 	 */
 	@Override
 	@Deprecated
@@ -677,11 +677,11 @@ public class JUnitLaunchConfigurationDelegate extends AbstractJavaLaunchConfigur
 			JUnitRuntimeClasspathEntry[] entries= kind.getClasspathEntries();
 			List<String> junitEntries= new ArrayList<>();
 
-			for (int i= 0; i < entries.length; i++) {
+			for (JUnitRuntimeClasspathEntry entrie : entries) {
 				try {
-					addEntry(junitEntries, entries[i]);
+					addEntry(junitEntries, entrie);
 				} catch (IOException | URISyntaxException e) {
-					Assert.isTrue(false, entries[i].getPluginId() + " is available (required JAR)"); //$NON-NLS-1$
+					Assert.isTrue(false, entrie.getPluginId() + " is available (required JAR)"); //$NON-NLS-1$
 				}
 			}
 			return junitEntries;

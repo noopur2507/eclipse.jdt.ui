@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Benjamin Muskalla <b.muskalla@gmx.net> - [quick fix] Quick fix for missing synchronized modifier - https://bugs.eclipse.org/bugs/show_bug.cgi?id=245250
@@ -62,6 +62,8 @@ public final class CorrectionMessages extends NLS {
 	public static String QuickAssistProcessor_convert_to_method_reference;
 	public static String QuickAssistProcessor_convert_to_multiple_singletype_catch_blocks;
 	public static String QuickAssistProcessor_convert_to_single_multicatch_block;
+	public static String QuickAssistProcessor_convert_to_string_format;
+	public static String QuickAssistProcessor_convert_to_try_with_resource;
 	public static String QuickAssistProcessor_convert_to_string_buffer_description;
 	public static String QuickAssistProcessor_exceptiontothrows_description;
 	public static String QuickAssistProcessor_extract_to_constant_description;
@@ -143,6 +145,9 @@ public final class CorrectionMessages extends NLS {
 	public static String TypeMismatchSubProcessor_addexceptions_description;
 	public static String TypeMismatchSubProcessor_incompatible_for_each_type_description;
 	public static String TypeMismatchSubProcessor_insertnullcheck_description;
+	public static String TypeMismatchSubProcessor_changetooptionalempty_description;
+	public static String TypeMismatchSubProcessor_changetooptionalof_description;
+	public static String TypeMismatchSubProcessor_changetooptionalofnullable_description;
 	public static String RemoveDeclarationCorrectionProposal_removeunusedfield_description;
 	public static String RemoveDeclarationCorrectionProposal_removeunusedmethod_description;
 	public static String RemoveDeclarationCorrectionProposal_removeunusedconstructor_description;
@@ -174,9 +179,15 @@ public final class CorrectionMessages extends NLS {
 	public static String ReturnTypeSubProcessor_missingreturntype_description;
 	public static String ReturnTypeSubProcessor_wrongconstructorname_description;
 	public static String ReturnTypeSubProcessor_changetovoid_description;
+	public static String ReturnTypeSubProcessor_changeReturnToYield_description;
 	public static String MissingReturnTypeCorrectionProposal_addreturnstatement_description;
 	public static String MissingReturnTypeCorrectionProposal_changereturnstatement_description;
 	public static String TypeArgumentMismatchSubProcessor_removeTypeArguments;
+
+	public static String InitializeFieldAtDeclarationCorrectionProposal_description;
+	public static String InitializeFieldInConstructorCorrectionProposal_description;
+	public static String InitializeFieldWithConstructorParameterCorrectionProposal_description;
+
 	public static String UnimplementedMethodsCorrectionProposal_description;
 	public static String UnimplementedMethodsCorrectionProposal_enum_info;
 	public static String UnimplementedMethodsCorrectionProposal_info_singular;
@@ -237,15 +248,19 @@ public final class CorrectionMessages extends NLS {
 	public static String UnresolvedElementsSubProcessor_arraychangetolength_description;
 	public static String UnresolvedElementsSubProcessor_addnewkeyword_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_method_description;
+	public static String JavadocTagsSubProcessor_addjavadoc_module_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_type_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_field_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_paramtag_description;
+	public static String JavadocTagsSubProcessor_addjavadoc_providestag_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_throwstag_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_returntag_description;
+	public static String JavadocTagsSubProcessor_addjavadoc_usestag_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_enumconst_description;
 	public static String JavadocTagsSubProcessor_addjavadoc_allmissing_description;
 	public static String JavadocTagsSubProcessor_qualifylinktoinner_description;
 	public static String JavadocTagsSubProcessor_removetag_description;
+	public static String JavadocTagsSubProcessor_removeduplicatetag_description;
 	public static String NoCorrectionProposal_description;
 	public static String MarkerResolutionProposal_additionaldesc;
 	public static String NewCUCompletionUsingWizardProposal_createclass_description;
@@ -337,6 +352,7 @@ public final class CorrectionMessages extends NLS {
 	public static String TypeChangeCompletionProposal_method_name;
 	public static String ImplementInterfaceProposal_name;
 	public static String AddUnimplementedMethodsOperation_AddMissingMethod_group;
+	public static String AddUnimplementedMethodReferenceOperation_AddMissingMethod_group;
 	public static String AdvancedQuickAssistProcessor_convertToIfReturn;
 	public static String AdvancedQuickAssistProcessor_combineSelectedStrings;
 	public static String AdvancedQuickAssistProcessor_convertToIfElse_description;
@@ -391,6 +407,7 @@ public final class CorrectionMessages extends NLS {
 	public static String ReorgCorrectionsSubProcessor_50_compliance_changeProjectJREToDefault_description;
 	public static String ReorgCorrectionsSubProcessor_50_compliance_changeWorkspaceJRE_description;
 	public static String ReorgCorrectionsSubProcessor_50_compliance_changeProjectJRE_description;
+	public static String ReorgCorrectionsSubProcessor_combine_two_quickfixes;
 	public static String ModifierCorrectionSubProcessor_default_visibility_label;
 	public static String UnresolvedElementsSubProcessor_change_to_static_import_description;
 	public static String ReorgCorrectionsSubProcessor_configure_buildpath_label;

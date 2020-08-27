@@ -23,7 +23,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IResource;
 
 import org.eclipse.core.indexsearch.ISearchResultCollector;
 
@@ -50,9 +49,9 @@ public class RenameTypeParticipant extends RenameParticipant {
 
 	@Override
 	public String getName() {
-		return JspMessages.RenameTypeParticipant_name; 
+		return JspMessages.RenameTypeParticipant_name;
 	}
-	
+
 	@Override
 	public RefactoringStatus checkConditions(IProgressMonitor pm, CheckConditionsContext context) {
 		return new RefactoringStatus();
@@ -62,20 +61,17 @@ public class RenameTypeParticipant extends RenameParticipant {
 	public Change createChange(IProgressMonitor pm) throws CoreException {
 		final Map changes= new HashMap();
 		final String newName= computeNewName();
-		ISearchResultCollector collector= new ISearchResultCollector() {
-			@Override
-			public void accept(IResource resource, int start, int length) throws CoreException {
-				TextFileChange change= (TextFileChange)changes.get(resource);
-				if (change == null) {
-					change= new TextFileChange(resource.getName(), (IFile)resource);
-					changes.put(resource, change);
-				}
-				TextChangeCompatibility.addTextEdit(change, "Update type reference", new ReplaceEdit(start, length, newName)); //$NON-NLS-1$
+		ISearchResultCollector collector= (resource, start, length) -> {
+			TextFileChange change= (TextFileChange)changes.get(resource);
+			if (change == null) {
+				change= new TextFileChange(resource.getName(), (IFile)resource);
+				changes.put(resource, change);
 			}
+			TextChangeCompatibility.addTextEdit(change, "Update type reference", new ReplaceEdit(start, length, newName)); //$NON-NLS-1$
 		};
 		JspUIPlugin.getDefault().search(new JspTypeQuery(fType), collector, pm);
-		
-		if (changes.size() == 0)
+
+		if (changes.isEmpty())
 			return null;
 		CompositeChange result= new CompositeChange("JSP updates"); //$NON-NLS-1$
 		for (Iterator iter= changes.values().iterator(); iter.hasNext();) {
@@ -83,7 +79,7 @@ public class RenameTypeParticipant extends RenameParticipant {
 		}
 		return result;
 	}
-	
+
 	private String computeNewName() {
 		String newName= getArguments().getNewName();
 		String currentName= fType.getFullyQualifiedName();

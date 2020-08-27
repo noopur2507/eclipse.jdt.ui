@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,7 +23,6 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -34,8 +33,9 @@ import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.manipulation.TypeKinds;
 
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.TypeFilter;
+
+import org.eclipse.jdt.internal.ui.text.CompletionTimeoutProgressMonitor;
 
 public class SimilarElementsRequestor extends CompletionRequestor {
 
@@ -165,7 +165,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 
 	private SimilarElement[] process(ICompilationUnit cu, int pos) throws JavaModelException {
 		try {
-			cu.codeComplete(pos, this);
+			cu.codeComplete(pos, this, new CompletionTimeoutProgressMonitor());
 			processKeywords();
 			return fResult.toArray(new SimilarElement[fResult.size()]);
 		} finally {
@@ -182,9 +182,9 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 	 */
 	private void processKeywords() {
 		if (isKind(TypeKinds.PRIMITIVETYPES)) {
-			for (int i= 0; i < PRIM_TYPES.length; i++) {
-				if (NameMatcher.isSimilarName(fName, PRIM_TYPES[i])) {
-					addResult(new SimilarElement(TypeKinds.PRIMITIVETYPES, PRIM_TYPES[i], 50));
+			for (String t : PRIM_TYPES) {
+				if (NameMatcher.isSimilarName(fName, t)) {
+					addResult(new SimilarElement(TypeKinds.PRIMITIVETYPES, t, 50));
 				}
 			}
 		}
@@ -234,62 +234,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 			addType(proposal.getSignature(), proposal.getFlags(), proposal.getRelevance());
 		}
 	}
-	
-	
-	public static String[] getStaticImportFavorites(ICompilationUnit cu, final String elementName, boolean isMethod, String[] favorites) throws JavaModelException {
-		StringBuilder dummyCU= new StringBuilder();
-		String packName= cu.getParent().getElementName();
-		IType type= cu.findPrimaryType();
-		if (type == null)
-			return new String[0];
-		
-		if (packName.length() > 0) {
-			dummyCU.append("package ").append(packName).append(';'); //$NON-NLS-1$
-		}
-		dummyCU.append("public class ").append(type.getElementName()).append("{\n static {\n").append(elementName); // static initializer  //$NON-NLS-1$//$NON-NLS-2$
-		int offset= dummyCU.length();
-		dummyCU.append("\n}\n }"); //$NON-NLS-1$
-		
-		ICompilationUnit newCU= null;
-		try {
-			newCU= cu.getWorkingCopy(null);
-			newCU.getBuffer().setContents(dummyCU.toString());
-			
-			final HashSet<String> result= new HashSet<>();
-			
-			CompletionRequestor requestor= new CompletionRequestor(true) {
-				@Override
-				public void accept(CompletionProposal proposal) {
-					if (elementName.equals(new String(proposal.getName()))) {
-						CompletionProposal[] requiredProposals= proposal.getRequiredProposals();
-						for (int i= 0; i < requiredProposals.length; i++) {
-							CompletionProposal curr= requiredProposals[i];
-							if (curr.getKind() == CompletionProposal.METHOD_IMPORT || curr.getKind() == CompletionProposal.FIELD_IMPORT) {
-								result.add(JavaModelUtil.concatenateName(Signature.toCharArray(curr.getDeclarationSignature()), curr.getName()));
-							}
-						}
-					}
-				}
-			};
-			
-			if (isMethod) {
-				requestor.setIgnored(CompletionProposal.METHOD_REF, false);
-				requestor.setAllowsRequiredProposals(CompletionProposal.METHOD_REF, CompletionProposal.METHOD_IMPORT, true);
-			} else {
-				requestor.setIgnored(CompletionProposal.FIELD_REF, false);
-				requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.FIELD_IMPORT, true);
-			}
-			requestor.setFavoriteReferences(favorites);
-			
-			newCU.codeComplete(offset, requestor);
-			
-			return result.toArray(new String[result.size()]);
-		} finally {
-			if (newCU != null) {
-				newCU.discardWorkingCopy();
-			}
-		}
-	}
+
 
 	@Override
 	public boolean isTestCodeExcluded() {

@@ -14,8 +14,6 @@
 package org.eclipse.jdt.internal.ui.preferences.cleanup;
 
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -49,7 +47,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 
 	/**
 	 * @param kind the kind of clean up to configure
-	 * 
+	 *
 	 * @see CleanUpConstants#DEFAULT_CLEAN_UP_OPTIONS
 	 * @see CleanUpConstants#DEFAULT_SAVE_ACTION_OPTIONS
 	 */
@@ -104,14 +102,11 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 
 	protected void registerPreference(final CheckboxPreference preference) {
 		fCount++;
-		preference.addObserver(new Observer() {
-			@Override
-			public void update(Observable o, Object arg) {
-				if (preference.getChecked()) {
-					setSelectedCleanUpCount(fSelectedCount + 1);
-				} else {
-					setSelectedCleanUpCount(fSelectedCount - 1);
-				}
+		preference.addObserver((o, arg) -> {
+			if (preference.getChecked()) {
+				setSelectedCleanUpCount(fSelectedCount + 1);
+			} else {
+				setSelectedCleanUpCount(fSelectedCount - 1);
 			}
 		});
 		if (preference.getChecked()) {
@@ -130,7 +125,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 
 	/**
 	 * Connects master and slave checkboxes.
-	 * 
+	 *
 	 * @param master the master
 	 * @param slaves direct slaves of the master
 	 * @param subSlaves indirect slaves, i.e. a slave is a master of its subSlave).
@@ -143,51 +138,38 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 		if (subSlaves != null) {
 			for (int i= 0; i < slaves.length; i++) {
 				final CheckboxPreference slave= slaves[i];
-				for (int j= 0; j < subSlaves[i].length; j++) {
-					final CheckboxPreference subSlave= subSlaves[i][j];
-					master.addObserver(new Observer() {
-						@Override
-						public void update(Observable o, Object arg) {
-							boolean enabled= master.getChecked() && slave.getChecked();
-							subSlave.setEnabled(enabled);
-						}
+				for (CheckboxPreference subSlave : subSlaves[i]) {
+					master.addObserver((o, arg) -> {
+						boolean enabled= master.getChecked() && slave.getChecked();
+						subSlave.setEnabled(enabled);
 					});
 				}
 			}
 		}
-		
-		master.addObserver(new Observer() {
-			@Override
-			public void update(Observable o, Object arg) {
-				boolean masterChecked= master.getChecked();
-				for (int i= 0; i < slaves.length; i++) {
-					if (slaves[i].getChecked()) {
-						setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
-						if (subSlaves != null) {
-							for (int j= 0; j < subSlaves[i].length; j++) {
-								if (subSlaves[i][j].getChecked()) {
-									setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
-								}
+
+		master.addObserver((o, arg) -> {
+			boolean masterChecked= master.getChecked();
+			for (int i= 0; i < slaves.length; i++) {
+				if (slaves[i].getChecked()) {
+					setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
+					if (subSlaves != null) {
+						for (CheckboxPreference subSlave : subSlaves[i]) {
+							if (subSlave.getChecked()) {
+								setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
 							}
 						}
 					}
 				}
 			}
 		});
-		
-		for (int i= 0; i < slaves.length; i++) {
-			final CheckboxPreference slave= slaves[i];
-			slave.addObserver(new Observer() {
-				@Override
-				public void update(Observable o, Object arg) {
-					setSelectedCleanUpCount(fSelectedCount + (slave.getChecked() ? 1 : -1));
-				}
-			});
+
+		for (CheckboxPreference slave : slaves) {
+			slave.addObserver((o, arg) -> setSelectedCleanUpCount(fSelectedCount + (slave.getChecked() ? 1 : -1)));
 		}
-		
+
 		if (master.getChecked()) {
-			for (int i= 0; i < slaves.length; i++) {
-				if (slaves[i].getChecked() && master.getEnabled()) {
+			for (CheckboxPreference slave : slaves) {
+				if (slave.getChecked() && master.getEnabled()) {
 					setSelectedCleanUpCount(fSelectedCount + 1);
 				}
 			}
@@ -195,23 +177,20 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 	}
 
 	private void internalRegisterSlavePreference(final CheckboxPreference master, final ButtonPreference[] slaves) {
-    	master.addObserver( new Observer() {
-    		@Override
-			public void update(Observable o, Object arg) {
-    			for (int i= 0; i < slaves.length; i++) {
-					slaves[i].setEnabled(master.getChecked());
-				}
-    		}
-    	});
+    	master.addObserver( (o, arg) -> {
+			for (ButtonPreference slave : slaves) {
+				slave.setEnabled(master.getChecked());
+			}
+		});
 
-    	for (int i= 0; i < slaves.length; i++) {
-			slaves[i].setEnabled(master.getChecked());
+		for (ButtonPreference slave : slaves) {
+			slave.setEnabled(master.getChecked());
 		}
 	}
 
 	/**
 	 * Creates a spacer control with a pre-defined width.
-	 * 
+	 *
 	 * @param parent the parent composite
 	 */
 	// should be called "createSpacer"

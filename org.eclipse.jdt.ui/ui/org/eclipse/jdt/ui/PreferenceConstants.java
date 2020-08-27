@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -45,6 +45,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.manipulation.CodeStyleConfiguration;
 import org.eclipse.jdt.core.manipulation.JavaManipulation;
 
+import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
 import org.eclipse.jdt.internal.core.manipulation.MembersOrderPreferenceCacheCommon;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettingsConstants;
 import org.eclipse.jdt.internal.corext.fix.CleanUpConstantsOptions;
@@ -2956,6 +2957,18 @@ public class PreferenceConstants {
 	public final static String FORMATTER_COMMENT_FORMATHTML= "comment_format_html"; //$NON-NLS-1$
 
 	/**
+	 * A named preference that controls whether completion processors should be called from the non-UI thread,
+	 * when they declare ability to work from non-UI Thread.
+	 * <p>Completion processors can declare whether they
+	 * require UI Thread or not in their extension description, see {@link org.eclipse.jdt.internal.ui.text.java.CompletionProposalComputerDescriptor#requiresUIThread()}.</p>
+	 * <p>Value is of type <code>Boolean</code></p>
+	 *
+	 * @since 3.21
+	 */
+	public static final String CODEASSIST_NONUITHREAD_COMPUTATION= "content_assist_noUIThread_computation"; //$NON-NLS-1$
+
+
+	/**
 	 * A named preference that controls if the Java code assist gets auto activated.
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
@@ -3166,7 +3179,7 @@ public class PreferenceConstants {
 	 * @see org.eclipse.jface.preference.PreferenceConverter
 	 * @since 3.3
 	 */
-	public final static String CODEASSIST_FAVORITE_STATIC_MEMBERS= "content_assist_favorite_static_members"; //$NON-NLS-1$
+	public final static String CODEASSIST_FAVORITE_STATIC_MEMBERS= JavaManipulationPlugin.CODEASSIST_FAVORITE_STATIC_MEMBERS;
 
 
 	/**
@@ -4087,6 +4100,7 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOACTIVATION_DELAY, 0);
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOINSERT, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_DISABLE_COMPLETION_PROPOSAL_TRIGGER_CHARS, false);
+		store.setDefault(PreferenceConstants.CODEASSIST_NONUITHREAD_COMPUTATION, true);
 		store.setDefault(PreferenceConstants.PREF_MIN_CHAIN_LENGTH, 2);
 		store.setDefault(PreferenceConstants.PREF_MAX_CHAIN_LENGTH, 4);
 		store.setDefault(PreferenceConstants.PREF_MAX_CHAINS, 20);
@@ -4105,8 +4119,11 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.CODEASSIST_FILL_ARGUMENT_NAMES, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_GUESS_METHOD_ARGUMENTS, false);
 		store.setDefault(PreferenceConstants.CODEASSIST_PREFIX_COMPLETION, false);
-		store.setDefault(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES, "org.eclipse.jdt.ui.textProposalCategory\0org.eclipse.jdt.ui.javaTypeProposalCategory\0org.eclipse.jdt.ui.javaNoTypeProposalCategory\0org.eclipse.jdt.ui.javaChainProposalCategory\0"); //$NON-NLS-1$
-		store.setDefault(PreferenceConstants.CODEASSIST_CATEGORY_ORDER, "org.eclipse.jdt.ui.javaChainProposalCategory:65546\0org.eclipse.jdt.ui.spellingProposalCategory:65545\0org.eclipse.jdt.ui.javaTypeProposalCategory:65540\0org.eclipse.jdt.ui.javaNoTypeProposalCategory:65539\0org.eclipse.jdt.ui.textProposalCategory:65541\0org.eclipse.jdt.ui.javaAllProposalCategory:65542\0org.eclipse.jdt.ui.templateProposalCategory:2\0org.eclipse.jdt.ui.swtProposalCategory:3\0"); //$NON-NLS-1$
+
+		// Be sure to add the newly introduced disabled categories to JavaPlugin.disableNewCodeAssistCategoryPreferences()
+		store.setDefault(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES, "org.eclipse.jdt.ui.textProposalCategory\0org.eclipse.jdt.ui.javaTypeProposalCategory\0org.eclipse.jdt.ui.javaNoTypeProposalCategory\0org.eclipse.jdt.ui.javaChainProposalCategory\0org.eclipse.jdt.ui.javaPostfixProposalCategory\0"); //$NON-NLS-1$
+		store.setDefault(PreferenceConstants.CODEASSIST_CATEGORY_ORDER, "org.eclipse.jdt.ui.javaPostfixProposalCategory:65547\0org.eclipse.jdt.ui.spellingProposalCategory:65545\0org.eclipse.jdt.ui.javaTypeProposalCategory:65540\0org.eclipse.jdt.ui.javaNoTypeProposalCategory:65539\0org.eclipse.jdt.ui.textProposalCategory:65541\0org.eclipse.jdt.ui.javaAllProposalCategory:65542\0org.eclipse.jdt.ui.templateProposalCategory:2\0org.eclipse.jdt.ui.swtProposalCategory:3\0org.eclipse.jdt.ui.javaChainProposalCategory:4"); //$NON-NLS-1$
+
 		store.setDefault(PreferenceConstants.CODEASSIST_LRU_HISTORY, ""); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_SORTER, "org.eclipse.jdt.ui.RelevanceSorter"); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_FAVORITE_STATIC_MEMBERS, ""); //$NON-NLS-1$
@@ -4274,14 +4291,14 @@ public class PreferenceConstants {
 		}
 
 		// Code minings preferences
-		store.setDefault(PreferenceConstants.EDITOR_CODEMINING_ENABLED, false);
+		store.setDefault(PreferenceConstants.EDITOR_CODEMINING_ENABLED, true);
 		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_CODEMINING_AT_LEAST_ONE,
 				true);
-		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES, true);
-		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_TYPES, true);
-		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_FIELDS, true);
-		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_METHODS, true);
-		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_IMPLEMENTATIONS, true);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES, false);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_TYPES, false);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_FIELDS, false);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_REFERENCES_ON_METHODS, false);
+		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_IMPLEMENTATIONS, false);
 		store.setDefault(EDITOR_JAVA_CODEMINING_SHOW_PARAMETER_NAMES, false);
 	}
 

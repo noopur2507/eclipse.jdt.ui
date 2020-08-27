@@ -75,11 +75,8 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 							fMapToPackageFragments.clear();
 							IJavaProject project= (IJavaProject) parentElement;
 
-							IPackageFragment[] topLevelChildren= getTopLevelChildrenByElementName(project.getPackageFragments());
 							List<IPackageFragment> list= new ArrayList<>();
-							for (int i= 0; i < topLevelChildren.length; i++) {
-								IPackageFragment fragment= topLevelChildren[i];
-
+							for (IPackageFragment fragment : getTopLevelChildrenByElementName(project.getPackageFragments())) {
 								IJavaElement el= fragment.getParent();
 								if (el instanceof IPackageFragmentRoot) {
 									IPackageFragmentRoot root= (IPackageFragmentRoot) el;
@@ -88,10 +85,8 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 								}
 							}
 
-							IPackageFragmentRoot[] packageFragmentRoots= project.getPackageFragmentRoots();
 							List<Object> folders= new ArrayList<>();
-							for (int i= 0; i < packageFragmentRoots.length; i++) {
-								IPackageFragmentRoot root= packageFragmentRoots[i];
+							for (IPackageFragmentRoot root : project.getPackageFragmentRoots()) {
 								IResource resource= root.getUnderlyingResource();
 								if (resource != null && resource instanceof IFolder) {
 									folders.addAll(getFolders(((IFolder)resource).members()));
@@ -154,8 +149,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 							}
 							ArrayList<Object> combined= new ArrayList<>();
 							combined.addAll(Arrays.asList(fragments));
-							for (int i= 0; i < nonJavaResources.length; i++) {
-								Object curr= nonJavaResources[i];
+							for (Object curr : nonJavaResources) {
 								if (curr instanceof IFolder) {
 									combined.add(curr);
 								}
@@ -169,9 +163,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 				List<IPackageFragment> children= new ArrayList<>();
 				LogicalPackage logicalPackage= (LogicalPackage) parentElement;
-				IPackageFragment[] elements= logicalPackage.getFragments();
-				for (int i= 0; i < elements.length; i++) {
-					IPackageFragment fragment= elements[i];
+				for (IPackageFragment fragment : logicalPackage.getFragments()) {
 					IPackageFragment[] objects= findNextLevelChildrenByElementName((IPackageFragmentRoot) fragment.getParent(), fragment);
 					children.addAll(Arrays.asList(objects));
 				}
@@ -184,8 +176,6 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 				return children.toArray();
 			}
 
-		} catch (JavaModelException e) {
-			return NO_CHILDREN;
 		} catch (CoreException e) {
 			return NO_CHILDREN;
 		}
@@ -194,8 +184,8 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 	private void addFragmentsToMap(List<IAdaptable> elements) {
 		List<IPackageFragment> packageFragments= new ArrayList<>();
-		for (Iterator<IAdaptable> iter= elements.iterator(); iter.hasNext();) {
-			Object elem= iter.next();
+		for (IAdaptable iAdaptable : elements) {
+			Object elem= iAdaptable;
 			if (elem instanceof IPackageFragment)
 				packageFragments.add((IPackageFragment) elem);
 		}
@@ -204,9 +194,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 	private List<IAdaptable> getFoldersAndElements(IResource[] resources) {
 		List<IAdaptable> list= new ArrayList<>();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
-
+		for (IResource resource : resources) {
 			if (resource instanceof IFolder) {
 				IFolder folder= (IFolder) resource;
 				IJavaElement element= JavaCore.create(folder);
@@ -223,9 +211,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 	private List<IFolder> getFolders(IResource[] resources) {
 		List<IFolder> list= new ArrayList<>();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
-
+		for (IResource resource : resources) {
 			if (resource instanceof IFolder) {
 				IFolder folder= (IFolder) resource;
 				IJavaElement element= JavaCore.create(folder);
@@ -242,10 +228,8 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 		List<IPackageFragment> list= new ArrayList<>();
 		try {
 
-			IJavaElement[] children= parent.getChildren();
 			String fragmentname= fragment.getElementName();
-			for (int i= 0; i < children.length; i++) {
-				IJavaElement element= children[i];
+			for (IJavaElement element : parent.getChildren()) {
 				if (element instanceof IPackageFragment) {
 					IPackageFragment frag= (IPackageFragment) element;
 
@@ -267,8 +251,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 	private IPackageFragment[] getTopLevelChildrenByElementName(IJavaElement[] elements){
 		List<IJavaElement> topLevelElements= new ArrayList<>();
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement iJavaElement= elements[i];
+		for (IJavaElement iJavaElement : elements) {
 			//if the name of the PackageFragment is the top level package it will contain no "." separators
 			if (iJavaElement instanceof IPackageFragment && iJavaElement.getElementName().indexOf('.')==-1){
 				topLevelElements.add(iJavaElement);
@@ -345,9 +328,7 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 		List<IPackageFragment> fragments= new ArrayList<>();
 		try {
-			IPackageFragmentRoot[] roots= pkgFragment.getJavaProject().getPackageFragmentRoots();
-			for (int i= 0; i < roots.length; i++) {
-				IPackageFragmentRoot root= roots[i];
+			for (IPackageFragmentRoot root : pkgFragment.getJavaProject().getPackageFragmentRoots()) {
 				IPackageFragment fragment= root.getPackageFragment(pkgFragment.getElementName());
 				if(fragment.exists() && !fragment.equals(pkgFragment))
 					fragments.add(fragment);
@@ -471,25 +452,25 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 
 			//if fragment was in LogicalPackage refresh,
 			//otherwise just remove
-			if (kind == IJavaElementDelta.REMOVED) {
-				removeElement(frag);
-				return;
-
-			} else if (kind == IJavaElementDelta.ADDED) {
-
-				Object parent= getParent(frag);
-				addElement(frag, parent);
-				return;
-
-			} else if (kind == IJavaElementDelta.CHANGED) {
-				//just refresh
-				LogicalPackage logicalPkg= findLogicalPackage(frag);
-				//in case changed object is filtered out
-				if (logicalPkg != null)
-					postRefresh(findElementToRefresh(logicalPkg));
-				else
-					postRefresh(findElementToRefresh(frag));
-				return;
+			switch (kind) {
+				case IJavaElementDelta.REMOVED:
+					removeElement(frag);
+					return;
+				case IJavaElementDelta.ADDED:
+					Object parent= getParent(frag);
+					addElement(frag, parent);
+					return;
+				case IJavaElementDelta.CHANGED:
+					//just refresh
+					LogicalPackage logicalPkg= findLogicalPackage(frag);
+					//in case changed object is filtered out
+					if (logicalPkg != null)
+						postRefresh(findElementToRefresh(logicalPkg));
+					else
+						postRefresh(findElementToRefresh(frag));
+					return;
+				default:
+					break;
 			}
 		}
 
@@ -510,46 +491,36 @@ class PackagesViewHierarchicalContentProvider extends LogicalPackagesProvider im
 	}
 
 	private void processAffectedChildren(IJavaElementDelta delta) throws JavaModelException {
-		IJavaElementDelta[] affectedChildren = delta.getAffectedChildren();
-		for (int i = 0; i < affectedChildren.length; i++) {
-			if (!(affectedChildren[i] instanceof ICompilationUnit)) {
-				processDelta(affectedChildren[i]);
+		for (IJavaElementDelta child : delta.getAffectedChildren()) {
+			if (!(child instanceof ICompilationUnit)) {
+				processDelta(child);
 			}
 		}
 	}
 
 	private void postAdd(final Object child, final Object parent) {
-		postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				Control ctrl = fViewer.getControl();
-				if (ctrl != null && !ctrl.isDisposed()) {
-					((TreeViewer)fViewer).add(parent, child);
-				}
+		postRunnable(() -> {
+			Control ctrl = fViewer.getControl();
+			if (ctrl != null && !ctrl.isDisposed()) {
+				((TreeViewer)fViewer).add(parent, child);
 			}
 		});
 	}
 
 	private void postRemove(final Object object) {
-		postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				Control ctrl = fViewer.getControl();
-				if (ctrl != null && !ctrl.isDisposed()) {
-					((TreeViewer)fViewer).remove(object);
-				}
+		postRunnable(() -> {
+			Control ctrl = fViewer.getControl();
+			if (ctrl != null && !ctrl.isDisposed()) {
+				((TreeViewer)fViewer).remove(object);
 			}
 		});
 	}
 
 	private void postRefresh(final Object object) {
-		postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				Control ctrl= fViewer.getControl();
-				if (ctrl != null && !ctrl.isDisposed()) {
-					((TreeViewer) fViewer).refresh(object);
-				}
+		postRunnable(() -> {
+			Control ctrl= fViewer.getControl();
+			if (ctrl != null && !ctrl.isDisposed()) {
+				((TreeViewer) fViewer).refresh(object);
 			}
 		});
 	}

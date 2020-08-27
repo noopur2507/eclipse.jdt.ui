@@ -158,14 +158,8 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 	 */
 	private IProgressMonitor fComputeProgressMonitor;
 
-	/**
-	 * Background color.
-	 * @since 3.2
-	 */
-	private Color fBackgroundColor;
 	private RGB fBackgroundColorRGB;
 
-	private Color fForegroundColor;
 	private RGB fForegroundColorRGB;
 
 	/**
@@ -176,7 +170,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * The last part that from which a selection changed event was received.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private IWorkbenchPart fLastSelectionProvider;
@@ -190,7 +184,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * Computes the input for this view based on the given element.
-	 * 
+	 *
 	 * @param element the element from which to compute the input, or <code>null</code>
 	 * @return the input or <code>null</code> if the input was not computed successfully
 	 */
@@ -198,7 +192,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * Computes the input for this view based on the given elements
-	 * 
+	 *
 	 * @param part the part that triggered the current element update, or <code>null</code>
 	 * @param selection the new selection, or <code>null</code>
 	 * @param element the new java element that will be displayed, or <code>null</code>
@@ -323,7 +317,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * Returns the Java element for which info should be shown.
-	 * 
+	 *
 	 * @return input the input object or <code>null</code> if no input is set
 	 */
 	protected IJavaElement getOrignalInput() {
@@ -393,8 +387,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 			fgColor = display.getSystemColor(SWT.COLOR_INFO_FOREGROUND);
 			fForegroundColorRGB= fgColor.getRGB();
 		} else {
-			fgColor = new Color(display, fForegroundColorRGB);
-			fForegroundColor= fgColor;
+			fgColor = new Color(fForegroundColorRGB);
 		}
 		setForeground(fgColor);
 
@@ -404,8 +397,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 			bgColor= display.getSystemColor(SWT.COLOR_INFO_BACKGROUND);
 			fBackgroundColorRGB= bgColor.getRGB();
 		} else {
-			bgColor= new Color(display, fBackgroundColorRGB);
-			fBackgroundColor= bgColor;
+			bgColor= new Color(fBackgroundColorRGB);
 		}
 		setBackground(bgColor);
 	}
@@ -420,7 +412,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
   	/**
 	 * The preference key for the foreground color.
-	 * 
+	 *
 	 * @return the foreground color key or <code>null</code> if none
 	 */
 	protected String getForegroundColorKey() {
@@ -538,11 +530,11 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 		return findJavaElement(element);
 	}
-	
+
 	/**
 	 * Gets the position of the innermost method call from a selection inside the parameters.
 	 * For example, the selection: String.valueOf(4|3543); would return a selection in valueOf.
-	 * 
+	 *
 	 * @param document the document containing the selection
 	 * @param selection the selection to search from
 	 * @return an offset into the given document, or <code>null</code> if the selection is not in a method call.
@@ -619,7 +611,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 		if (je != null && je.exists())
 			return je;
-		
+
 		return null;
 	}
 
@@ -669,16 +661,8 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 		JFaceResources.getColorRegistry().removeListener(this);
 		fBackgroundColorRGB= null;
-		if (fBackgroundColor != null) {
-			fBackgroundColor.dispose();
-			fBackgroundColor= null;
-		}
 
 		fForegroundColorRGB= null;
-		if (fForegroundColor != null) {
-			fForegroundColor.dispose();
-			fForegroundColor= null;
-		}
 
 		internalDispose();
 
@@ -781,22 +765,16 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 				if (display.isDisposed())
 					return;
 
-				display.asyncExec(new Runnable() {
-					/*
-					 * @see java.lang.Runnable#run()
-					 */
-					@Override
-					public void run() {
+				display.asyncExec(() -> {
 
-						if (fComputeCount != currentCount || getViewSite().getShell().isDisposed())
-							return;
+					if (fComputeCount != currentCount || getViewSite().getShell().isDisposed())
+						return;
 
-						fCurrentViewInput= je;
-						doSetInput(input, description);
-						fToggleLinkAction.updateLinkImage(false);
+					fCurrentViewInput= je;
+					doSetInput(input, description);
+					fToggleLinkAction.updateLinkImage(false);
 
-						fComputeProgressMonitor= null;
-					}
+					fComputeProgressMonitor= null;
 				});
 			}
 
@@ -809,15 +787,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 				if (display.isDisposed())
 					return;
 
-				display.asyncExec(new Runnable() {
-					/*
-					 * @see java.lang.Runnable#run()
-					 */
-					@Override
-					public void run() {
-						fToggleLinkAction.updateLinkImage(isBroken);
-					}
-				});
+				display.asyncExec(() -> fToggleLinkAction.updateLinkImage(isBroken));
 			}
 		};
 
@@ -863,21 +833,21 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * Action to enable and disable link with selection.
-	 * 
+	 *
 	 * @since 3.4 in JavadocView, moved here in 3.9
 	 */
 	protected LinkAction fToggleLinkAction;
 
 	/**
 	 * Name of the link with selection icon when the view and selection is in sync.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private static final String SYNCED_GIF= "synced.png"; //$NON-NLS-1$
 
 	/**
 	 * Name of the link with selection icon when the view and selection is out of sync.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private static final String SYNC_BROKEN_GIF= "sync_broken.png"; //$NON-NLS-1$
@@ -885,7 +855,7 @@ public abstract class AbstractInfoView extends ViewPart implements ISelectionLis
 
 	/**
 	 * Action to toggle linking with selection.
-	 * 
+	 *
 	 * @since 3.4 in JavadocView, moved here in 3.9
 	 */
 	private class LinkAction extends Action {

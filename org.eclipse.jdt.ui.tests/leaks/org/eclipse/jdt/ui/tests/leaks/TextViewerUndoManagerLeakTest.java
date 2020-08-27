@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2015 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,14 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.leaks;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Shell;
@@ -28,10 +36,7 @@ import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.text.TextViewerUndoManager;
 
 import org.eclipse.jdt.ui.leaktest.LeakTestCase;
-import org.eclipse.jdt.ui.leaktest.LeakTestSetup;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.core.rules.LeakTestSetup;
 
 /**
  * Tests for leaks in TextViewerUndoManager.
@@ -39,6 +44,9 @@ import junit.framework.TestSuite;
  * @since 3.2
  */
 public class TextViewerUndoManagerLeakTest extends LeakTestCase {
+
+	@Rule
+	public LeakTestSetup projectSetup = new LeakTestSetup();
 
 	/** The maximum undo level. */
 	private static final int MAX_UNDO_LEVEL= 256;
@@ -50,22 +58,12 @@ public class TextViewerUndoManagerLeakTest extends LeakTestCase {
 	/** The undo manager. */
 	private IUndoManager fUndoManager;
 
-	public static Test suite() {
-		return new LeakTestSetup(new TestSuite(TextViewerUndoManagerLeakTest.class));
-	}
-
-	/*
-	 * @see TestCase#TestCase(String)
-	 */
-	public TextViewerUndoManagerLeakTest(final String name) {
-		super(name);
-	}
-
 	/*
 	 *  @see TestCase#setUp()
 	 */
 	@Override
-	protected void setUp() {
+	@Before
+	public void setUp() {
 		fShell= new Shell();
 		fUndoManager= new TextViewerUndoManager(MAX_UNDO_LEVEL);
 		fTextViewer= new TextViewer(fShell, SWT.NONE);
@@ -73,6 +71,7 @@ public class TextViewerUndoManagerLeakTest extends LeakTestCase {
 		fUndoManager.connect(fTextViewer);
 	}
 
+	@Test
 	public void testTextViewerUndoManager() throws Exception{
 		// There is always a document instance around, hence a DocumentUndoManager.
 		// So count instances first.

@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,7 +100,7 @@ public class JarWriter3 {
 		fJarPackage= jarPackage;
 		Assert.isTrue(fJarPackage.isValid(), "The JAR package specification is invalid"); //$NON-NLS-1$
 		if (!canCreateJar(parent))
-			throw new OperationCanceledException();
+			throw new OperationCanceledException("Cannot create JAR with path: " + fJarPackage.getAbsoluteJarLocation()); //$NON-NLS-1$
 
 		try {
 			if (fJarPackage.usesManifest() && fJarPackage.areGeneratedFilesExported()) {
@@ -122,12 +121,12 @@ public class JarWriter3 {
 			throw JarPackagerUtil.createCoreException(exception.getLocalizedMessage(), exception);
 		}
 	}
-	
+
 	/**
 	 * Creates the directory entries for the given path and writes it to the current archive.
-	 * 
+	 *
 	 * @param destinationPath the path to add
-	 * 
+	 *
 	 * @throws IOException if an I/O error has occurred
 	 */
 	protected void addDirectories(IPath destinationPath) throws IOException {
@@ -136,9 +135,9 @@ public class JarWriter3 {
 
 	/**
 	 * Creates the directory entries for the given path and writes it to the current archive.
-	 * 
+	 *
 	 * @param destPath the path to add
-	 * 
+	 *
 	 * @throws IOException if an I/O error has occurred
 	 * @since 3.5
 	 */
@@ -303,17 +302,13 @@ public class JarWriter3 {
 		Assert.isNotNull(path);
 		Assert.isNotNull(monitor);
 		final RefactoringDescriptorProxy[] proxies= data.getRefactoringDescriptors();
-		Arrays.sort(proxies, new Comparator<RefactoringDescriptorProxy>() {
-
-			@Override
-			public final int compare(final RefactoringDescriptorProxy first, final RefactoringDescriptorProxy second) {
-				final long delta= first.getTimeStamp() - second.getTimeStamp();
-				if (delta > 0)
-					return 1;
-				else if (delta < 0)
-					return -1;
-				return 0;
-			}
+		Arrays.sort(proxies, (first, second) -> {
+			final long delta= first.getTimeStamp() - second.getTimeStamp();
+			if (delta > 0)
+				return 1;
+			else if (delta < 0)
+				return -1;
+			return 0;
 		});
 		File file= null;
 		OutputStream output= null;
@@ -397,9 +392,7 @@ public class JarWriter3 {
 
 	private void registerInWorkspaceIfNeeded() {
 		IPath jarPath= fJarPackage.getAbsoluteJarLocation();
-		IProject[] projects= ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		for (int i= 0; i < projects.length; i++) {
-			IProject project= projects[i];
+		for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			// The Jar is always put into the local file system. So it can only be
 			// part of a project if the project is local as well. So using getLocation
 			// is currently save here.

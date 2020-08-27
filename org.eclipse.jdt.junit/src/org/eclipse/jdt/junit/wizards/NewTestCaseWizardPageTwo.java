@@ -30,8 +30,6 @@ import org.eclipse.swt.widgets.Widget;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
@@ -170,12 +168,7 @@ public class NewTestCaseWizardPageTwo extends WizardPage {
 
 		fMethodsTree.setLabelProvider(new JavaElementLabelProvider());
 		fMethodsTree.setAutoExpandLevel(2);
-		fMethodsTree.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				doCheckedStateChanged();
-			}
-		});
+		fMethodsTree.addCheckStateListener(event -> doCheckedStateChanged());
 		fMethodsTree.addFilter(new ViewerFilter() {
 			@Override
 			public boolean select(Viewer viewer, Object parentElement, Object element) {
@@ -298,15 +291,16 @@ public class NewTestCaseWizardPageTwo extends WizardPage {
 	 */
 	public IMethod[] getCheckedMethods() {
 		int methodCount= 0;
-		for (int i = 0; i < fCheckedObjects.length; i++) {
-			if (fCheckedObjects[i] instanceof IMethod)
+		for (Object fCheckedObject : fCheckedObjects) {
+			if (fCheckedObject instanceof IMethod) {
 				methodCount++;
+			}
 		}
 		IMethod[] checkedMethods= new IMethod[methodCount];
 		int j= 0;
-		for (int i = 0; i < fCheckedObjects.length; i++) {
-			if (fCheckedObjects[i] instanceof IMethod) {
-				checkedMethods[j]= (IMethod)fCheckedObjects[i];
+		for (Object fCheckedObject : fCheckedObjects) {
+			if (fCheckedObject instanceof IMethod) {
+				checkedMethods[j]= (IMethod) fCheckedObject;
 				j++;
 			}
 		}
@@ -328,8 +322,7 @@ public class NewTestCaseWizardPageTwo extends WizardPage {
 					try {
 						IMethod[] currMethods= type.getMethods();
 						for_currMethods:
-						for (int j = 0; j < currMethods.length; j++) {
-							IMethod currMethod = currMethods[j];
+						for (IMethod currMethod : currMethods) {
 							int flags= currMethod.getFlags();
 							if (!Flags.isPrivate(flags) && !Flags.isSynthetic(flags)) {
 								for (int k = 0; k < methods.size(); k++) {
@@ -360,9 +353,9 @@ public class NewTestCaseWizardPageTwo extends WizardPage {
 			if (parentElement instanceof IType) {
 				IType parentType= (IType)parentElement;
 				ArrayList<IMethod> result= new ArrayList<>(fMethods.length);
-				for (int i= 0; i < fMethods.length; i++) {
-					if (fMethods[i].getDeclaringType().equals(parentType)) {
-						result.add(fMethods[i]);
+				for (IMethod fMethod : fMethods) {
+					if (fMethod.getDeclaringType().equals(parentType)) {
+						result.add(fMethod);
 					}
 				}
 				return result.toArray();

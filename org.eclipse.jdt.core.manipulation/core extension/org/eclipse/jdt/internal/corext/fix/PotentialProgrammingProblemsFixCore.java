@@ -16,10 +16,10 @@ package org.eclipse.jdt.internal.corext.fix;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -129,9 +129,7 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 							} else {
 							   	result.addWarning(Messages.format(FixMessages.PotentialProgrammingProblemsFix_calculatingUIDFailed_unknown, BasicElementLabels.getJavaElementName(typeBinding.getName())));
 							}
-						} catch (IOException e) {
-						   	result.addWarning(Messages.format(FixMessages.PotentialProgrammingProblemsFix_calculatingUIDFailed_exception, new String[] { BasicElementLabels.getJavaElementName(typeBinding.getName()), e.getLocalizedMessage()}), JavaStatusContext.create(types[i]));
-				        } catch (CoreException e) {
+						} catch (IOException | CoreException e) {
 						   	result.addWarning(Messages.format(FixMessages.PotentialProgrammingProblemsFix_calculatingUIDFailed_exception, new String[] { BasicElementLabels.getJavaElementName(typeBinding.getName()), e.getLocalizedMessage()}), JavaStatusContext.create(types[i]));
 				        }
 					}
@@ -164,9 +162,7 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 					//depending on how many subtypes exit in the project.
 
 					HashSet<ICompilationUnit> cus= new HashSet<>();
-					for (int i= 0; i < compilationUnits.length; i++) {
-						cus.add(compilationUnits[i]);
-					}
+					cus.addAll(Arrays.asList(compilationUnits));
 
 					monitor.subTask(Messages.format(FixMessages.Java50Fix_SerialVersion_CalculateHierarchy_description, SERIALIZABLE_NAME));
 					ITypeHierarchy hierarchy1= serializable.newTypeHierarchy(project, new SubProgressMonitor(monitor, compilationUnits.length));
@@ -174,8 +170,8 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 					addTypes(allSubtypes1, cus, types);
 				} else {
 					monitor.subTask(FixMessages.Java50Fix_InitializeSerialVersionId_subtask_description);
-                    for (int i= 0; i < compilationUnits.length; i++) {
-                    	collectChildrenWithMissingSerialVersionId(compilationUnits[i].getChildren(), serializable, types);
+                    for (ICompilationUnit compilationUnit : compilationUnits) {
+                    	collectChildrenWithMissingSerialVersionId(compilationUnit.getChildren(), serializable, types);
                     	if (monitor.isCanceled())
                     		throw new OperationCanceledException();
                     	monitor.worked(1);
@@ -189,9 +185,7 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 		}
 
 		private void addTypes(IType[] allSubtypes, HashSet<ICompilationUnit> cus, List<IType> types) throws JavaModelException {
-			for (int i= 0; i < allSubtypes.length; i++) {
-				IType type= allSubtypes[i];
-
+			for (IType type : allSubtypes) {
 				IField field= type.getField(NAME_FIELD);
 				if (!field.exists()) {
 					if (type.isClass() && cus.contains(type.getCompilationUnit())){
@@ -202,8 +196,7 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 		}
 
 		private void collectChildrenWithMissingSerialVersionId(IJavaElement[] children, IType serializable, List<IType> result) throws JavaModelException {
-			for (int i= 0; i < children.length; i++) {
-				IJavaElement child= children[i];
+			for (IJavaElement child : children) {
 				if (child instanceof IType) {
 					IType type= (IType)child;
 
@@ -211,9 +204,8 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
     					IField field= type.getField(NAME_FIELD);
     					if (!field.exists()) {
     						ITypeHierarchy hierarchy= type.newSupertypeHierarchy(new NullProgressMonitor());
-    						IType[] interfaces= hierarchy.getAllSuperInterfaces(type);
-    						for (int j= 0; j < interfaces.length; j++) {
-    							if (interfaces[j].equals(serializable)) {
+    						for (IType interface1 : hierarchy.getAllSuperInterfaces(type)) {
+    							if (interface1.equals(serializable)) {
     								result.add(type);
     								break;
     							}
@@ -351,9 +343,9 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 				return null;
 
 			List<ASTNode> declarationNodes= new ArrayList<>();
-			for (int i= 0; i < problems.length; i++) {
-				if (problems[i].getProblemId() == IProblem.MissingSerialVersion) {
-					final SimpleName simpleName= getSelectedName(compilationUnit, problems[i]);
+			for (IProblemLocationCore problem : problems) {
+				if (problem.getProblemId() == IProblem.MissingSerialVersion) {
+					final SimpleName simpleName= getSelectedName(compilationUnit, problem);
 					if (simpleName != null) {
 						ASTNode declarationNode= getDeclarationNode(simpleName);
 						if (declarationNode != null) {
@@ -365,8 +357,7 @@ public class PotentialProgrammingProblemsFixCore extends CompilationUnitRewriteO
 			if (declarationNodes.size() == 0)
 				return null;
 
-			for (Iterator<ASTNode> iter= declarationNodes.iterator(); iter.hasNext();) {
-	            ASTNode declarationNode= iter.next();
+			for (ASTNode declarationNode : declarationNodes) {
 	            ITypeBinding binding= getTypeBinding(declarationNode);
 	            if (fCurrentContext.getSerialVersionId(binding) != null) {
 	            	SerialVersionHashBatchOperation op= new SerialVersionHashBatchOperation(unit, declarationNodes.toArray(new ASTNode[declarationNodes.size()]), fCurrentContext);

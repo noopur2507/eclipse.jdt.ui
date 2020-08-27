@@ -25,6 +25,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -43,16 +44,9 @@ import org.eclipse.ui.wizards.datatransfer.ProjectConfigurator;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+public class ImporterTest{
 
-public class ImporterTest extends TestCase {
-	
-	public static Test suite() {
-		return new TestSuite(ImporterTest.class);
-	}
-
+	@Test
 	public void testImportRawJavaProject() throws Exception {
 		IProject project = null;
 		try {

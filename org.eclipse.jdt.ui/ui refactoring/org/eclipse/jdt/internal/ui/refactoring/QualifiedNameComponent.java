@@ -14,8 +14,6 @@
 package org.eclipse.jdt.internal.ui.refactoring;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -56,20 +54,14 @@ public class QualifiedNameComponent extends Composite {
 		fPatterns.setText(text);
 		refactoring.setFilePatterns(text);
 
-		fPatterns.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				refactoring.setFilePatterns(fPatterns.getText());
-			}
-		});
+		fPatterns.addModifyListener(e -> refactoring.setFilePatterns(fPatterns.getText()));
 	}
 
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		Control[] children= getChildren();
-		for (int i= 0; i < children.length; i++) {
-			children[i].setEnabled(enabled);
+		for (Control child : getChildren()) {
+			child.setEnabled(enabled);
 		}
 	}
 

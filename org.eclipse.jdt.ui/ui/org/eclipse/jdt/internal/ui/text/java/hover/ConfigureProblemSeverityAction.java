@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -101,14 +101,17 @@ public class ConfigureProblemSeverityAction extends Action {
 					CONFIGURE_PROBLEM_SEVERITY_DIALOG_ID, shell, JavaHoverMessages.ProblemHover_chooseSettingsTypeDialog_title, null, message, MessageDialog.QUESTION, buttons, 0,
 					JavaHoverMessages.ProblemHover_chooseSettingsTypeDialog_checkBox_dontShowAgain);
 
-			if (result == OptionalMessageDialog.NOT_SHOWN) {
-				showPropertyPage= false;
-			} else if (result == 2 || result == SWT.DEFAULT) {
-				return;
-			} else if (result == 0) {
-				showPropertyPage= true;
-			} else {
-				showPropertyPage= false;
+			switch (result) {
+				case OptionalMessageDialog.NOT_SHOWN:
+				default:
+					showPropertyPage= false;
+					break;
+				case 0:
+					showPropertyPage= true;
+					break;
+				case 2:
+				case SWT.DEFAULT:
+					return;
 			}
 		} else {
 			showPropertyPage= true;
@@ -187,7 +190,7 @@ public class ConfigureProblemSeverityAction extends Action {
 			case ERRORS_WARNINGS:
 				keys= ProblemSeveritiesConfigurationBlock.getKeys();
 				break;
-			default: 
+			default:
 				return false; // cannot happen
 		}
 		return OptionsConfigurationBlock.hasProjectSpecificOptions(fProject.getProject(), keys, null);

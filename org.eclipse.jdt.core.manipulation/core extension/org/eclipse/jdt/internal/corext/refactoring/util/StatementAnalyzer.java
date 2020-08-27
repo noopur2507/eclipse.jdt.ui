@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.corext.refactoring.util;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
@@ -163,8 +162,7 @@ public class StatementAnalyzer extends SelectionAnalyzer {
 		ASTNode[] selectedNodes= getSelectedNodes();
 		if (doAfterValidation(node, selectedNodes)) {
 			List<SwitchCase> cases= getSwitchCases(node);
-			for (int i= 0; i < selectedNodes.length; i++) {
-				ASTNode topNode= selectedNodes[i];
+			for (ASTNode topNode : selectedNodes) {
 				if (cases.contains(topNode)) {
 					invalidSelection(JavaManipulationMessages.StatementAnalyzer_switch_statement);
 					break;
@@ -179,8 +177,7 @@ public class StatementAnalyzer extends SelectionAnalyzer {
 		ASTNode[] selectedNodes= getSelectedNodes();
 		if (doAfterValidation(node, selectedNodes)) {
 			List<SwitchCase> cases= getSwitchCases(node);
-			for (int i= 0; i < selectedNodes.length; i++) {
-				ASTNode topNode= selectedNodes[i];
+			for (ASTNode topNode : selectedNodes) {
 				if (cases.contains(topNode)) {
 					invalidSelection(JavaManipulationMessages.StatementAnalyzer_switch_expression);
 					break;
@@ -209,8 +206,7 @@ public class StatementAnalyzer extends SelectionAnalyzer {
 				invalidSelection(JavaManipulationMessages.StatementAnalyzer_try_statement);
 			} else {
 				List<CatchClause> catchClauses= node.catchClauses();
-				for (Iterator<CatchClause> iterator= catchClauses.iterator(); iterator.hasNext();) {
-					CatchClause element= iterator.next();
+				for (CatchClause element : catchClauses) {
 					if (element == firstSelectedNode || element.getBody() == firstSelectedNode) {
 						invalidSelection(JavaManipulationMessages.StatementAnalyzer_try_statement);
 					} else if (element.getException() == firstSelectedNode) {
@@ -255,8 +251,8 @@ public class StatementAnalyzer extends SelectionAnalyzer {
 		} else if (node instanceof SwitchExpression) {
 			statements= ((SwitchExpression) node).statements();
 		}
-		for (Iterator<Statement> iter= statements.iterator(); iter.hasNext();) {
-			Object element= iter.next();
+		for (Statement statement : statements) {
+			Object element= statement;
 			if (element instanceof SwitchCase)
 				result.add((SwitchCase) element);
 		}
@@ -264,17 +260,19 @@ public class StatementAnalyzer extends SelectionAnalyzer {
 	}
 
 	protected static boolean contains(ASTNode[] nodes, ASTNode node) {
-		for (int i = 0; i < nodes.length; i++) {
-			if (nodes[i] == node)
+		for (ASTNode n : nodes) {
+			if (n == node) {
 				return true;
+			}
 		}
 		return false;
 	}
 
 	protected static boolean contains(ASTNode[] nodes, List<Expression> list) {
-		for (int i = 0; i < nodes.length; i++) {
-			if (list.contains(nodes[i]))
+		for (ASTNode node : nodes) {
+			if (list.contains(node)) {
 				return true;
+			}
 		}
 		return false;
 	}

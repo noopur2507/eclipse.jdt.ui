@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -72,8 +71,8 @@ public final class ClasspathFixProcessorDescriptor {
 		IConfigurationElement[] children= fConfigurationElement.getChildren(OVERRIDES);
 		if (children.length > 0) {
 			fOverriddenIds= new ArrayList<>(children.length);
-			for (int i= 0; i < children.length; i++) {
-				fOverriddenIds.add(children[i].getAttribute(ID));
+			for (IConfigurationElement child : children) {
+				fOverriddenIds.add(child.getAttribute(ID));
 			}
 		} else {
 			fOverriddenIds= Collections.emptyList();
@@ -149,8 +148,8 @@ public final class ClasspathFixProcessorDescriptor {
 			IConfigurationElement[] elements= Platform.getExtensionRegistry().getConfigurationElementsFor(JavaUI.ID_PLUGIN, ATT_EXTENSION);
 			ArrayList<ClasspathFixProcessorDescriptor> res= new ArrayList<>(elements.length);
 
-			for (int i= 0; i < elements.length; i++) {
-				ClasspathFixProcessorDescriptor desc= new ClasspathFixProcessorDescriptor(elements[i]);
+			for (IConfigurationElement element : elements) {
+				ClasspathFixProcessorDescriptor desc= new ClasspathFixProcessorDescriptor(element);
 				IStatus status= desc.checkSyntax();
 				if (status.isOK()) {
 					res.add(desc);
@@ -159,17 +158,14 @@ public final class ClasspathFixProcessorDescriptor {
 				}
 			}
 			fgContributedClasspathFixProcessors= res.toArray(new ClasspathFixProcessorDescriptor[res.size()]);
-			Arrays.sort(fgContributedClasspathFixProcessors, new Comparator<ClasspathFixProcessorDescriptor>() {
-				@Override
-				public int compare(ClasspathFixProcessorDescriptor d1, ClasspathFixProcessorDescriptor d2) {
-					if (d1.getOverridenIds().contains(d2.getID())) {
-						return -1;
-					}
-					if (d2.getOverridenIds().contains(d1.getID())) {
-						return 1;
-					}
-					return 0;
+			Arrays.sort(fgContributedClasspathFixProcessors, (d1, d2) -> {
+				if (d1.getOverridenIds().contains(d2.getID())) {
+					return -1;
 				}
+				if (d2.getOverridenIds().contains(d1.getID())) {
+					return 1;
+				}
+				return 0;
 			});
 		}
 		return fgContributedClasspathFixProcessors;
@@ -179,9 +175,7 @@ public final class ClasspathFixProcessorDescriptor {
 		final ArrayList<ClasspathFixProposal> proposals= new ArrayList<>();
 
 		final HashSet<String> overriddenIds= new HashSet<>();
-		ClasspathFixProcessorDescriptor[] correctionProcessors= getCorrectionProcessors();
-		for (int i= 0; i < correctionProcessors.length; i++) {
-			final ClasspathFixProcessorDescriptor curr= correctionProcessors[i];
+		for (ClasspathFixProcessorDescriptor curr : getCorrectionProcessors()) {
 			if (!overriddenIds.contains(curr.getID())) {
 				SafeRunner.run(new ISafeRunnable() {
 					@Override
@@ -190,9 +184,7 @@ public final class ClasspathFixProcessorDescriptor {
 						if (processor != null) {
 							ClasspathFixProposal[] fixProposals= processor.getFixImportProposals(project, missingType);
 							if (fixProposals != null) {
-								for (int k= 0; k < fixProposals.length; k++) {
-									proposals.add(fixProposals[k]);
-								}
+								proposals.addAll(Arrays.asList(fixProposals));
 								overriddenIds.addAll(curr.getOverridenIds());
 							}
 						}

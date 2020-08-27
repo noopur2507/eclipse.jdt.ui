@@ -16,6 +16,7 @@
 package org.eclipse.jdt.internal.corext.callhierarchy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -179,14 +180,11 @@ public class Implementors {
         subProgressMonitor.beginTask("", types.length); //$NON-NLS-1$
 
         try {
-            for (int i = 0; i < types.length; i++) {
-                IType type = types[i];
+            for (IType type : types) {
                 IMethod[] methods = type.findMethods(method);
 
                 if (methods != null) {
-                    for (int j = 0; j < methods.length; j++) {
-                        foundMethods.add(methods[j]);
-                    }
+					foundMethods.addAll(Arrays.asList(methods));
                 }
 
                 subProgressMonitor.worked(1);

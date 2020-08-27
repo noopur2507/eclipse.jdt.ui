@@ -103,16 +103,13 @@ public class AddSelectedLibraryToBuildpathAction extends BuildpathModifierAction
 		try {
 			final IFile[] files= getSelectedElements().toArray(new IFile[getSelectedElements().size()]);
 
-			final IRunnableWithProgress runnable= new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-				        IJavaProject project= JavaCore.create(files[0].getProject());
-				        List<IJavaElement> result= addLibraryEntries(files, project, monitor);
-						selectAndReveal(new StructuredSelection(result));
-					} catch (CoreException e) {
-						throw new InvocationTargetException(e);
-					}
+			final IRunnableWithProgress runnable= monitor -> {
+				try {
+			        IJavaProject project= JavaCore.create(files[0].getProject());
+			        List<IJavaElement> result= addLibraryEntries(files, project, monitor);
+					selectAndReveal(new StructuredSelection(result));
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
 				}
 			};
 			fContext.run(false, false, runnable);
@@ -130,8 +127,7 @@ public class AddSelectedLibraryToBuildpathAction extends BuildpathModifierAction
 		List<CPListElement> addedEntries= new ArrayList<>();
 		try {
 			monitor.beginTask(NewWizardMessages.ClasspathModifier_Monitor_AddToBuildpath, 4);
-			for (int i= 0; i < resources.length; i++) {
-				IResource res= resources[i];
+			for (IFile res : resources) {
 				CPListElement cpListElement= new CPListElement(project, IClasspathEntry.CPE_LIBRARY, res.getFullPath(), res);
 				if(fForTestOnly) {
 					cpListElement.setAttribute(IClasspathAttribute.TEST, "true"); //$NON-NLS-1$
@@ -153,8 +149,7 @@ public class AddSelectedLibraryToBuildpathAction extends BuildpathModifierAction
         	informListeners(delta);
 
 			List<IJavaElement> result= new ArrayList<>(addedEntries.size());
-			for (int i= 0; i < resources.length; i++) {
-				IResource res= resources[i];
+			for (IResource res : resources) {
 				IJavaElement elem= project.getPackageFragmentRoot(res);
 				if (elem != null) {
 					result.add(elem);

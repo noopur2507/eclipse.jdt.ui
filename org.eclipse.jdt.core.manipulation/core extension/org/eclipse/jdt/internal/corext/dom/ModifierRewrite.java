@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.corext.dom;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.text.edits.TextEditGroup;
@@ -31,6 +30,7 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
@@ -78,6 +78,8 @@ public class ModifierRewrite {
 				return rewrite.getListRewrite(declNode, SingleVariableDeclaration.MODIFIERS2_PROPERTY);
 			case ASTNode.TYPE_DECLARATION:
 				return rewrite.getListRewrite(declNode, TypeDeclaration.MODIFIERS2_PROPERTY);
+			case ASTNode.RECORD_DECLARATION:
+				return rewrite.getListRewrite(declNode, RecordDeclaration.MODIFIERS2_PROPERTY);
 			case ASTNode.ENUM_DECLARATION:
 				return rewrite.getListRewrite(declNode, EnumDeclaration.MODIFIERS2_PROPERTY);
 			case ASTNode.ANNOTATION_TYPE_DECLARATION:
@@ -97,7 +99,7 @@ public class ModifierRewrite {
 
 	/**
 	 * Sets the given modifiers. Removes all other flags, but leaves annotations in place.
-	 * 
+	 *
 	 * @param modifiers the modifiers to set
 	 * @param editGroup the edit group in which to collect the corresponding text edits, or
 	 *            <code>null</code> if ungrouped
@@ -110,7 +112,7 @@ public class ModifierRewrite {
 	/**
 	 * Sets the included modifiers and removes the excluded modifiers. Does not touch other flags
 	 * and leaves annotations in place.
-	 * 
+	 *
 	 * @param included the modifiers to set
 	 * @param excluded the modifiers to remove
 	 * @param editGroup the edit group in which to collect the corresponding text edits, or
@@ -124,7 +126,7 @@ public class ModifierRewrite {
 	/**
 	 * Sets the included visibility modifiers and removes existing visibility modifiers. Does not
 	 * touch other flags and leaves annotations in place.
-	 * 
+	 *
 	 * @param visibilityFlags the new visibility modifiers
 	 * @param editGroup the edit group in which to collect the corresponding text edits, or
 	 *            <code>null</code> if ungrouped
@@ -137,7 +139,7 @@ public class ModifierRewrite {
 	public void copyAllModifiers(ASTNode otherDecl, TextEditGroup editGroup) {
 		copyAllModifiers(otherDecl, editGroup, false);
 	}
-	
+
 	public void copyAllModifiers(ASTNode otherDecl, TextEditGroup editGroup, boolean copyIndividually) {
 		ListRewrite modifierList= evaluateListRewrite(fModifierRewrite.getASTRewrite(), otherDecl);
 		List<IExtendedModifier> originalList= modifierList.getOriginalList();
@@ -146,8 +148,8 @@ public class ModifierRewrite {
 		}
 
 		if (copyIndividually) {
-			for (Iterator<IExtendedModifier> iterator= originalList.iterator(); iterator.hasNext();) {
-				ASTNode modifier= (ASTNode) iterator.next();
+			for (IExtendedModifier iExtendedModifier : originalList) {
+				ASTNode modifier= (ASTNode) iExtendedModifier;
 				ASTNode copy= fModifierRewrite.getASTRewrite().createCopyTarget(modifier);
 				if (copy != null) { //paranoia check (only left here because we're in RC1)
 					fModifierRewrite.insertLast(copy, editGroup);
@@ -165,8 +167,7 @@ public class ModifierRewrite {
 		ListRewrite modifierList= evaluateListRewrite(fModifierRewrite.getASTRewrite(), otherDecl);
 		List<IExtendedModifier> originalList= modifierList.getOriginalList();
 
-		for (Iterator<IExtendedModifier> iterator= originalList.iterator(); iterator.hasNext();) {
-			IExtendedModifier modifier= iterator.next();
+		for (IExtendedModifier modifier : originalList) {
 			if (modifier.isAnnotation()) {
 				fModifierRewrite.insertLast(fModifierRewrite.getASTRewrite().createCopyTarget((Annotation) modifier), editGroup);
 			}
@@ -176,7 +177,7 @@ public class ModifierRewrite {
 	/**
 	 * Sets the given modifiers and removes all other modifiers that match the consideredFlags mask.
 	 * Does not touch other flags and leaves annotations in place.
-	 * 
+	 *
 	 * @param modifiers the modifiers to set
 	 * @param consideredFlags mask of modifiers to consider
 	 * @param editGroup the edit group in which to collect the corresponding text edits, or
@@ -191,8 +192,8 @@ public class ModifierRewrite {
 
 		// remove modifiers
 		List<IExtendedModifier> originalList= fModifierRewrite.getOriginalList();
-		for (int i= 0; i < originalList.size(); i++) {
-			ASTNode curr= (ASTNode) originalList.get(i);
+		for (IExtendedModifier element : originalList) {
+			ASTNode curr= (ASTNode) element;
 			if (curr instanceof Modifier) {
 				int flag= ((Modifier)curr).getKeyword().toFlagValue();
 				if ((consideredFlags & flag) != 0) {
@@ -209,16 +210,14 @@ public class ModifierRewrite {
 		// find last annotation
 		IExtendedModifier lastAnnotation= null;
 		List<IExtendedModifier> extendedList= fModifierRewrite.getRewrittenList();
-		for (int i= 0; i < extendedList.size(); i++) {
-			IExtendedModifier curr= extendedList.get(i);
+		for (IExtendedModifier curr : extendedList) {
 			if (curr.isAnnotation())
 				lastAnnotation= curr;
 		}
 
 		// add modifiers
 		List<Modifier> newNodes= ASTNodeFactory.newModifiers(fAst, newModifiers);
-		for (int i= 0; i < newNodes.size(); i++) {
-			Modifier curr= newNodes.get(i);
+		for (Modifier curr : newNodes) {
 			if ((curr.getKeyword().toFlagValue() & VISIBILITY_MODIFIERS) != 0) {
 				if (lastAnnotation != null)
 					fModifierRewrite.insertAfter(curr, (ASTNode) lastAnnotation, editGroup);

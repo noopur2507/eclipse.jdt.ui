@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2010 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,9 +13,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.text.tests;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.eclipse.jface.preference.PreferenceStore;
 
@@ -24,7 +29,6 @@ import org.eclipse.jface.text.BadPartitioningException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentPartitioner;
-import org.eclipse.jface.text.IDocumentPartitioningListener;
 import org.eclipse.jface.text.ITypedRegion;
 import org.eclipse.jface.text.TypedRegion;
 
@@ -33,21 +37,13 @@ import org.eclipse.jdt.ui.text.JavaTextTools;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.IPropertiesFilePartitions;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesFileDocumentSetupParticipant;
 
-
-
-public class PropertiesFilePartitionerTest extends TestCase {
-
+public class PropertiesFilePartitionerTest {
 	private JavaTextTools fTextTools;
 	private Document fDocument;
 	protected boolean fDocumentPartitioningChanged;
 
-
-	public PropertiesFilePartitionerTest(String name) {
-		super(name);
-	}
-
-	@Override
-	protected void setUp() {
+	@Before
+	public void setUp() {
 
 		fTextTools= new JavaTextTools(new PreferenceStore());
 
@@ -57,20 +53,11 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		//             01234567890 1234567890 1234567890 123456789
 
 		fDocumentPartitioningChanged= false;
-		fDocument.addDocumentPartitioningListener(new IDocumentPartitioningListener() {
-			@Override
-			public void documentPartitioningChanged(IDocument document) {
-				fDocumentPartitioningChanged= true;
-			}
-		});
+		fDocument.addDocumentPartitioningListener(document -> fDocumentPartitioningChanged= true);
 	}
 
-	public static Test suite() {
-		return new TestSuite(PropertiesFilePartitionerTest.class);
-	}
-
-	@Override
-	protected void tearDown () {
+	@After
+	public void tearDown () {
 		fTextTools.dispose();
 		fTextTools= null;
 
@@ -90,11 +77,12 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		for (int i= 0; i < expectation.length; i++) {
 			ITypedRegion e= expectation[i];
 			ITypedRegion r= result[i];
-			assertTrue("was: "+ print(r) + ", expected: " + print(e), r.equals(e));
+			assertEquals("was: "+ print(r) + ", expected: " + print(e), r, e);
 		}
 
 	}
 
+	@Test
 	public void testInitialPartitioning() {
 		try {
 			ITypedRegion[] result= fDocument.computePartitioning(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, 0, fDocument.getLength(), false);
@@ -116,6 +104,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPartitioningWithEndingEscape() {
 		try {
 			fDocument.replace(40, 0, "\n key value\\n\nkey value\n");
@@ -142,6 +131,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPartitioningWithLeadingWhitespace() {
 		try {
 			fDocument.replace(40, 0, "\n key value\n  key value\n\tkey value\n\t\tkey value");
@@ -172,12 +162,13 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testIntraPartitionChange1() {
 		try {
 
 			fDocument.replace(1, 3, "ttt");
 
-			assertTrue(!fDocumentPartitioningChanged);
+			assertFalse(fDocumentPartitioningChanged);
 
 			ITypedRegion[] result= fDocument.computePartitioning(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, 0, fDocument.getLength(), false);
 			TypedRegion[] expectation= {
@@ -198,12 +189,13 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testIntraPartitionChange2() {
 		try {
 
 			fDocument.replace(14, 1, " ");
 
-			 assertTrue(!fDocumentPartitioningChanged);
+			 assertFalse(fDocumentPartitioningChanged);
 
 				ITypedRegion[] result= fDocument.computePartitioning(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, 0, fDocument.getLength(), false);
 				TypedRegion[] expectation= {
@@ -224,6 +216,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 			}
 	}
 
+	@Test
 	public void testInsertNewPartition() {
 		try {
 
@@ -252,6 +245,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRemoveCommentPartition() {
 		try {
 
@@ -277,6 +271,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRemoveValuePartition() {
 
 		fDocumentPartitioningChanged= false;
@@ -306,6 +301,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 	}
 
 
+	@Test
 	public void testJoinPartitions1() {
 		try {
 
@@ -330,6 +326,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testJoinPartitions2() {
 		try {
 
@@ -355,6 +352,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 	}
 
 
+	@Test
 	public void testSplitPartition1() {
 
 		testJoinPartitions1();
@@ -369,12 +367,13 @@ public class PropertiesFilePartitionerTest extends TestCase {
 
 
 		} catch (BadLocationException x) {
-			assertTrue(false);
+			fail();
 		}
 
 		testInitialPartitioning();
 	}
 
+	@Test
 	public void testSplitPartition2() {
 
 		testJoinPartitions2();
@@ -387,22 +386,20 @@ public class PropertiesFilePartitionerTest extends TestCase {
 			assertTrue(fDocumentPartitioningChanged);
 
 		} catch (BadLocationException x) {
-			assertTrue(false);
+			fail();
 		}
 
 		testInitialPartitioning();
 	}
 
+	@Test
 	public void testPartitionFinder() {
 		try {
 
-			ITypedRegion[] partitioning= fDocument.computePartitioning(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, 0, fDocument.getLength(), false);
-
-			for (int i= 0; i < partitioning.length; i++) {
-				ITypedRegion expected= partitioning[i];
+			for (ITypedRegion expected : fDocument.computePartitioning(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, 0, fDocument.getLength(), false)) {
 				for (int j= 0; j < expected.getLength(); j++) {
 					ITypedRegion result= fDocument.getPartition(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, expected.getOffset() + j, false);
-					assertTrue(expected.equals(result));
+					assertEquals(expected, result);
 				}
 			}
 
@@ -413,6 +410,7 @@ public class PropertiesFilePartitionerTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testReplaceWithCommentPartition() {
 		try {
 

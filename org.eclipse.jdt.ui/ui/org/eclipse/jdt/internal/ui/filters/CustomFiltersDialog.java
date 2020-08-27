@@ -40,15 +40,11 @@ import org.eclipse.core.runtime.Assert;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.SelectionDialog;
@@ -203,31 +199,23 @@ public class CustomFiltersDialog extends SelectionDialog {
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		data.heightHint= convertHeightInCharsToPixels(3);
 		description.setLayoutData(data);
-		fCheckBoxList.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				ISelection selection= event.getSelection();
-				if (selection instanceof IStructuredSelection) {
-					Object selectedElement= ((IStructuredSelection)selection).getFirstElement();
-					if (selectedElement instanceof FilterDescriptor)
-						description.setText(((FilterDescriptor)selectedElement).getDescription());
-				}
+		fCheckBoxList.addSelectionChangedListener(event -> {
+			ISelection selection= event.getSelection();
+			if (selection instanceof IStructuredSelection) {
+				Object selectedElement= ((IStructuredSelection)selection).getFirstElement();
+				if (selectedElement instanceof FilterDescriptor)
+					description.setText(((FilterDescriptor)selectedElement).getDescription());
 			}
 		});
-		fCheckBoxList.addCheckStateListener(new ICheckStateListener() {
-			/*
-			 * @see org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.jface.viewers.CheckStateChangedEvent)
-			 */
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				Object element= event.getElement();
-				if (element instanceof FilterDescriptor) {
-					// renew if already touched
-					if (fFilterDescriptorChangeHistory.contains(element))
-						fFilterDescriptorChangeHistory.remove(element);
-					fFilterDescriptorChangeHistory.push((FilterDescriptor) element);
-				}
-			}});
+		fCheckBoxList.addCheckStateListener(event -> {
+			Object element= event.getElement();
+			if (element instanceof FilterDescriptor) {
+				// renew if already touched
+				if (fFilterDescriptorChangeHistory.contains(element))
+					fFilterDescriptorChangeHistory.remove(element);
+				fFilterDescriptorChangeHistory.push((FilterDescriptor) element);
+			}
+		});
 
 		addSelectionButtons(parent);
 	}
@@ -250,8 +238,9 @@ public class CustomFiltersDialog extends SelectionDialog {
 			public void widgetSelected(SelectionEvent e) {
 				fCheckBoxList.setAllChecked(true);
 				fFilterDescriptorChangeHistory.clear();
-				for (int i= 0; i < fBuiltInFilters.length; i++)
-					fFilterDescriptorChangeHistory.push(fBuiltInFilters[i]);
+				for (FilterDescriptor builtInFilter : fBuiltInFilters) {
+					fFilterDescriptorChangeHistory.push(builtInFilter);
+				}
 			}
 		};
 		selectButton.addSelectionListener(listener);
@@ -265,8 +254,9 @@ public class CustomFiltersDialog extends SelectionDialog {
 			public void widgetSelected(SelectionEvent e) {
 				fCheckBoxList.setAllChecked(false);
 				fFilterDescriptorChangeHistory.clear();
-				for (int i= 0; i < fBuiltInFilters.length; i++)
-					fFilterDescriptorChangeHistory.push(fBuiltInFilters[i]);
+				for (FilterDescriptor builtInFilter : fBuiltInFilters) {
+					fFilterDescriptorChangeHistory.push(builtInFilter);
+				}
 			}
 		};
 		deselectButton.addSelectionListener(listener);
@@ -282,9 +272,9 @@ public class CustomFiltersDialog extends SelectionDialog {
 	protected void okPressed() {
 		if (fBuiltInFilters != null) {
 			ArrayList<FilterDescriptor> result= new ArrayList<>();
-			for (int i= 0; i < fBuiltInFilters.length; ++i) {
-				if (fCheckBoxList.getChecked(fBuiltInFilters[i]))
-					result.add(fBuiltInFilters[i]);
+			for (FilterDescriptor fBuiltInFilter : fBuiltInFilters) {
+				if (fCheckBoxList.getChecked(fBuiltInFilter))
+					result.add(fBuiltInFilter);
 			}
 			setResult(result);
 		}
@@ -336,8 +326,9 @@ public class CustomFiltersDialog extends SelectionDialog {
 	public String[] getEnabledFilterIds() {
 		Object[] result= getResult();
 		Set<String> enabledIds= new HashSet<>(result.length);
-		for (int i= 0; i < result.length; i++)
-			enabledIds.add(((FilterDescriptor)result[i]).getId());
+		for (Object r : result) {
+			enabledIds.add(((FilterDescriptor) r).getId());
+		}
 		return enabledIds.toArray(new String[enabledIds.size()]);
 	}
 
@@ -360,10 +351,11 @@ public class CustomFiltersDialog extends SelectionDialog {
 		FilterDescriptor[] filterDescs= fBuiltInFilters;
 		List<FilterDescriptor> result= new ArrayList<>(filterDescs.length);
 		List<String> enabledFilterIds= Arrays.asList(fEnabledFilterIds);
-		for (int i= 0; i < filterDescs.length; i++) {
-			String id= filterDescs[i].getId();
-			if (enabledFilterIds.contains(id))
-				result.add(filterDescs[i]);
+		for (FilterDescriptor filterDesc : filterDescs) {
+			String id= filterDesc.getId();
+			if (enabledFilterIds.contains(id)) {
+				result.add(filterDesc);
+			}
 		}
 		return result.toArray(new FilterDescriptor[result.size()]);
 	}
@@ -424,8 +416,7 @@ public class CustomFiltersDialog extends SelectionDialog {
 	private static String escapeSeparator(String pattern, String separator) {
 		int length= pattern.length();
 		StringBuilder buf= new StringBuilder(length);
-		for (int i= 0; i < length; i++) {
-			char ch= pattern.charAt(i);
+		for (char ch : pattern.toCharArray()) {
 			if (separator.equals(String.valueOf(ch)))
 				buf.append(ch);
 			buf.append(ch);

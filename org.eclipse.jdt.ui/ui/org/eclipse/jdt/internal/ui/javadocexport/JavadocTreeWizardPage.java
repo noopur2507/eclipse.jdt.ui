@@ -22,8 +22,6 @@ import java.util.StringTokenizer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -47,8 +45,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 
 import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 
@@ -115,7 +111,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 
 	/**
 	 * Constructor for JavadocTreeWizardPage.
-	 * 
+	 *
 	 * @param pageName the page name
 	 * @param store the store
 	 */
@@ -170,12 +166,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 		createLabel(group, SWT.NONE, JavadocExportMessages.JavadocTreeWizardPage_javadoccommand_label, createGridData(GridData.HORIZONTAL_ALIGN_BEGINNING, numColumns, 0));
 		fJavadocCommandText= createCombo(group, SWT.NONE, null, createGridData(GridData.FILL_HORIZONTAL, numColumns - 1, 0));
 
-		fJavadocCommandText.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doValidation(JAVADOCSTATUS);
-			}
-		});
+		fJavadocCommandText.addModifyListener(e -> doValidation(JAVADOCSTATUS));
 
 		final Button javadocCommandBrowserButton= createButton(group, SWT.PUSH, JavadocExportMessages.JavadocTreeWizardPage_javadoccommand_button_label, createGridData(GridData.HORIZONTAL_ALIGN_FILL, 1, 0));
 		SWTUtil.setButtonDimensionHint(javadocCommandBrowserButton);
@@ -207,12 +198,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 		ITreeContentProvider listContentProvider= new JavadocMemberContentProvider();
 		fInputGroup= new CheckboxTreeAndListGroup(c, this, treeContentProvider, new JavaElementLabelProvider(JavaElementLabelProvider.SHOW_DEFAULT), listContentProvider, new JavaElementLabelProvider(JavaElementLabelProvider.SHOW_DEFAULT), SWT.NONE, convertWidthInCharsToPixels(60), convertHeightInCharsToPixels(7));
 
-		fInputGroup.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent e) {
-				doValidation(TREESTATUS);
-			}
-		});
+		fInputGroup.addCheckStateListener(e -> doValidation(TREESTATUS));
 		fInputGroup.setTreeComparator(new JavaElementComparator());
 
 		SWTUtil.setAccessibilityText(fInputGroup.getTree(), JavadocExportMessages.JavadocTreeWizardPage_tree_accessibility_message);
@@ -323,12 +309,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 				createGridData(GridData.HORIZONTAL_ALIGN_FILL, 1, LayoutUtil.getIndent()));
 		fDestinationText= createText(group, SWT.SINGLE | SWT.BORDER, null, createGridData(GridData.FILL_HORIZONTAL, numColumns - 2, 0));
 		((GridData) fDestinationText.getLayoutData()).widthHint= 0;
-		fDestinationText.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doValidation(STANDARDSTATUS);
-			}
-		});
+		fDestinationText.addModifyListener(e -> doValidation(STANDARDSTATUS));
 
 		fDestinationBrowserButton= createButton(group, SWT.PUSH, JavadocExportMessages.JavadocTreeWizardPage_destinationbrowse_label, createGridData(GridData.HORIZONTAL_ALIGN_END, 1, 0));
 		SWTUtil.setButtonDimensionHint(fDestinationBrowserButton);
@@ -343,24 +324,13 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 		((GridData) fDocletTypeText.getLayoutData()).widthHint= 0;
 
 
-		fDocletTypeText.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doValidation(CUSTOMSTATUS);
-			}
-		});
+		fDocletTypeText.addModifyListener(e -> doValidation(CUSTOMSTATUS));
 
 		fDocletLabel= createLabel(group, SWT.NONE, JavadocExportMessages.JavadocTreeWizardPage_docletpathfield_label, createGridData(GridData.HORIZONTAL_ALIGN_BEGINNING, 1, LayoutUtil.getIndent()));
 		fDocletText= createText(group, SWT.SINGLE | SWT.BORDER, null, createGridData(GridData.HORIZONTAL_ALIGN_FILL, numColumns - 1, 0));
 		((GridData) fDocletText.getLayoutData()).widthHint= 0;
 
-		fDocletText.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				doValidation(CUSTOMSTATUS);
-			}
-
-		});
+		fDocletText.addModifyListener(e -> doValidation(CUSTOMSTATUS));
 
 		//Add Listeners
 		fCustomButton.addSelectionListener(new EnableSelectionAdapter(new Control[] { fDocletLabel, fDocletText, fDocletTypeLabel, fDocletTypeText }, new Control[] { fDestinationLabel, fDestinationText, fDestinationBrowserButton }));
@@ -423,12 +393,11 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 	 * Receives of list of elements selected by the user and passes them to the CheckedTree. List
 	 * can contain multiple projects and elements from different projects. If the list of seletected
 	 * elements is empty a default project is selected.
-	 * 
+	 *
 	 * @param sourceElements an array with the source elements
 	 */
 	private void setTreeChecked(IJavaElement[] sourceElements) {
-		for (int i= 0; i < sourceElements.length; i++) {
-			IJavaElement curr= sourceElements[i];
+		for (IJavaElement curr : sourceElements) {
 			if (curr instanceof ICompilationUnit) {
 				fInputGroup.initialCheckListItem(curr);
 			} else if (curr instanceof IPackageFragment) {
@@ -446,13 +415,9 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 	private IPath[] getSourcePath(IJavaProject[] projects) {
 		HashSet<IPath> res= new HashSet<>();
 		//loops through all projects and gets a list if of their source paths
-		for (int k= 0; k < projects.length; k++) {
-			IJavaProject iJavaProject= projects[k];
-
+		for (IJavaProject javaProject : projects) {
 			try {
-				IPackageFragmentRoot[] roots= iJavaProject.getPackageFragmentRoots();
-				for (int i= 0; i < roots.length; i++) {
-					IPackageFragmentRoot curr= roots[i];
+				for (IPackageFragmentRoot curr : javaProject.getPackageFragmentRoots()) {
 					if (curr.getKind() == IPackageFragmentRoot.K_SOURCE) {
 						IResource resource= curr.getResource();
 						if (resource != null) {
@@ -476,11 +441,9 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 		HashSet<IPath> res= new HashSet<>();
 
 		IWorkspaceRoot root= ResourcesPlugin.getWorkspace().getRoot();
-		for (int j= 0; j < javaProjects.length; j++) {
-			IJavaProject curr= javaProjects[j];
+		for (IJavaProject curr : javaProjects) {
 			try {
 				IPath outputLocation= null;
-
 				// Not really clear yet what to do here for EFS. See bug
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=113233.
 
@@ -491,10 +454,8 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 				IResource outputPathFolder= root.findMember(curr.getOutputLocation());
 				if (outputPathFolder != null)
 					outputLocation= outputPathFolder.getLocation();
-
-				String[] classPath= JavaRuntime.computeDefaultRuntimeClassPath(curr);
-				for (int i= 0; i < classPath.length; i++) {
-					IPath path= Path.fromOSString(classPath[i]);
+				for (String p : JavaRuntime.computeDefaultRuntimeClassPath(curr)) {
+					IPath path= Path.fromOSString(p);
 					if (!path.equals(outputLocation)) {
 						res.add(path);
 					}
@@ -509,7 +470,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 	/**
 	 * Gets a list of elements to generated javadoc for from each project. Javadoc can be generated
 	 * for either a IPackageFragment or a ICompilationUnit.
-	 * 
+	 *
 	 * @param projects an array with Java projects
 	 * @return an array with the source elements
 	 */
@@ -519,21 +480,15 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 			Set<Object> allChecked= fInputGroup.getAllCheckedTreeItems();
 
 			Set<String> incompletePackages= new HashSet<>();
-			for (int h= 0; h < projects.length; h++) {
-				IJavaProject iJavaProject= projects[h];
-
-				IPackageFragmentRoot[] roots= iJavaProject.getPackageFragmentRoots();
-				for (int i= 0; i < roots.length; i++) {
-					IPackageFragmentRoot root= roots[i];
+			for (IJavaProject iJavaProject : projects) {
+				for (IPackageFragmentRoot root : iJavaProject.getPackageFragmentRoots()) {
 					if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
 						IPath rootLocation= root.getResource().getLocation();
-						IJavaElement[] packs= root.getChildren();
-						for (int k= 0; k < packs.length; k++) {
-							IJavaElement curr= packs[k];
+						for (IJavaElement curr : root.getChildren()) {
 							if (curr.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
 								// default packages are always incomplete
 								if (curr.getElementName().length() == 0 || !allChecked.contains(curr)
-										|| fInputGroup.isTreeItemGreyChecked(curr) || !isAccessibleLocation(curr.getResource().getLocation(), rootLocation)) {
+									|| fInputGroup.isTreeItemGreyChecked(curr) || !isAccessibleLocation(curr.getResource().getLocation(), rootLocation)) {
 									incompletePackages.add(curr.getElementName());
 								}
 							}
@@ -599,9 +554,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 
 		ArrayList<String> commands= new ArrayList<>();
 		commands.add(fJavadocCommandText.getText()); // must be first
-		String[] items= fJavadocCommandText.getItems();
-		for (int i= 0; i < items.length; i++) {
-			String curr= items[i];
+		for (String curr : fJavadocCommandText.getItems()) {
 			if (!commands.contains(curr)) {
 				commands.add(curr);
 			}
@@ -611,10 +564,9 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 
 	public IJavaProject[] getCheckedProjects() {
 		ArrayList<Object> res= new ArrayList<>();
-		TreeItem[] treeItems= fInputGroup.getTree().getItems();
-		for (int i= 0; i < treeItems.length; i++) {
-			if (treeItems[i].getChecked()) {
-				Object curr= treeItems[i].getData();
+		for (TreeItem treeItem : fInputGroup.getTree().getItems()) {
+			if (treeItem.getChecked()) {
+				Object curr= treeItem.getData();
 				if (curr instanceof IJavaProject) {
 					res.add(curr);
 				}
@@ -642,7 +594,7 @@ public class JavadocTreeWizardPage extends JavadocWizardPage {
 					if (doclet.length() == 0) {
 						fDocletStatus.setError(JavadocExportMessages.JavadocTreeWizardPage_nodocletname_error);
 
-					} else if (JavaConventions.validateJavaTypeName(doclet, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3).matches(IStatus.ERROR)) {
+					} else if (JavaConventions.validateJavaTypeName(doclet, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3, null).matches(IStatus.ERROR)) {
 						fDocletStatus.setError(JavadocExportMessages.JavadocTreeWizardPage_invaliddocletname_error);
 					} else if ((docletPath.length() == 0) || !validDocletPath(docletPath)) {
 						fDocletStatus.setError(JavadocExportMessages.JavadocTreeWizardPage_invaliddocletpath_error);

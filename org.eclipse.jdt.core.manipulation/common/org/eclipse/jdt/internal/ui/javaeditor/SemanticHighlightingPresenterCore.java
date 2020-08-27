@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.core.runtime.Platform;
+
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.BadPositionCategoryException;
 import org.eclipse.jface.text.DocumentEvent;
@@ -248,7 +250,7 @@ public class SemanticHighlightingPresenterCore {
 	 * Add a position with the given range and highlighting unconditionally, only from UI thread.
 	 * The position will also be registered on the document. The text presentation is not
 	 * invalidated.
-	 * 
+	 *
 	 * @param event The document event
 	 * @param category The category
 	 * @param offset The range offset
@@ -260,7 +262,7 @@ public class SemanticHighlightingPresenterCore {
 		try {
 			event.fDocument.addPosition(category, highlightedPosition);
 		} catch (BadLocationException | BadPositionCategoryException e) {
-			JavaManipulationPlugin.logException("Error when adding new highlighting position to the document", e); //$NON-NLS-1$
+			Platform.getLog(this.getClass()).error("Error when adding new highlighting position to the document", e); //$NON-NLS-1$
 		}
 
 	}
@@ -299,12 +301,7 @@ public class SemanticHighlightingPresenterCore {
 		if (isCanceled())
 			return null;
 
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				updatePresentationCore(document, added, removed);
-			}
-		};
+		Runnable runnable= () -> updatePresentationCore(document, added, removed);
 		return runnable;
 	}
 
@@ -386,10 +383,7 @@ public class SemanticHighlightingPresenterCore {
 				}
 				fPositions= newPositions;
 			}
-		} catch (BadPositionCategoryException e) {
-			// Should not happen
-			JavaManipulationPlugin.log(e);
-		} catch (BadLocationException e) {
+		} catch (BadPositionCategoryException | BadLocationException e) {
 			// Should not happen
 			JavaManipulationPlugin.log(e);
 		}

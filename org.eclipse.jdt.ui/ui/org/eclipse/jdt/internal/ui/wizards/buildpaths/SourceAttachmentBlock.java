@@ -33,7 +33,6 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 
@@ -140,7 +139,7 @@ public class SourceAttachmentBlock {
 		} catch (CoreException e) {
 			//do nothing
 		}
-		
+
 		int kind= entry.getEntryKind();
 		Assert.isTrue(kind == IClasspathEntry.CPE_LIBRARY || kind == IClasspathEntry.CPE_VARIABLE);
 
@@ -718,15 +717,12 @@ public class SourceAttachmentBlock {
 	 * @return return the runnable
 	 */
 	public static IRunnableWithProgress getRunnable(final Shell shell, final IClasspathEntry newEntry, final IJavaProject jproject, final IPath containerPath, final boolean isReferencedEntry) {
-		return new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor monitor) throws InvocationTargetException {
-				try {
-					String[] changedAttributes= { CPListElement.SOURCEATTACHMENT, CPListElement.SOURCE_ATTACHMENT_ENCODING };
-					BuildPathSupport.modifyClasspathEntry(shell, newEntry, changedAttributes, jproject, containerPath, isReferencedEntry, monitor);
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
-				}
+		return monitor -> {
+			try {
+				String[] changedAttributes= { CPListElement.SOURCEATTACHMENT, CPListElement.SOURCE_ATTACHMENT_ENCODING };
+				BuildPathSupport.modifyClasspathEntry(shell, newEntry, changedAttributes, jproject, containerPath, isReferencedEntry, monitor);
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
 			}
 		};
 	}
@@ -741,9 +737,7 @@ public class SourceAttachmentBlock {
 			throw new IllegalArgumentException("Entry must be of kind CPE_LIBRARY or CPE_VARIABLE"); //$NON-NLS-1$
 		}
 
-		IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			IClasspathAttribute attrib= extraAttributes[i];
+		for (IClasspathAttribute attrib : entry.getExtraAttributes()) {
 			if (IClasspathAttribute.SOURCE_ATTACHMENT_ENCODING.equals(attrib.getName())) {
 				return attrib.getValue();
 			}

@@ -23,8 +23,6 @@ import java.util.Properties;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -62,6 +60,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLayoutData;
 import org.eclipse.jface.viewers.ColumnPixelData;
@@ -69,8 +68,6 @@ import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -97,6 +94,7 @@ import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaModelException;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.nls.KeyValuePair;
 import org.eclipse.jdt.internal.corext.refactoring.nls.NLSRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.nls.NLSSubstitution;
@@ -114,7 +112,6 @@ import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesFileEscapes;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
@@ -633,8 +630,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 			choices= loadAccessorDescriptions();
 		}
 
-		for (int i= 0; i < choices.length; i++) {
-			AccessorDescription curr= choices[i];
+		for (AccessorDescription curr : choices) {
 			if (!curr.equals(configured)) {
 				currChoices.add(curr);
 				currLabels.add(curr.getLabel());
@@ -703,9 +699,9 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 		Properties props= new Properties();
 		try {
 			if (propertyFile.exists()) {
-				InputStream is= propertyFile.getContents();
-				props.load(is);
-				is.close();
+				try (InputStream is= propertyFile.getContents()) {
+					props.load(is);
+				}
 			}
 		} catch (Exception e) {
 			// sorry no property
@@ -752,18 +748,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 		fTableViewer.setColumnProperties(PROPERTIES);
 		fTableViewer.setCellModifier(new CellModifier());
 
-		fTableViewer.setContentProvider(new IStructuredContentProvider() {
-			@Override
-			public Object[] getElements(Object inputElement) {
-				return fSubstitutions;
-			}
-			@Override
-			public void dispose() {
-			}
-			@Override
-			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			}
-		});
+		fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 		fTableViewer.addFilter(new ViewerFilter() {
 			@Override
 			public boolean select(Viewer viewer, Object parentElement, Object element) {
@@ -777,19 +762,13 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 
 
 		fTableViewer.setLabelProvider(new NLSSubstitutionLabelProvider());
-		fTableViewer.setInput(new Object());
+		fTableViewer.setInput(fSubstitutions);
 
-		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				ExternalizeWizardPage.this.selectionChanged(event);
-			}
-		});
+		fTableViewer.addSelectionChangedListener(ExternalizeWizardPage.this::selectionChanged);
 	}
 
 	private void createDefaultExternalization(NLSSubstitution[] substitutions) {
-		for (int i= 0; i < substitutions.length; i++) {
-			NLSSubstitution substitution= substitutions[i];
+		for (NLSSubstitution substitution : substitutions) {
 			if (substitution.getState() == NLSSubstitution.INTERNALIZED) {
 				substitution.setState(NLSSubstitution.EXTERNALIZED);
 				substitution.generateKey(substitutions, getProperties(fNLSRefactoring.getPropertyFileHandle()));
@@ -861,12 +840,9 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 		fPrefixField.setText(fNLSRefactoring.getPrefix());
 		fPrefixField.selectAll();
 
-		fPrefixField.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				fNLSRefactoring.setPrefix(fPrefixField.getText());
-				validateKeys(true);
-			}
+		fPrefixField.addModifyListener(e -> {
+			fNLSRefactoring.setPrefix(fPrefixField.getText());
+			validateKeys(true);
 		});
 	}
 
@@ -900,9 +876,10 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 	}
 
 	private void checkInvalidKeys(RefactoringStatus status) {
-		for (int i= 0; i < fSubstitutions.length; i++) {
-			if (!isKeyValid(fSubstitutions[i], status))
+		for (NLSSubstitution substitution : fSubstitutions) {
+			if (!isKeyValid(substitution, status)) {
 				return;
+			}
 		}
 	}
 
@@ -948,8 +925,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 	}
 
 	private void checkDuplicateKeys(RefactoringStatus status) {
-		for (int i= 0; i < fSubstitutions.length; i++) {
-			NLSSubstitution substitution= fSubstitutions[i];
+		for (NLSSubstitution substitution : fSubstitutions) {
 			if (conflictingKeys(substitution)) {
 				status.addFatalError(NLSUIMessages.ExternalizeWizardPage_warning_conflicting);
 				return;
@@ -958,8 +934,7 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 	}
 
 	private void checkMissingKeys(RefactoringStatus status) {
-		for (int i= 0; i < fSubstitutions.length; i++) {
-			NLSSubstitution substitution= fSubstitutions[i];
+		for (NLSSubstitution substitution : fSubstitutions) {
 			if ((substitution.getValue() == null) && (substitution.getKey() != null)) {
 				status.addWarning(NLSUIMessages.ExternalizeWizardPage_warning_keymissing);
 				return;
@@ -1018,12 +993,11 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 	}
 
 	private boolean hasNewOrMissingSubstitutions() {
-		for (int i= 0; i < fSubstitutions.length; i++) {
-			NLSSubstitution curr= fSubstitutions[i];
-			if (curr.getInitialState() == NLSSubstitution.INTERNALIZED) {
+		for (NLSSubstitution substitution : fSubstitutions) {
+			if (substitution.getInitialState() == NLSSubstitution.INTERNALIZED) {
 				return true;
 			}
-			if (curr.getInitialState() == NLSSubstitution.EXTERNALIZED && curr.getInitialValue() == null) {
+			if (substitution.getInitialState() == NLSSubstitution.EXTERNALIZED && substitution.getInitialValue() == null) {
 				return true;
 			}
 		}
@@ -1137,9 +1111,8 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 	}
 
 	private void revertStateOfSelection() {
-		List<?> selection= getSelectedTableEntries();
-		for (Iterator<?> iter= selection.iterator(); iter.hasNext();) {
-			NLSSubstitution substitution= (NLSSubstitution) iter.next();
+		for (Object name : getSelectedTableEntries()) {
+			NLSSubstitution substitution= (NLSSubstitution) name;
 			substitution.revert();
 		}
 		fTableViewer.refresh();
@@ -1191,8 +1164,8 @@ class ExternalizeWizardPage extends UserInputWizardPage {
 		Assert.isTrue(state == NLSSubstitution.EXTERNALIZED || state == NLSSubstitution.IGNORED || state == NLSSubstitution.INTERNALIZED);
 		List<?> selected= getSelectedTableEntries();
 		String[] props= new String[]{PROPERTIES[STATE_PROP]};
-		for (Iterator<?> iter= selected.iterator(); iter.hasNext();) {
-			NLSSubstitution substitution= (NLSSubstitution) iter.next();
+		for (Object name : selected) {
+			NLSSubstitution substitution= (NLSSubstitution) name;
 			substitution.setState(state);
 			if ((substitution.getState() == NLSSubstitution.EXTERNALIZED) && substitution.hasStateChanged()) {
 				substitution.generateKey(fSubstitutions, getProperties(fNLSRefactoring.getPropertyFileHandle()));

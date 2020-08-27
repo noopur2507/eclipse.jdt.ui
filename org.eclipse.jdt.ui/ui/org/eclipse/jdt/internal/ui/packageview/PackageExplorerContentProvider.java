@@ -14,6 +14,7 @@
 package org.eclipse.jdt.internal.ui.packageview;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -249,9 +250,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 		getHierarchicalPackageRootChildren(root, result);
 		if (!isProjectPackageFragmentRoot(root)) {
 			Object[] nonJavaResources= root.getNonJavaResources();
-			for (int i= 0; i < nonJavaResources.length; i++) {
-				result.add(nonJavaResources[i]);
-			}
+			result.addAll(Arrays.asList(nonJavaResources));
 		}
 		return result.toArray();
 	}
@@ -269,9 +268,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 		Object[] nonPackages= super.getPackageContent(fragment);
 		if (result.isEmpty())
 			return nonPackages;
-		for (int i= 0; i < nonPackages.length; i++) {
-			result.add(nonPackages[i]);
-		}
+		result.addAll(Arrays.asList(nonPackages));
 		return result.toArray();
 	}
 
@@ -288,9 +285,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 		Object[] others= super.getFolderContent(folder);
 		if (result.isEmpty())
 			return others;
-		for (int i= 0; i < others.length; i++) {
-			result.add(others[i]);
-		}
+		result.addAll(Arrays.asList(others));
 		return result.toArray();
 	}
 
@@ -324,9 +319,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 
 		List<Object> result= new ArrayList<>();
 
-		IPackageFragmentRoot[] roots= project.getPackageFragmentRoots();
-		for (int i= 0; i < roots.length; i++) {
-			IPackageFragmentRoot root= roots[i];
+		for (IPackageFragmentRoot root : project.getPackageFragmentRoots()) {
 			IClasspathEntry classpathEntry= root.getRawClasspathEntry();
 			int entryKind= classpathEntry.getEntryKind();
 			if (entryKind == IClasspathEntry.CPE_CONTAINER) {
@@ -344,9 +337,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 					// filter out package fragments that correspond to projects and
 					// replace them with the package fragments directly
 					Object[] fragments= getPackageFragmentRootContent(root);
-					for (int j= 0; j < fragments.length; j++) {
-						result.add(fragments[j]);
-					}
+					result.addAll(Arrays.asList(fragments));
 				} else {
 					result.add(root);
 				}
@@ -358,17 +349,13 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 		}
 
 		// separate loop to make sure all containers are on the classpath (even empty ones)
-		IClasspathEntry[] rawClasspath= project.getRawClasspath();
-		for (int i= 0; i < rawClasspath.length; i++) {
-			IClasspathEntry classpathEntry= rawClasspath[i];
+		for (IClasspathEntry classpathEntry : project.getRawClasspath()) {
 			if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
 				result.add(new ClassPathContainer(project, classpathEntry));
 			}
 		}
 		Object[] resources= project.getNonJavaResources();
-		for (int i= 0; i < resources.length; i++) {
-			result.add(resources[i]);
-		}
+		result.addAll(Arrays.asList(resources));
 		return result.toArray();
 	}
 
@@ -428,10 +415,9 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 	 * @throws JavaModelException if fetching the children fails
 	 */
 	private void getHierarchicalPackageRootChildren(IPackageFragmentRoot parent, Collection<Object> result) throws JavaModelException {
-		IJavaElement[] children= parent.getChildren();
 		boolean is9OrHigher= JavaModelUtil.is9OrHigher(parent.getJavaProject());
-		for (int i= 0; i < children.length; i++) {
-			IPackageFragment curr= (IPackageFragment) children[i];
+		for (IJavaElement child : parent.getChildren()) {
+			IPackageFragment curr= (IPackageFragment) child;
 			String name= curr.getElementName();
 			if (!name.isEmpty() && name.indexOf('.') == -1) {
 				if (fFoldPackages) {
@@ -498,9 +484,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 	 * @throws CoreException thrown when elements could not be accessed
 	 */
 	private void getHierarchicalPackagesInFolder(IFolder folder, Collection<Object> result) throws CoreException {
-		IResource[] resources= folder.members();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : folder.members()) {
 			if (resource instanceof IFolder) {
 				IFolder curr= (IFolder) resource;
 				IJavaElement element= JavaCore.create(curr);
@@ -677,7 +661,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 				if (fViewer.testFindItem(parent) != null)
 					postRefresh(parent, PARENT, element, runnables);
 				return true;
-				
+
 			} else if (element instanceof IPackageFragmentRoot) {
 				// libs and class folders can show up twice (in library container and as resource at original location)
 				IResource resource= element.getResource();
@@ -790,16 +774,16 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 
 		IResourceDelta[] resourceDeltas= delta.getResourceDeltas();
 		if (resourceDeltas != null) {
-			for (int i= 0; i < resourceDeltas.length; i++) {
-				int kind= resourceDeltas[i].getKind();
+			for (IResourceDelta resourceDelta : resourceDeltas) {
+				int kind= resourceDelta.getKind();
 				if (kind == IResourceDelta.ADDED || kind == IResourceDelta.REMOVED) {
 					count++;
 				}
 			}
 		}
 		IJavaElementDelta[] affectedChildren= delta.getAffectedChildren();
-		for (int i= 0; i < affectedChildren.length; i++) {
-			int kind= affectedChildren[i].getKind();
+		for (IJavaElementDelta affectedChildren1 : affectedChildren) {
+			int kind= affectedChildren1.getKind();
 			if (kind == IJavaElementDelta.ADDED || kind == IJavaElementDelta.REMOVED) {
 				count++;
 			}
@@ -826,22 +810,22 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 			return;
 		}
 		if (resourceDeltas != null) {
-			for (int i= 0; i < resourceDeltas.length; i++) {
-				if (processResourceDelta(resourceDeltas[i], element, runnables)) {
+			for (IResourceDelta resourceDelta : resourceDeltas) {
+				if (processResourceDelta(resourceDelta, element, runnables)) {
 					return; // early return, element got refreshed
 				}
 			}
 		}
-		for (int i= 0; i < affectedChildren.length; i++) {
-			if (processDelta(affectedChildren[i], runnables)) {
+		for (IJavaElementDelta child : affectedChildren) {
+			if (processDelta(child, runnables)) {
 				return; // early return, element got refreshed
 			}
 		}
 	}
 
 	protected void processAffectedChildren(IJavaElementDelta[] affectedChildren, Collection<Runnable> runnables) throws JavaModelException {
-		for (int i= 0; i < affectedChildren.length; i++) {
-			processDelta(affectedChildren[i], runnables);
+		for (IJavaElementDelta child : affectedChildren) {
+			processDelta(child, runnables);
 		}
 	}
 
@@ -858,13 +842,7 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 	 * @param runnables the resulting view changes as runnables (type {@link Runnable})
 	 */
 	 private void postUpdateIcon(final IJavaElement element, Collection<Runnable> runnables) {
-		 runnables.add(new Runnable() {
-			@Override
-			public void run() {
-				// 1GF87WR: ITPUI:ALL - SWTEx + NPE closing a workbench window.
-				fViewer.update(element, new String[]{IBasicPropertyConstants.P_IMAGE});
-			}
-		});
+		 runnables.add(() -> fViewer.update(element, new String[]{IBasicPropertyConstants.P_IMAGE}));
 	 }
 
 	/**
@@ -919,8 +897,8 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 		IResourceDelta[] resourceDeltas= delta.getAffectedChildren();
 
 		int count= 0;
-		for (int i= 0; i < resourceDeltas.length; i++) {
-			int kind= resourceDeltas[i].getKind();
+		for (IResourceDelta resourceDelta : resourceDeltas) {
+			int kind= resourceDelta.getKind();
 			if (kind == IResourceDelta.ADDED || kind == IResourceDelta.REMOVED) {
 				count++;
 				if (count > 1) {
@@ -929,8 +907,8 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 				}
 			}
 		}
-		for (int i= 0; i < resourceDeltas.length; i++) {
-			if (processResourceDelta(resourceDeltas[i], resource, runnables)) {
+		for (IResourceDelta resourceDelta : resourceDeltas) {
+			if (processResourceDelta(resourceDelta, resource, runnables)) {
 				return false; // early return, element got refreshed
 			}
 		}
@@ -976,59 +954,43 @@ public class PackageExplorerContentProvider extends StandardJavaElementContentPr
 	}
 
 	protected void postRefresh(final List<Object> toRefresh, final boolean updateLabels, Collection<Runnable> runnables) {
-		runnables.add(new Runnable() {
-			@Override
-			public void run() {
-				Object[] elements= toRefresh.toArray();
-				for (int i= 0; i < elements.length; i++) {
-					Object element= elements[i];
-					if (element == null || fViewer.testFindItems(element).length > 0) {
-						fViewer.refresh(element, updateLabels);
-					}
+		runnables.add(() -> {
+			for (Object element : toRefresh.toArray()) {
+				if (element == null || fViewer.testFindItems(element).length > 0) {
+					fViewer.refresh(element, updateLabels);
 				}
 			}
 		});
 	}
 
 	protected void postAdd(final Object parent, final Object element, Collection<Runnable> runnables) {
-		runnables.add(new Runnable() {
-			@Override
-			public void run() {
-				Widget[] items= fViewer.testFindItems(element);
-				for (int i= 0; i < items.length; i++) {
-					Widget item= items[i];
-					if (item instanceof TreeItem && !item.isDisposed()) {
-						TreeItem parentItem= ((TreeItem) item).getParentItem();
-						if (parentItem != null && !parentItem.isDisposed() && parent.equals(parentItem.getData())) {
-							return; // no add, element already added (most likely by a refresh)
-						}
+		runnables.add(() -> {
+			for (Widget item : fViewer.testFindItems(element)) {
+				if (item instanceof TreeItem && !item.isDisposed()) {
+					TreeItem parentItem= ((TreeItem) item).getParentItem();
+					if (parentItem != null && !parentItem.isDisposed() && parent.equals(parentItem.getData())) {
+						return; // no add, element already added (most likely by a refresh)
 					}
 				}
-				fViewer.add(parent, element);
 			}
+			fViewer.add(parent, element);
 		});
 	}
 
 	protected void postRemove(final Object element, Collection<Runnable> runnables) {
-		runnables.add(new Runnable() {
-			@Override
-			public void run() {
-				if (fViewer.testFindItems(element).length > 0) {
-					fViewer.remove(element);
-				}
+		runnables.add(() -> {
+			if (fViewer.testFindItems(element).length > 0) {
+				fViewer.remove(element);
 			}
 		});
 	}
 
 	protected void postProjectStateChanged(final Object root, Collection<Runnable> runnables) {
-		runnables.add(new Runnable() {
-			@Override
-			public void run() {
-				fViewer.refresh(root, true);
-				// trigger a synthetic selection change so that action refresh their
-				// enable state.
-				fViewer.setSelection(fViewer.getSelection());
-			}
+		runnables.add(() -> {
+			fViewer.refresh(root, true);
+			// trigger a synthetic selection change so that action refresh their
+			// enable state.
+			fViewer.setSelection(fViewer.getSelection());
 		});
 	}
 

@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
@@ -129,46 +128,42 @@ public class RemoveFromBuildpathAction extends BuildpathModifierAction {
 			final List<IFolder> foldersToDelete= new ArrayList<>();
 			queryToRemoveLinkedFolders(elementsToRemove, foldersToDelete);
 
-			final IRunnableWithProgress runnable= new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						monitor.beginTask(NewWizardMessages.ClasspathModifier_Monitor_RemoveFromBuildpath, foldersToDelete.size() + 10);
+			final IRunnableWithProgress runnable= monitor -> {
+				try {
+					monitor.beginTask(NewWizardMessages.ClasspathModifier_Monitor_RemoveFromBuildpath, foldersToDelete.size() + 10);
 
-						CPJavaProject cpProject= CPJavaProject.createFromExisting(project);
-						CPListElement[] toRemove= new CPListElement[elementsToRemove.size()];
-						int i= 0;
-						for (Iterator<Object> iterator= elementsToRemove.iterator(); iterator.hasNext();) {
-							Object element= iterator.next();
-							if (element instanceof IJavaProject) {
-								toRemove[i]= ClasspathModifier.getListElement(((IJavaProject)element).getPath(), cpProject.getCPListElements());
-							} else if (element instanceof IPackageFragmentRoot) {
-								toRemove[i]= CPListElement.createFromExisting(((IPackageFragmentRoot)element).getRawClasspathEntry(), project);
-							} else {
-								toRemove[i]= CPListElement.createFromExisting(((ClassPathContainer)element).getClasspathEntry(), project);
-							}
-	                        i++;
-                        }
-
-						BuildpathDelta delta= ClasspathModifier.removeFromBuildpath(toRemove, cpProject);
-						ClasspathModifier.commitClassPath(cpProject, new SubProgressMonitor(monitor, 10));
-
-						deleteFolders(foldersToDelete, new SubProgressMonitor(monitor, foldersToDelete.size()));
-
-						informListeners(delta);
-
-						if (delta.getDeletedResources().length == foldersToDelete.size()) {
-							selectAndReveal(new StructuredSelection(project));
+					CPJavaProject cpProject= CPJavaProject.createFromExisting(project);
+					CPListElement[] toRemove= new CPListElement[elementsToRemove.size()];
+					int i= 0;
+					for (Object element : elementsToRemove) {
+						if (element instanceof IJavaProject) {
+							toRemove[i]= ClasspathModifier.getListElement(((IJavaProject)element).getPath(), cpProject.getCPListElements());
+						} else if (element instanceof IPackageFragmentRoot) {
+							toRemove[i]= CPListElement.createFromExisting(((IPackageFragmentRoot)element).getRawClasspathEntry(), project);
 						} else {
-							List<IResource> result= new ArrayList<>(Arrays.asList(delta.getDeletedResources()));
-							result.removeAll(foldersToDelete);
-							selectAndReveal(new StructuredSelection(result));
+							toRemove[i]= CPListElement.createFromExisting(((ClassPathContainer)element).getClasspathEntry(), project);
 						}
-					} catch (CoreException e) {
-						throw new InvocationTargetException(e);
-					} finally {
-						monitor.done();
+						i++;
 					}
+
+					BuildpathDelta delta= ClasspathModifier.removeFromBuildpath(toRemove, cpProject);
+					ClasspathModifier.commitClassPath(cpProject, new SubProgressMonitor(monitor, 10));
+
+					deleteFolders(foldersToDelete, new SubProgressMonitor(monitor, foldersToDelete.size()));
+
+					informListeners(delta);
+
+					if (delta.getDeletedResources().length == foldersToDelete.size()) {
+						selectAndReveal(new StructuredSelection(project));
+					} else {
+						List<IResource> result= new ArrayList<>(Arrays.asList(delta.getDeletedResources()));
+						result.removeAll(foldersToDelete);
+						selectAndReveal(new StructuredSelection(result));
+					}
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
+				} finally {
+					monitor.done();
 				}
 			};
 			fContext.run(false, false, runnable);
@@ -189,8 +184,7 @@ public class RemoveFromBuildpathAction extends BuildpathModifierAction {
 		try {
 			monitor.beginTask(NewWizardMessages.ClasspathModifier_Monitor_RemoveFromBuildpath, folders.size());
 
-			for (Iterator<IFolder> iter= folders.iterator(); iter.hasNext();) {
-				IFolder folder= iter.next();
+			for (IFolder folder : folders) {
 				folder.delete(true, true, new SubProgressMonitor(monitor, 1));
 			}
 		} finally {
@@ -200,8 +194,7 @@ public class RemoveFromBuildpathAction extends BuildpathModifierAction {
 
 	private void queryToRemoveLinkedFolders(final List<Object> elementsToRemove, final List<IFolder> foldersToDelete) throws JavaModelException {
 		final Shell shell= getShell();
-		for (Iterator<?> iter= getSelectedElements().iterator(); iter.hasNext();) {
-			Object element= iter.next();
+		for (Object element : getSelectedElements()) {
 			if (element instanceof IPackageFragmentRoot) {
 				IFolder folder= getLinkedSourceFolder((IPackageFragmentRoot)element);
 				if (folder != null) {
@@ -247,9 +240,7 @@ public class RemoveFromBuildpathAction extends BuildpathModifierAction {
 			return false;
 
 		try {
-			for (Iterator<?> iter= elements.iterator(); iter.hasNext();) {
-				Object element= iter.next();
-
+			for (Object element : elements) {
 				if (element instanceof IJavaProject) {
 					IJavaProject project= (IJavaProject)element;
 					if (!ClasspathModifier.isSourceFolder(project))

@@ -19,6 +19,7 @@ import java.util.jar.Attributes.Name;
 import org.eclipse.osgi.util.NLS;
 
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Platform;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -465,7 +466,7 @@ public class JavaElementLabelComposerCore {
 				// don't care, we are decorating already removed element
 				return;
 			}
-			JavaManipulationPlugin.logException("Error rendering method label", e); //$NON-NLS-1$ // NotExistsException will not reach this point
+			Platform.getLog(this.getClass()).error("Error rendering method label", e); //$NON-NLS-1$ // NotExistsException will not reach this point
 		}
 	}
 
@@ -476,8 +477,7 @@ public class JavaElementLabelComposerCore {
 
 
 	protected void appendAnnotationLabels(IAnnotation[] annotations, long flags) throws JavaModelException {
-		for (int j= 0; j < annotations.length; j++) {
-			IAnnotation annotation= annotations[j];
+		for (IAnnotation annotation : annotations) {
 			appendAnnotationLabel(annotation, flags);
 			fBuffer.append(' ');
 		}
@@ -681,7 +681,7 @@ public class JavaElementLabelComposerCore {
 			}
 
 		} catch (JavaModelException e) {
-			JavaManipulationPlugin.logException("Error rendering type parameters", e); //$NON-NLS-1$ // NotExistsException will not reach this point
+			Platform.getLog(this.getClass()).error("Error rendering type parameters", e); //$NON-NLS-1$ // NotExistsException will not reach this point
 		}
 	}
 

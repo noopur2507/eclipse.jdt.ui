@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,8 +21,6 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -75,7 +74,7 @@ public class FilteredPreferenceTree {
 
 	/**
 	 * A node in <code>FilteredPreferenceTree</code>.
-	 * 
+	 *
 	 * @param <T> type of the node's main control
 	 */
 	public static class PreferenceTreeNode<T extends Control> {
@@ -122,7 +121,7 @@ public class FilteredPreferenceTree {
 		 * The <code>label</code> and the <code>key</code> must not be <code>null</code> if the node
 		 * has a corresponding UI control.
 		 * </p>
-		 * 
+		 *
 		 * @param label the label text
 		 * @param control the control associated with this node,
 		 * @param showAllChildren tells whether all children should be shown even if just one child
@@ -311,12 +310,7 @@ public class FilteredPreferenceTree {
 
 		fRefreshJob= doCreateRefreshJob();
 		fRefreshJob.setSystem(true);
-		fParentComposite.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				fRefreshJob.cancel();
-			}
-		});
+		fParentComposite.addDisposeListener(e -> fRefreshJob.cancel());
 	}
 
 	private void createDescription(String label) {
@@ -381,12 +375,9 @@ public class FilteredPreferenceTree {
 				setAllExpanded(null, expand);
 			}
 		});
-		item.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				createdImage.dispose();
-				createdDisabledImage.dispose();
-			}
+		item.addDisposeListener(e -> {
+			createdImage.dispose();
+			createdDisabledImage.dispose();
 		});
 		return item;
 	}
@@ -443,9 +434,8 @@ public class FilteredPreferenceTree {
 			labelMatcher= createStringMatcher(filterText);
 		} else {
 			if (index == 0 && !fExpectMultiWordValueMatch) {
-				int i= 0;
-				for (; i < filterText.length(); i++) {
-					char ch= filterText.charAt(i);
+				int i= filterText.length();
+				for (char ch : filterText.toCharArray()) {
 					if (ch == ' ' || ch == '\t') {
 						break;
 					}
@@ -470,7 +460,7 @@ public class FilteredPreferenceTree {
 
 	/**
 	 * Return the time delay that should be used when scheduling the filter refresh job.
-	 * 
+	 *
 	 * @return a time delay in milliseconds before the job should run
 	 */
 	private long getRefreshJobDelay() {
@@ -492,8 +482,8 @@ public class FilteredPreferenceTree {
 		//update children
 		List<PreferenceTreeNode<?>> children= node.getChildren();
 		if (children != null) {
-			for (int i= 0; i < children.size(); i++) {
-				updateUI(children.get(i));
+			for (PreferenceTreeNode<?> element : children) {
+				updateUI(element);
 			}
 		}
 	}
@@ -528,15 +518,15 @@ public class FilteredPreferenceTree {
 		fScrolledPageContent.setRedraw(false);
 		fScrolledPageContent.setReflow(false);
 
-		ArrayList<PreferenceTreeNode<?>> bfsNodes= new ArrayList<>();
+		ArrayDeque<PreferenceTreeNode<?>> bfsNodes= new ArrayDeque<>();
 		if (start != null) {
 			bfsNodes.add(start);
 		} else {
 			bfsNodes.addAll(fRoot.getChildren());
 		}
-		for (int i= 0; i < bfsNodes.size(); i++) {
-			PreferenceTreeNode<?> node= bfsNodes.get(i);
-			bfsNodes.addAll(bfsNodes.get(i).getChildren());
+		while (!bfsNodes.isEmpty()) {
+			PreferenceTreeNode<?> node= bfsNodes.remove();
+			bfsNodes.addAll(node.getChildren());
 			if (node.getControl() instanceof ExpandableComposite)
 				((ExpandableComposite) node.getControl()).setExpanded(expanded);
 		}

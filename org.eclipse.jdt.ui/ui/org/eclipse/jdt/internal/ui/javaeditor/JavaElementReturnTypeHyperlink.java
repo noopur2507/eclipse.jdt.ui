@@ -23,7 +23,6 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 
 import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.PartInitException;
 
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -41,7 +40,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
 
 /**
  * Creates a Java element return type hyperlink for methods.
- * 
+ *
  * @since 3.7
  */
 public class JavaElementReturnTypeHyperlink implements IHyperlink {
@@ -50,10 +49,10 @@ public class JavaElementReturnTypeHyperlink implements IHyperlink {
 	private final SelectionDispatchAction fOpenAction;
 	private final IMethod fMethod;
 	private final boolean fQualify;
-	
+
 	/**
 	 * Creates a new Java element return type hyperlink for methods.
-	 * 
+	 *
 	 * @param region the region of the link
 	 * @param openAction the action to use to open the Java elements
 	 * @param method the method to open
@@ -128,13 +127,11 @@ public class JavaElementReturnTypeHyperlink implements IHyperlink {
 	private void openMethodAndShowErrorInStatusLine() {
 		try {
 			IEditorPart editor= JavaUI.openInEditor(fMethod);
-			
+
 			editor.getSite().getShell().getDisplay().beep();
 			if (editor instanceof JavaEditor)
 				((JavaEditor)editor).setStatusLineErrorMessage(JavaEditorMessages.JavaElementReturnTypeHyperlink_error_msg);
-			
-		} catch (PartInitException e) {
-			JavaPlugin.log(e);
+
 		} catch (CoreException e) {
 			JavaPlugin.log(e);
 		}

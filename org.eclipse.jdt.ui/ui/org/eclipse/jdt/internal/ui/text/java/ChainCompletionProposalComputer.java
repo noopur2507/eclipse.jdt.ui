@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010, 2019 Darmstadt University of Technology and others
+ * Copyright (c) 2010, 2020 Darmstadt University of Technology and others
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,19 +25,12 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMember;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.manipulation.JavaManipulation;
 import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
@@ -52,8 +45,9 @@ import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.text.Chain;
 import org.eclipse.jdt.internal.ui.text.ChainElement;
+import org.eclipse.jdt.internal.ui.text.ChainElementAnalyzer;
 import org.eclipse.jdt.internal.ui.text.ChainFinder;
-import org.eclipse.jdt.internal.ui.text.TypeBindingAnalyzer;
+import org.eclipse.jdt.internal.ui.text.ChainType;
 import org.eclipse.jdt.internal.ui.text.template.contentassist.TemplateProposal;
 
 public class ChainCompletionProposalComputer implements IJavaCompletionProposalComputer {
@@ -67,8 +61,6 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 	private List<ChainElement> entrypoints;
 
 	private String error;
-
-	private IJavaElement invocationSite;
 
 	private String[] excludedTypes;
 
@@ -101,11 +93,14 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 			// try to continue
 		}
 
-		invocationSite= ctx.getCoreContext().getEnclosingElement();
 		return true;
 	}
 
 	private boolean shouldPerformCompletionOnExpectedType() {
+		if (ctx.getCoreContext() == null) {
+			return false;
+		}
+
 		AST ast;
 		CompilationUnit cuNode= SharedASTProviderCore.getAST(ctx.getCompilationUnit(), SharedASTProviderCore.WAIT_NO, null);
 		if (cuNode != null) {
@@ -113,56 +108,31 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 		} else {
 			ast= ASTCreator.createAST(ctx.getCompilationUnit(), null).getAST();
 		}
-		ITypeBinding binding= ast.resolveWellKnownType(TypeBindingAnalyzer.getExpectedFullyQualifiedTypeName(ctx.getCoreContext()));
-		return binding != null || TypeBindingAnalyzer.getExpectedType(ctx.getProject(), ctx.getCoreContext()) != null;
+		return ast.resolveWellKnownType(ChainElementAnalyzer.getExpectedFullyQualifiedTypeName(ctx.getCoreContext())) != null
+				|| ChainElementAnalyzer.getExpectedType(ctx.getProject(), ctx.getCoreContext()) != null;
 	}
 
 	private boolean findEntrypoints() {
 		entrypoints= new LinkedList<>();
-		List<IJavaElement> nonTypeElements= new LinkedList<>();
-		List<IType> typeElements= new LinkedList<>();
 		for (IJavaCompletionProposal prop : collector.getJavaCompletionProposals()) {
 			if (prop instanceof AbstractJavaCompletionProposal) {
 				AbstractJavaCompletionProposal aprop= (AbstractJavaCompletionProposal) prop;
-				IJavaElement element= aprop.getJavaElement();
-				if (element != null && matchesExpectedPrefix(element)) {
-					if (element instanceof IType) {
-						if (hasPublicStaticNonPrimitiveMember((IType) element)) {
-							typeElements.add((IType) element);
-						}
-					} else {
-						if (element instanceof IMethod) {
-							if (isNonPrimitiveMethod((IMethod) element)) {
-								nonTypeElements.add(element);
-							}
-						} else if (element instanceof IField) {
-							if (isNonPrimitiveField((IField) element)) {
-								nonTypeElements.add(element);
-							}
-						} else {
-							nonTypeElements.add(element);
+				IJavaElement e= aprop.getJavaElement();
+				if (e != null) {
+					if (matchesExpectedPrefix(e) && !ChainFinder.isFromExcludedType(Arrays.asList(excludedTypes), e)) {
+						ChainElement ce= new ChainElement(e, false);
+						if (ce.getElementType() != null) {
+							entrypoints.add(ce);
 						}
 					}
 				} else {
 					IJavaElement[] visibleElements= ctx.getCoreContext().getVisibleElements(null);
 					for (IJavaElement ve : visibleElements) {
-						if (ve.getElementName().equals(aprop.getReplacementString()) && matchesExpectedPrefix(ve)) {
-							if (ve instanceof IType ) {
-								if (hasPublicStaticNonPrimitiveMember((IType) ve)) {
-									typeElements.add((IType) ve);
-								}
-							} else {
-								if (ve instanceof IMethod) {
-									if (isNonPrimitiveMethod((IMethod) ve)) {
-										nonTypeElements.add(ve);
-									}
-								} else if (element instanceof IField) {
-									if (isNonPrimitiveField((IField) element)) {
-										nonTypeElements.add(ve);
-									}
-								} else {
-									nonTypeElements.add(ve);
-								}
+						if (ve.getElementName().equals(aprop.getReplacementString()) && matchesExpectedPrefix(ve)
+								&& !ChainFinder.isFromExcludedType(Arrays.asList(excludedTypes), ve)) {
+							ChainElement ce= new ChainElement(ve, false);
+							if (ce.getElementType() != null) {
+								entrypoints.add(ce);
 							}
 						}
 					}
@@ -170,76 +140,7 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 			}
 		}
 
-		List<IBinding> bindings= new LinkedList<>();
-		IBinding [] tmp;
-		if (!nonTypeElements.isEmpty()) {
-			tmp= TypeBindingAnalyzer.resolveBindingsForElements(ctx.getCompilationUnit(), nonTypeElements.toArray(new IJavaElement[0]), false);
-			bindings.addAll(Arrays.asList(tmp));
-		}
-		if (!typeElements.isEmpty()) {
-			tmp= TypeBindingAnalyzer.resolveBindingsForElements(ctx.getCompilationUnit(), typeElements.toArray(new IJavaElement[0]), true);
-			bindings.addAll(Arrays.asList(tmp));
-		}
-		for (IBinding b : bindings) {
-			if (b != null && !ChainFinder.isFromExcludedType(Arrays.asList(excludedTypes), b)) {
-				entrypoints.add(new ChainElement(b, false));
-			}
-		}
-
 		return !entrypoints.isEmpty();
-	}
-
-	private static boolean hasPublicStaticNonPrimitiveMember(IType element) {
-		try {
-			for (IMethod m : element.getMethods()) {
-				int flags= m.getFlags();
-				if (Flags.isStatic(flags) && Flags.isPublic(flags) && !Signature.SIG_VOID.equals(m.getReturnType())) {
-					int returnType= Signature.getTypeSignatureKind(m.getReturnType());
-					if (returnType != Signature.BASE_TYPE_SIGNATURE) {
-						return true;
-					}
-				}
-			}
-			for (IField f : element.getFields()) {
-				int flags= f.getFlags();
-				if (Flags.isStatic(flags) && Flags.isPublic(flags)) {
-					int typeSignature= Signature.getTypeSignatureKind(f.getTypeSignature());
-					if (typeSignature != Signature.BASE_TYPE_SIGNATURE) {
-						return true;
-					}
-				}
-			}
-		} catch (JavaModelException e) {
-			// do nothing
-		}
-
-		return false;
-    }
-
-	private static boolean isNonPrimitiveMethod (IMethod method) {
-		try {
-			if (!Signature.SIG_VOID.equals(method.getReturnType()) && !method.isConstructor()) {
-				int typeSignature= Signature.getTypeSignatureKind(method.getReturnType());
-				if (typeSignature != Signature.BASE_TYPE_SIGNATURE) {
-					return true;
-				}
-			}
-		} catch (JavaModelException e) {
-			// do nothing
-		}
-		return false;
-	}
-
-	private static boolean isNonPrimitiveField (IField field) {
-		try {
-			int typeSignature= Signature.getTypeSignatureKind(field.getTypeSignature());
-			if (typeSignature != Signature.BASE_TYPE_SIGNATURE) {
-				return true;
-			}
-		} catch (JavaModelException e) {
-			// do nothing
-		}
-		return false;
 	}
 
 	private boolean matchesExpectedPrefix(final IJavaElement element) {
@@ -257,13 +158,12 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 			excludedTypes[i]= "L" + excludedTypes[i].replace('.', '/'); //$NON-NLS-1$
 		}
 
-		final IType invocationType= ((IMember) invocationSite).getCompilationUnit().findPrimaryType();
-		ITypeBinding receiverType= TypeBindingAnalyzer.getTypeBindingFrom(invocationType);
+		final IType invocationType= ctx.getCompilationUnit().findPrimaryType();
 
-		final List<ITypeBinding> expectedTypes= TypeBindingAnalyzer.resolveBindingsForExpectedTypes(ctx.getProject(), ctx.getCompilationUnit(), ctx.getCoreContext());
-		final ChainFinder finder= new ChainFinder(expectedTypes, Arrays.asList(excludedTypes), receiverType);
+		final List<ChainType> expectedTypes= ChainElementAnalyzer.resolveBindingsForExpectedTypes(ctx.getProject(), ctx.getCoreContext());
+		final ChainFinder finder= new ChainFinder(expectedTypes, Arrays.asList(excludedTypes), invocationType);
+		final ExecutorService executor= Executors.newSingleThreadExecutor();
 		try {
-			ExecutorService executor= Executors.newSingleThreadExecutor();
 			Future<?> future= executor.submit(() -> {
 				if (findEntrypoints()) {
 					finder.startChainSearch(entrypoints, maxChains, minDepth, maxDepth);
@@ -272,6 +172,8 @@ public class ChainCompletionProposalComputer implements IJavaCompletionProposalC
 			long timeout= Long.parseLong(JavaManipulation.getPreference(PreferenceConstants.PREF_CHAIN_TIMEOUT, ctx.getProject()));
 			future.get(timeout, TimeUnit.SECONDS);
 		} catch (final Exception e) {
+			finder.cancel();
+			executor.shutdownNow();
 			setError("Timeout during call chain computation."); //$NON-NLS-1$
 		}
 		return buildCompletionProposals(finder.getChains());

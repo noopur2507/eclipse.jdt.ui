@@ -22,7 +22,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -92,8 +91,7 @@ abstract class AbstractConfigurationBlock implements IPreferenceConfigurationBlo
 				if (e.getState()) {
 					try {
 						fIsBeingManaged= true;
-						for (Iterator<ExpandableComposite> iter= fSections.iterator(); iter.hasNext();) {
-							ExpandableComposite composite= iter.next();
+						for (ExpandableComposite composite : fSections) {
 							if (composite != source)
 								composite.setExpanded(false);
 						}
@@ -128,7 +126,7 @@ abstract class AbstractConfigurationBlock implements IPreferenceConfigurationBlo
 
 		/**
 		 * Creates a new section manager.
-		 * 
+		 *
 		 * @param dialogSettingsStore the dialog store
 		 * @param lastOpenKey the preference key
 		 */
@@ -231,21 +229,13 @@ abstract class AbstractConfigurationBlock implements IPreferenceConfigurationBlo
 
 
 	private Map<Text, String> fTextFields= new HashMap<>();
-	private ModifyListener fTextFieldListener= new ModifyListener() {
-		@Override
-		public void modifyText(ModifyEvent e) {
-			Text text= (Text) e.widget;
-			fStore.setValue(fTextFields.get(text), text.getText());
-		}
+	private ModifyListener fTextFieldListener= e -> {
+		Text text= (Text) e.widget;
+		fStore.setValue(fTextFields.get(text), text.getText());
 	};
 
 	private ArrayList<Text> fNumberFields= new ArrayList<>();
-	private ModifyListener fNumberFieldListener= new ModifyListener() {
-		@Override
-		public void modifyText(ModifyEvent e) {
-			numberFieldChanged((Text) e.widget);
-		}
-	};
+	private ModifyListener fNumberFieldListener= e -> numberFieldChanged((Text) e.widget);
 
 	/**
 	 * List of master/slave listeners when there's a dependency.

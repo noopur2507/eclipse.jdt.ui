@@ -54,12 +54,7 @@ public final class FatJarPackagerUtil {
 			return false;
 
 		final boolean[] returnValue= new boolean[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				returnValue[0]= MessageDialog.openQuestion(parent, title, message);
-			}
-		};
+		Runnable runnable= () -> returnValue[0]= MessageDialog.openQuestion(parent, title, message);
 		display.syncExec(runnable);
 
 		return returnValue[0];
@@ -81,7 +76,7 @@ public final class FatJarPackagerUtil {
 	 * Increment of "[name][.ext]" is "[name]_2[.ext]<br>
 	 * Increment of "[name]_2[.ext]" is "[name]_3[.ext]<br>
 	 * [.ext] might be empty<br>
-	 * 
+	 *
 	 * @param fileName the file name to increment
 	 * @return incremented filename
 	 */

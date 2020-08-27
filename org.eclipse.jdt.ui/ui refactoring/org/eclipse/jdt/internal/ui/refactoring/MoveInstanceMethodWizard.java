@@ -14,8 +14,6 @@
 package org.eclipse.jdt.internal.ui.refactoring;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -34,10 +32,8 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 
@@ -145,7 +141,7 @@ public final class MoveInstanceMethodWizard extends RefactoringWizard {
 			composite.setLayout(tableColumnLayout);
 			tableColumnLayout.setColumnData(columnType, new ColumnWeightData(60, true));
 			tableColumnLayout.setColumnData(columnName, new ColumnWeightData(40, true));
-			
+
 			final TableViewer viewer= new TableViewer(table);
 			viewer.setContentProvider(ArrayContentProvider.getInstance());
 			viewer.setLabelProvider(new TargetLabelProvider());
@@ -155,28 +151,23 @@ public final class MoveInstanceMethodWizard extends RefactoringWizard {
 			final IVariableBinding[] possibleTargets= fProcessor.getPossibleTargets();
 			viewer.setSelection(new StructuredSelection(new Object[] { possibleTargets[0]}));
 
-			viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-				@Override
-				public final void selectionChanged(final SelectionChangedEvent event) {
-					final Object element= ((IStructuredSelection) event.getSelection()).getFirstElement();
-					if (element instanceof IVariableBinding) {
-						final IVariableBinding target= (IVariableBinding) element;
-						final IVariableBinding[] targets= fProcessor.getPossibleTargets();
-						boolean success= false;
-						for (int index= 0; index < targets.length; index++) {
-							if (Bindings.equals(target, targets[index])) {
-								handleTargetChanged(target);
-								success= true;
-								break;
-							}
+			viewer.addSelectionChangedListener(event -> {
+				final Object element= ((IStructuredSelection) event.getSelection()).getFirstElement();
+				if (element instanceof IVariableBinding) {
+					final IVariableBinding target= (IVariableBinding) element;
+					boolean success= false;
+					for (IVariableBinding v : fProcessor.getPossibleTargets()) {
+						if (Bindings.equals(target, v)) {
+							handleTargetChanged(target);
+							success= true;
+							break;
 						}
-						if (!success)
-							fTargetTypeStatus= RefactoringStatus.createWarningStatus(Messages.format(RefactoringMessages.MoveInstanceMethodPage_invalid_target, BasicElementLabels.getJavaElementName(target.getName())));
-						else
-							fTargetTypeStatus= new RefactoringStatus();
-						handleStatusChanged();
 					}
+					if (!success)
+						fTargetTypeStatus= RefactoringStatus.createWarningStatus(Messages.format(RefactoringMessages.MoveInstanceMethodPage_invalid_target, BasicElementLabels.getJavaElementName(target.getName())));
+					else
+						fTargetTypeStatus= new RefactoringStatus();
+					handleStatusChanged();
 				}
 			});
 
@@ -195,13 +186,9 @@ public final class MoveInstanceMethodWizard extends RefactoringWizard {
 			fMethodNameField.selectAll();
 			fMethodNameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			fMethodNameField.setFocus();
-			fMethodNameField.addModifyListener(new ModifyListener() {
-
-				@Override
-				public final void modifyText(final ModifyEvent event) {
-					fMethodNameStatus= fProcessor.setMethodName(fMethodNameField.getText());
-					handleStatusChanged();
-				}
+			fMethodNameField.addModifyListener(event -> {
+				fMethodNameStatus= fProcessor.setMethodName(fMethodNameField.getText());
+				handleStatusChanged();
 			});
 			TextFieldNavigationHandler.install(fMethodNameField);
 
@@ -218,13 +205,9 @@ public final class MoveInstanceMethodWizard extends RefactoringWizard {
 				setPageComplete(false);
 			}
 			fTargetNameField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			fTargetNameField.addModifyListener(new ModifyListener() {
-
-				@Override
-				public final void modifyText(final ModifyEvent event) {
-					fTargetNameStatus= fProcessor.setTargetName(fTargetNameField.getText());
-					handleStatusChanged();
-				}
+			fTargetNameField.addModifyListener(event -> {
+				fTargetNameStatus= fProcessor.setTargetName(fTargetNameField.getText());
+				handleStatusChanged();
 			});
 			TextFieldNavigationHandler.install(fTargetNameField);
 

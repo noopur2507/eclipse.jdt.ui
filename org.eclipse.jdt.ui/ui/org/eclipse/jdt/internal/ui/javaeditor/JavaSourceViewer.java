@@ -20,8 +20,6 @@ import java.util.Map;
 import com.ibm.icu.text.Bidi;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.BidiSegmentEvent;
-import org.eclipse.swt.custom.BidiSegmentListener;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
@@ -60,11 +58,13 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.jdt.core.JavaCore;
 
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.text.IJavaColorConstants;
 import org.eclipse.jdt.ui.text.IJavaPartitions;
 import org.eclipse.jdt.ui.text.JavaSourceViewerConfiguration;
 
 import org.eclipse.jdt.internal.ui.text.SmartBackspaceManager;
+import org.eclipse.jdt.internal.ui.text.java.CompletionProposalComputerRegistry;
 import org.eclipse.jdt.internal.ui.text.java.JavaFormattingContext;
 
 
@@ -95,26 +95,6 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 	private IInformationPresenter fStructurePresenter;
 	private IInformationPresenter fHierarchyPresenter;
 
-	/**
-	 * This viewer's foreground color.
-	 * @since 3.0
-	 */
-	private Color fForegroundColor;
-	/**
-	 * The viewer's background color.
-	 * @since 3.0
-	 */
-	private Color fBackgroundColor;
-	/**
-	 * This viewer's selection foreground color.
-	 * @since 3.0
-	 */
-	private Color fSelectionForegroundColor;
-	/**
-	 * The viewer's selection background color.
-	 * @since 3.0
-	 */
-	private Color fSelectionBackgroundColor;
 	/**
 	 * The preference store.
 	 *
@@ -204,14 +184,16 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 	 */
 	@Override
 	public boolean canDoOperation(int operation) {
-		if (operation == SHOW_OUTLINE)
-			return fOutlinePresenter != null;
-		if (operation == OPEN_STRUCTURE)
-			return fStructurePresenter != null;
-		if (operation == SHOW_HIERARCHY)
-			return fHierarchyPresenter != null;
-
-		return super.canDoOperation(operation);
+		switch (operation) {
+			case SHOW_OUTLINE:
+				return fOutlinePresenter != null;
+			case OPEN_STRUCTURE:
+				return fStructurePresenter != null;
+			case SHOW_HIERARCHY:
+				return fHierarchyPresenter != null;
+			default:
+				return super.canDoOperation(operation);
+		}
 	}
 
 	/*
@@ -272,21 +254,11 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 			: createColor(fPreferenceStore, AbstractTextEditor.PREFERENCE_COLOR_FOREGROUND, styledText.getDisplay());
 			styledText.setForeground(color);
 
-			if (fForegroundColor != null)
-				fForegroundColor.dispose();
-
-			fForegroundColor= color;
-
 			// ---------- background color ----------------------
 			color= fPreferenceStore.getBoolean(AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT)
 			? null
 			: createColor(fPreferenceStore, AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND, styledText.getDisplay());
 			styledText.setBackground(color);
-
-			if (fBackgroundColor != null)
-				fBackgroundColor.dispose();
-
-			fBackgroundColor= color;
 
 			// ----------- selection foreground color --------------------
 			color= fPreferenceStore.getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SELECTION_FOREGROUND_DEFAULT_COLOR)
@@ -294,21 +266,12 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 				: createColor(fPreferenceStore, AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SELECTION_FOREGROUND_COLOR, styledText.getDisplay());
 			styledText.setSelectionForeground(color);
 
-			if (fSelectionForegroundColor != null)
-				fSelectionForegroundColor.dispose();
-
-			fSelectionForegroundColor= color;
-
 			// ---------- selection background color ----------------------
 			color= fPreferenceStore.getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SELECTION_BACKGROUND_DEFAULT_COLOR)
 				? null
 				: createColor(fPreferenceStore, AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SELECTION_BACKGROUND_COLOR, styledText.getDisplay());
 			styledText.setSelectionBackground(color);
 
-			if (fSelectionBackgroundColor != null)
-				fSelectionBackgroundColor.dispose();
-
-			fSelectionBackgroundColor= color;
 		}
     }
 
@@ -339,31 +302,27 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 
         return null;
     }
-    
+
 	/**
 	 * Sets the viewer's background color to the given control's background color.
 	 * The background color is <em>only</em> set if it's visibly distinct from the
 	 * default Java source text color.
-	 * 
+	 *
 	 * @param control the control with the default background color
 	 * @since 3.7
 	 */
 	public void adaptBackgroundColor(Control control) {
 		// workaround for dark editor background color, see https://bugs.eclipse.org/330680
-		
+
 		Color defaultColor= control.getBackground();
 		float[] defaultBgHSB= defaultColor.getRGB().getHSB();
-		
+
 		Color javaDefaultColor= JavaUI.getColorManager().getColor(IJavaColorConstants.JAVA_DEFAULT);
 		RGB javaDefaultRGB= javaDefaultColor != null ? javaDefaultColor.getRGB() : new RGB(255, 255, 255);
 		float[] javaDefaultHSB= javaDefaultRGB.getHSB();
-		
+
 		if (Math.abs(defaultBgHSB[2] - javaDefaultHSB[2]) >= 0.5f) {
 			getTextWidget().setBackground(defaultColor);
-			if (fBackgroundColor != null) {
-				fBackgroundColor.dispose();
-				fBackgroundColor= null;
-			}
 		}
 	}
 
@@ -385,14 +344,6 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 		if (fHierarchyPresenter != null) {
 			fHierarchyPresenter.uninstall();
 			fHierarchyPresenter= null;
-		}
-		if (fForegroundColor != null) {
-			fForegroundColor.dispose();
-			fForegroundColor= null;
-		}
-		if (fBackgroundColor != null) {
-			fBackgroundColor.dispose();
-			fBackgroundColor= null;
 		}
 
 		if (fPreferenceStore != null)
@@ -475,15 +426,12 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 		fBackspaceManager.install(this);
 
 		StyledText text= getTextWidget();
-		text.addBidiSegmentListener(new BidiSegmentListener() {
-			@Override
-			public void lineGetSegments(BidiSegmentEvent event) {
-				if (redraws()) {
-					try {
-						event.segments= getBidiLineSegments(getDocument(), baseLevel, widgetOffset2ModelOffset(event.lineOffset), event.lineText);
-					} catch (BadLocationException e) {
-						// don't touch the segments
-					}
+		text.addBidiSegmentListener(event -> {
+			if (redraws()) {
+				try {
+					event.segments= getBidiLineSegments(getDocument(), baseLevel, widgetOffset2ModelOffset(event.lineOffset), event.lineText);
+				} catch (BadLocationException e) {
+					// don't touch the segments
 				}
 			}
 		});
@@ -722,5 +670,14 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 	 */
 	void resetCodeMinings() {
 		super.setCodeMiningProviders(null);
+	}
+
+	/**
+	 * Check if async completion is supported for this source viewer or not.
+	 *
+	 * @return <code>true</code> if async completion is supported, otherwise <code>false</code>.
+	 */
+	public final boolean isAsyncCompletionActive() {
+		return fPreferenceStore.getBoolean(PreferenceConstants.CODEASSIST_NONUITHREAD_COMPUTATION) && !CompletionProposalComputerRegistry.getDefault().computingCompletionRequiresUIThread();
 	}
 }

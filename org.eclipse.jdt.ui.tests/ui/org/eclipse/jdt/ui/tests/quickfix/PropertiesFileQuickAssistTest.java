@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2016 IBM Corporation and others.
+ * Copyright (c) 2011, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,9 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -21,6 +24,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -51,7 +59,7 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesAssistContext;
@@ -59,13 +67,10 @@ import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesFileEditor;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesFileEditorMessages;
 import org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertiesQuickAssistProcessor;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+public class PropertiesFileQuickAssistTest {
 
-public class PropertiesFileQuickAssistTest extends TestCase {
-
-	private static final Class<PropertiesFileQuickAssistTest> THIS= PropertiesFileQuickAssistTest.class;
+	@Rule
+    public ProjectTestSetup projectSetup = new ProjectTestSetup();
 
 	private IJavaProject fJProject;
 	private IPackageFragmentRoot fSourceFolder;
@@ -73,20 +78,8 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 	private String REMOVE_KEY= PropertiesFileEditorMessages.PropertiesCorrectionProcessor_remove_property_label;
 	private String REMOVE_KEYS= PropertiesFileEditorMessages.PropertiesCorrectionProcessor_remove_properties_label;
 
-	public PropertiesFileQuickAssistTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
@@ -95,7 +88,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 
 		setPreferences();
 
-		fJProject= ProjectTestSetup.getProject();
+		fJProject= projectSetup.getProject();
 
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject, "src");
 
@@ -113,9 +106,9 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 	}
 
 
-	@Override
-	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject, ProjectTestSetup.getDefaultClasspath());
+	@After
+	public void tearDown() throws Exception {
+		JavaProjectHelper.clear(fJProject, projectSetup.getDefaultClasspath());
 	}
 
 	private static IFile createPropertyFile(IPackageFragment pack, String name, String content) throws UnsupportedEncodingException, CoreException {
@@ -130,11 +123,8 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 	}
 
 	private static void checkContentOfFile(String message, IFile file, String content) throws Exception {
-		InputStream in= file.getContents();
-		try {
+		try (InputStream in= file.getContents()) {
 			assertEqualLines(message, content, copyToString(in));
-		} finally {
-			in.close();
 		}
 	}
 
@@ -183,6 +173,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		return new PropertiesAssistContext(sourceViewer, offset, length, file, sourceViewer.getDocument(), accessorType);
 	}
 
+	@Test
 	public void testCreateFieldInAccessor1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -205,7 +196,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		buf.append("Test_1=Hello1\n");
 		buf.append("Test_2=Hello2\n");
 		IFile file= createPropertyFile(pack1, "Accessor.properties", buf.toString());
-		
+
 		int offset= buf.toString().indexOf("est_1");
 		PropertiesAssistContext context= createAssistContext(file, offset, 0);
 		List<ICompletionProposal> proposals= collectAssists(context);
@@ -232,6 +223,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testCreateFieldInAccessor2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -283,6 +275,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testCreateFieldInAccessor3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -341,6 +334,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testCreateFieldInAccessor4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -404,6 +398,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testCreateFieldInAccessor5() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -467,6 +462,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testCreateFieldInAccessor6() throws Exception {
 		//https://bugs.eclipse.org/bugs/show_bug.cgi?id=361535
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
@@ -517,6 +513,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfCu("nls file", cu, buf.toString());
 	}
 
+	@Test
 	public void testRemoveProperty1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -556,6 +553,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfFile("property file", file, buf.toString());
 	}
 
+	@Test
 	public void testRemoveProperty2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -595,6 +593,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfFile("property file", file, buf.toString());
 	}
 
+	@Test
 	public void testRemoveProperty3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -651,6 +650,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfFile("property file", file, buf.toString());
 	}
 
+	@Test
 	public void testRemoveProperty4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -722,6 +722,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		checkContentOfFile("property file", file, buf.toString());
 	}
 
+	@Test
 	public void testNoProposals1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -759,6 +760,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		QuickFixTest.assertNumberOfProposals(proposals, 0);
 	}
 
+	@Test
 	public void testNoProposals2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 
@@ -796,6 +798,7 @@ public class PropertiesFileQuickAssistTest extends TestCase {
 		QuickFixTest.assertNumberOfProposals(proposals, 0);
 	}
 
+	@Test
 	public void testNoProposals3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -86,6 +86,7 @@ public final class FixMessages extends NLS {
 	public static String UnusedCodeFix_RemoveUnusedPrivateMethod_description;
 	public static String UnusedCodeFix_RemoveUnusedField_description;
 	public static String UnusedCodeFix_RemoveUnusedVariabl_description;
+	public static String UnusedCodeFix_RemoveUnnecessaryArrayCreation_description;
 
 	public static String Java50Fix_AddMissingAnnotation_description;
 	public static String Java50Fix_AddDeprecated_description;
@@ -96,6 +97,7 @@ public final class FixMessages extends NLS {
 	public static String Java50Fix_SerialVersion_hash_description;
 	public static String Java50Fix_InitializeSerialVersionId_subtask_description;
 	public static String Java50Fix_SerialVersion_CalculateHierarchy_description;
+	public static String Java50Fix_RemoveUnnecessaryArrayCreation_description;
 
 	public static String StringFix_AddRemoveNonNls_description;
 	public static String StringFix_AddNonNls_description;
@@ -143,6 +145,7 @@ public final class FixMessages extends NLS {
 	public static String ExtractToNullCheckedLocalProposal_extractCheckedLocal_editName;
 	public static String ExtractToNullCheckedLocalProposal_extractToCheckedLocal_proposalName;
 	public static String ExtractToNullCheckedLocalProposal_todoHandleNullDescription;
+	public static String PatternFix_convert_string_to_pattern_object;
 	public static String LambdaExpressionsFix_convert_to_anonymous_class_creation;
 	public static String LambdaExpressionsFix_convert_to_lambda_expression;
 	public static String LambdaExpressionsFix_convert_to_lambda_expression_removes_annotations;
@@ -151,7 +154,7 @@ public final class FixMessages extends NLS {
 	public static String TypeParametersFix_insert_inferred_type_arguments_name;
 	public static String TypeParametersFix_remove_redundant_type_arguments_description;
 	public static String TypeParametersFix_remove_redundant_type_arguments_name;
-	
+
 	public static String TypeAnnotationFix_move;
 	public static String TypeAnnotationFix_remove;
 

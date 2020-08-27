@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2011 IBM Corporation and others.
+ * Copyright (c) 2010, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,18 +13,20 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring;
 
+import static org.junit.Assert.assertEquals;
+
 import java.lang.reflect.InvocationTargetException;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaTestPlugin;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -57,6 +59,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
@@ -66,43 +69,24 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  *
  * @since 3.6
  */
-public class DocumentChangeTest extends RefactoringTest {
-	
-	public static Test suite() {
-		return setUpTest(new TestSuite(DocumentChangeTest.class));
+public class DocumentChangeTest extends GenericRefactoringTest {
+	@Rule
+	public RefactoringTestSetup fts= new RefactoringTestSetup();
+
+	@Before
+	public void setUp() throws Exception {
+		PlatformUI.getWorkbench().showPerspective(JavaUI.ID_PERSPECTIVE, JavaPlugin.getActiveWorkbenchWindow());
 	}
 
-	public static Test suiteWithoutRefactoringTestSetup() {
-		return new TestSetup(new TestSuite(DocumentChangeTest.class)) {
-			@Override
-			protected void setUp() throws Exception {
-				PlatformUI.getWorkbench().showPerspective(JavaUI.ID_PERSPECTIVE, JavaPlugin.getActiveWorkbenchWindow());
-			}
-			
-			@Override
-			protected void tearDown() throws Exception {
-				IWorkbenchPage activePage= JavaPlugin.getActivePage();
-				if (activePage != null) {
-					activePage.closeAllPerspectives(true, true);
-				}
-			}
-		};
-	}
-	
-	public static Test setUpTest(Test test) {
-		return new RefactoringTestSetup(test) {
-			@Override
-			protected void setUp() throws Exception {
-				super.setUp(); // closes the perspective, need to reopen
-				PlatformUI.getWorkbench().showPerspective(JavaUI.ID_PERSPECTIVE, JavaPlugin.getActiveWorkbenchWindow());
-			}
-		};
+	@After
+	public void tearDown() throws Exception {
+		IWorkbenchPage activePage= JavaPlugin.getActivePage();
+		if (activePage != null) {
+			activePage.closeAllPerspectives(true, true);
+		}
 	}
 
-	public DocumentChangeTest(String name) {
-		super(name);
-	}
-	
+	@Test
 	public void testDocumentChange() throws Exception {
 		IProject project= RefactoringTestSetup.getProject().getProject();
 		IFile file= project.getFile("file.txt");
@@ -110,32 +94,32 @@ public class DocumentChangeTest extends RefactoringTest {
 		final String insertion= "modified ";
 		final String epilog= "text";
 		file.create(getStream(prolog + epilog), IResource.NONE, null);
-		
+
 		IEditorPart editor= IDE.openEditor(JavaPlugin.getActivePage(), file);
 		ITextFileBuffer textFileBuffer= FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE);
 		final IDocument document= textFileBuffer.getDocument();
-		
+
 		final Refactoring ref= new Refactoring() {
 			@Override
 			public String getName() {
 				return getClass().getName();
 			}
-			
+
 			@Override
 			public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 				return new RefactoringStatus();
 			}
-			
+
 			@Override
 			public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 				return new RefactoringStatus();
 			}
-			
+
 			@Override
 			public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 				DocumentChange change= new DocumentChange("DocumentChangeTest change", document);
 				change.setEdit(new InsertEdit(prolog.length(), insertion));
-				
+
 				// need to provide a non-null affectedObjects from the undo change, otherwise the NonLocalUndoUserApprover shows a dialog.
 				CompositeChange compositeChange= new CompositeChange("DocumentChangeTest composite change") {
 					@Override
@@ -152,87 +136,73 @@ public class DocumentChangeTest extends RefactoringTest {
 				return compositeChange;
 			}
 		};
-		
+
 		final MultiStatus statusCollector= new MultiStatus(JavaTestPlugin.getPluginId(), 0, "", null);
-		
-		ILogListener logListener= new ILogListener() {
-			@Override
-			public void logging(IStatus status, String plugin) {
-				statusCollector.add(status);
-			}
-		};
+
+		ILogListener logListener= (status, plugin) -> statusCollector.add(status);
 		Platform.addLogListener(logListener);
 		try {
-			IRunnableWithProgress runnable= new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						performRefactoring(ref);
-					} catch (Exception e) {
-						throw new InvocationTargetException(e);
-					}
+			IRunnableWithProgress runnable= monitor -> {
+				try {
+					performRefactoring(ref);
+				} catch (Exception e) {
+					throw new InvocationTargetException(e);
 				}
 			};
 			JavaPlugin.getActiveWorkbenchWindow().run(true, true, runnable);
-			
+
 			editor.doSave(new NullProgressMonitor());
-			
+
 			String contents= getContents(file);
 			assertEquals(prolog + insertion + epilog, contents);
-			
+
 			// undo:
-			
-			runnable= new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						RefactoringCore.getUndoManager().performUndo(null, new NullProgressMonitor());
-					} catch (Exception e) {
-						throw new InvocationTargetException(e);
-					}
+
+			runnable= monitor -> {
+				try {
+					RefactoringCore.getUndoManager().performUndo(null, new NullProgressMonitor());
+				} catch (Exception e) {
+					throw new InvocationTargetException(e);
 				}
 			};
 			JavaPlugin.getActiveWorkbenchWindow().run(true, true, runnable);
-			
+
 			editor.doSave(new NullProgressMonitor());
-			
+
 			contents= getContents(file);
 			assertEquals(prolog + epilog, contents);
-			
-			
+
+
 			// redo after closing file:
-			
+
 			JavaPlugin.getActivePage().closeEditor(editor, true);
-			
-			runnable= new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						RefactoringCore.getUndoManager().performRedo(null, new NullProgressMonitor());
-					} catch (Exception e) {
-						throw new InvocationTargetException(e);
-					}
+
+			runnable= monitor -> {
+				try {
+					RefactoringCore.getUndoManager().performRedo(null, new NullProgressMonitor());
+				} catch (Exception e) {
+					throw new InvocationTargetException(e);
 				}
 			};
 			JavaPlugin.getActiveWorkbenchWindow().run(true, true, runnable);
-			
+
 			editor.doSave(new NullProgressMonitor());
-			
+
 			contents= document.get();
 			assertEquals(prolog + insertion + epilog, contents);
-			
+
 			// Only document content has changed, but file content hasn't
 			// (since closing the editor has disconnected the file buffer):
 			contents= getContents(file);
 			assertEquals(prolog + epilog, contents);
-			
-			
+
+
 		} finally {
 			Platform.removeLogListener(logListener);
 		}
 		if (statusCollector.getChildren().length != 0) {
 			throw new CoreException(statusCollector);
 		}
-		
+
 	}
 }

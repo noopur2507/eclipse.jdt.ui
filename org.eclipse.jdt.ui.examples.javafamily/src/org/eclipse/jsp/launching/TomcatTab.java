@@ -13,14 +13,12 @@
  *******************************************************************************/
 package org.eclipse.jsp.launching;
 
- 
+
 import java.io.File;
 
 import org.eclipse.jsp.JspPluginImages;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
@@ -61,31 +59,31 @@ import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
  * Specifies the install location of Tomcat.
  */
 public class TomcatTab extends AbstractLaunchConfigurationTab {
-		
-		
+
+
 	// Tomcat location
 	private Button fBrowseButton;
 	private Text fTomcatDir;
-	
+
 	// WebApp location
 	private Button fProjectButton;
 	private Text fProjectText;
-	
+
 	/**
 	 * Constructs a new Tomcat tab
 	 */
 	public TomcatTab() {
 		super();
 	}
-		
+
 	/**
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(Composite)
 	 */
 	@Override
 	public void createControl(Composite parent) {
-		
+
 		Font font = parent.getFont();
-				
+
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout workingDirLayout = new GridLayout();
 		workingDirLayout.numColumns = 3;
@@ -96,28 +94,23 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 		composite.setLayoutData(gd);
 		composite.setFont(font);
 		setControl(composite);
-		
+
 		createVerticalSpacer(composite, 3);
-				
+
 		Label label = new Label(composite, SWT.NONE);
 		label.setText(LaunchingMessages.TomcatTab_3);
 		gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
 		gd.horizontalSpan = 3;
 		label.setLayoutData(gd);
 		label.setFont(font);
-				
+
 		fTomcatDir = new Text(composite, SWT.SINGLE | SWT.BORDER);
 		gd = new GridData(GridData.FILL_HORIZONTAL);
 		gd.horizontalSpan = 2;
 		fTomcatDir.setLayoutData(gd);
 		fTomcatDir.setFont(font);
-		fTomcatDir.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent evt) {
-				updateLaunchConfigurationDialog();
-			}
-		});
-		
+		fTomcatDir.addModifyListener(evt -> updateLaunchConfigurationDialog());
+
 		fBrowseButton = createPushButton(composite, LaunchingMessages.TomcatTab_21, null);
 		fBrowseButton.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -125,28 +118,23 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 				handleTomcatBrowseButtonSelected();
 			}
 		});
-		
+
 		createVerticalSpacer(composite, 3);
-		
+
 		label = new Label(composite, SWT.NONE);
 		label.setText(LaunchingMessages.TomcatTab_22);
 		gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
 		gd.horizontalSpan = 3;
 		label.setLayoutData(gd);
 		label.setFont(font);
-				
+
 		fProjectText = new Text(composite, SWT.SINGLE | SWT.BORDER);
 		gd = new GridData(GridData.FILL_HORIZONTAL);
 		gd.horizontalSpan = 2;
 		fProjectText.setLayoutData(gd);
 		fProjectText.setFont(font);
-		fProjectText.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent evt) {
-				updateLaunchConfigurationDialog();
-			}
-		});
-		
+		fProjectText.addModifyListener(evt -> updateLaunchConfigurationDialog());
+
 		fProjectButton = createPushButton(composite, LaunchingMessages.TomcatTab_23, null);
 		fProjectButton.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -155,7 +143,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 			}
 		});
 	}
-		
+
 	/**
 	 * Show a dialog that lets the user select a project
 	 * from the workspace
@@ -173,7 +161,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 				fProjectText.setText(((IResource)elements[0]).getName());
 			}
 		}
-		
+
 	}
 
 	/**
@@ -183,19 +171,19 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 		DirectoryDialog dialog = new DirectoryDialog(getShell(), SWT.SHEET);
 		dialog.setMessage(LaunchingMessages.TomcatTab_4);
 		String currentWorkingDir = fTomcatDir.getText();
-		if (!currentWorkingDir.trim().equals("")) { //$NON-NLS-1$
+		if (!currentWorkingDir.trim().isEmpty()) {
 			File path = new File(currentWorkingDir);
 			if (path.exists()) {
 				dialog.setFilterPath(currentWorkingDir);
 			}
 		}
-		
+
 		String selectedDirectory = dialog.open();
 		if (selectedDirectory != null) {
 			fTomcatDir.setText(selectedDirectory);
 		}
 	}
-					
+
 	/**
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#dispose()
 	 */
@@ -203,7 +191,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 	public void dispose() {
 		// empty implementation
 	}
-		
+
 	/**
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(ILaunchConfiguration)
 	 */
@@ -211,7 +199,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 	public boolean isValid(ILaunchConfiguration config) {
 		setErrorMessage(null);
 		setMessage(null);
-		
+
 		String workingDirPath = fTomcatDir.getText().trim();
 		// resolve variables (if any)
 		String expansion;
@@ -232,7 +220,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 				return false;
 			}
 		}
-		
+
 		String projectName = fProjectText.getText().trim();
 		if (projectName.length() > 0) {
 			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
@@ -241,7 +229,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 				return false;
 			}
 		}
-					
+
 		return true;
 	}
 
@@ -303,7 +291,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 
 	/**
 	 * Returns the string in the text widget, or <code>null</code> if empty.
-	 * 
+	 *
 	 * @param text the text field
 	 * @return text or <code>null</code>
 	 */
@@ -314,7 +302,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
 	 */
@@ -322,7 +310,7 @@ public class TomcatTab extends AbstractLaunchConfigurationTab {
 	public String getName() {
 		return LaunchingMessages.TomcatTab_7;
 	}
-		
+
 	/**
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getImage()
 	 */

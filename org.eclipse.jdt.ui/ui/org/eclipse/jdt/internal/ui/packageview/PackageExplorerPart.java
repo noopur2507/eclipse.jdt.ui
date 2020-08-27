@@ -56,8 +56,6 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IElementComparer;
 import org.eclipse.jface.viewers.ILabelDecorator;
 import org.eclipse.jface.viewers.ISelection;
@@ -91,7 +89,6 @@ import org.eclipse.ui.internal.views.helpers.EmptyWorkspaceHelper;
 import org.eclipse.ui.part.ISetSelectionTarget;
 import org.eclipse.ui.part.IShowInSource;
 import org.eclipse.ui.part.IShowInTarget;
-import org.eclipse.ui.part.IShowInTargetList;
 import org.eclipse.ui.part.ShowInContext;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.views.framelist.Frame;
@@ -525,12 +522,7 @@ public class PackageExplorerPart extends ViewPart
 		initFrameActions();
 		initKeyListener();
 
-		fViewer.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				fActionSet.handleDoubleClick(event);
-			}
-		});
+		fViewer.addDoubleClickListener(event -> fActionSet.handleDoubleClick(event));
 
 		fOpenAndLinkWithEditorHelper= new OpenAndLinkWithEditorHelper(fViewer) {
 			@Override
@@ -703,15 +695,6 @@ public class PackageExplorerPart extends ViewPart
 		if (key == IShowInSource.class) {
 			return (T) getShowInSource();
 		}
-		if (key == IShowInTargetList.class) {
-			return (T) new IShowInTargetList() {
-				@Override
-				public String[] getShowInTargetIds() {
-					return new String[] { JavaPlugin.ID_RES_NAV };
-				}
-
-			};
-		}
 		if (key == IContextProvider.class) {
 			return (T) JavaUIHelp.getHelpContextProvider(this, IJavaHelpContextIds.PACKAGES_VIEW);
 		}
@@ -837,9 +820,8 @@ public class PackageExplorerPart extends ViewPart
 
 	@Override
 	public void refresh(IStructuredSelection selection) {
-		Object[] selectedElements= selection.toArray();
-		for (int i= 0; i < selectedElements.length; i++) {
-			fViewer.refresh(selectedElements[i]);
+		for (Object selectedElement : selection.toArray()) {
+			fViewer.refresh(selectedElement);
 		}
 	}
 
@@ -1137,13 +1119,10 @@ public class PackageExplorerPart extends ViewPart
 				final IType type2= type;
 				Control ctrl= fViewer.getControl();
 				if (ctrl != null && !ctrl.isDisposed()) {
-					ctrl.getDisplay().asyncExec(new Runnable() {
-						@Override
-						public void run() {
-							Control ctrl2= fViewer.getControl();
-							if (ctrl2 != null && !ctrl2.isDisposed())
-								fViewer.expandToLevel(type2, 1);
-						}
+					ctrl.getDisplay().asyncExec(() -> {
+						Control ctrl2= fViewer.getControl();
+						if (ctrl2 != null && !ctrl2.isDisposed())
+							fViewer.expandToLevel(type2, 1);
 					});
 				}
 			}
@@ -1280,14 +1259,9 @@ public class PackageExplorerPart extends ViewPart
 	 * @return the <code>IShowInSource</code>
 	 */
 	protected IShowInSource getShowInSource() {
-		return new IShowInSource() {
-			@Override
-			public ShowInContext getShowInContext() {
-				return new ShowInContext(
-					getTreeViewer().getInput(),
-					getTreeViewer().getSelection());
-			}
-		};
+		return () -> new ShowInContext(
+			getTreeViewer().getInput(),
+			getTreeViewer().getSelection());
 	}
 
 	@Override

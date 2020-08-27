@@ -35,6 +35,8 @@ import org.eclipse.ui.IEditorPart;
 
 import org.eclipse.ui.texteditor.ITextEditor;
 
+import org.eclipse.search.ui.NewSearchUI;
+
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
@@ -97,8 +99,6 @@ public class JavaReferenceCodeMining extends AbstractJavaElementLineHeaderCodeMi
 									textEditor.selectAndReveal(match.getOffset(), match.getLength());
 								}
 							}
-						} catch (JavaModelException e1) {
-							// Should never occur
 						} catch (CoreException e1) {
 							// Should never occur
 						}
@@ -112,8 +112,6 @@ public class JavaReferenceCodeMining extends AbstractJavaElementLineHeaderCodeMi
 				} else {
 					super.setLabel(MessageFormat.format(JavaCodeMiningMessages.JavaReferenceCodeMining_label, refCount));
 				}
-			} catch (JavaModelException e) {
-				// Should never occur
 			} catch (CoreException e) {
 				// Should never occur
 			}
@@ -142,11 +140,15 @@ public class JavaReferenceCodeMining extends AbstractJavaElementLineHeaderCodeMi
 		final AtomicLong count= new AtomicLong(0);
 		SearchPattern pattern= SearchPattern.createPattern(element, IJavaSearchConstants.REFERENCES);
 		SearchEngine engine= new SearchEngine();
+		final boolean ignoreInaccurate= NewSearchUI.arePotentialMatchesIgnored();
 		engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
 				createSearchScope(element), new SearchRequestor() {
 
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						if (match.getAccuracy() == SearchMatch.A_INACCURATE && ignoreInaccurate) {
+							return;
+						}
 						Object o= match.getElement();
 						if (o instanceof IJavaElement) {
 							IJavaElement e= (IJavaElement)o;

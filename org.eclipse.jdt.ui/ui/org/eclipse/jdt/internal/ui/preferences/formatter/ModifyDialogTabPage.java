@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences.formatter;
 
+import java.util.Objects;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +30,6 @@ import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.FocusAdapter;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
@@ -69,12 +69,9 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 	 * classes. It is added by the respective factory methods and
 	 * updates the page's preview on each change.
 	 */
-	protected final Observer fUpdater= new Observer() {
-		@Override
-		public void update(Observable o, Object arg) {
-			doUpdatePreview();
-			notifyValuesModified();
-		}
+	protected final Observer fUpdater= (o, arg) -> {
+		doUpdatePreview();
+		notifyValuesModified();
 	};
 
 
@@ -271,8 +268,11 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 			fCombo.setItems(items);
 
 			int max= 0;
-			for (int i= 0; i < items.length; i++)
-			    if (items[i].length() > max) max= items[i].length();
+			for (String item : items) {
+				if (item.length() > max) {
+					max= item.length();
+				}
+			}
 
 			fCombo.setLayoutData(createGridData(1, GridData.HORIZONTAL_ALIGN_FILL, fCombo.computeSize(SWT.DEFAULT, SWT.DEFAULT).x));
 
@@ -374,12 +374,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 				}
 			});
 
-			fNumberText.addModifyListener(new ModifyListener() {
-				@Override
-				public void modifyText(ModifyEvent e) {
-					fieldModified();
-				}
-			});
+			fNumberText.addModifyListener(e -> fieldModified());
 		}
 
 		private IStatus createErrorStatus() {
@@ -474,7 +469,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 
 	/**
 	 * Wrapper around a text field which requests a string input.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	protected final class StringPreference extends Preference {
@@ -484,7 +479,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 		 * <p>
 		 * The default implementation declares all non-<code>null</code> values as valid.
 		 * </p>
-		 * 
+		 *
 		 * @since 3.6
 		 */
 		protected class Validator {
@@ -505,7 +500,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 
 		/**
 		 * Creates a new <code>StringPreference</code>.
-		 * 
+		 *
 		 * @param composite the composite on which the SWT widgets are added.
 		 * @param numColumns the number of columns in the composite's {@link GridLayout}
 		 * @param preferences the map to store the values.
@@ -544,12 +539,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 				}
 			});
 
-			fText.addModifyListener(new ModifyListener() {
-				@Override
-				public void modifyText(ModifyEvent e) {
-					fieldModified();
-				}
-			});
+			fText.addModifyListener(e -> fieldModified());
 		}
 
 		private IStatus createErrorStatus(String errorText) {
@@ -569,7 +559,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 				fSelected= fOldSelected;
 			else
 				fSelected= input;
-			if (fSelected != fOldSelected) {
+			if (!Objects.equals(fSelected, fOldSelected)) {
 				saveSelected();
 				fText.setText(fSelected);
 			}
@@ -581,7 +571,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 			final String errorText= fInputValidator != null ? fInputValidator.isValid(text) : null;
 			if (errorText == null) {
 				updateStatus(null);
-				if (fSelected != text) {
+				if (!Objects.equals(fSelected, text)) {
 					fSelected= text;
 					saveSelected();
 				}
@@ -709,10 +699,10 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 			int x = fMinimalWidth;
 			int y = fMinimalHight;
 			Control[] children = composite.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				Point size = children[i].computeSize(SWT.DEFAULT, SWT.DEFAULT, force);
-				x = Math.max(x, size.x);
-				y = Math.max(y, size.y);
+			for (Control c : children) {
+				Point size= c.computeSize(SWT.DEFAULT, SWT.DEFAULT, force);
+				x= Math.max(x, size.x);
+				y= Math.max(y, size.y);
 			}
 
 			Rectangle area= fContainer.getClientArea();
@@ -741,9 +731,8 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 		@Override
 		public void layout(Composite composite, boolean force) {
 			Rectangle rect = composite.getClientArea();
-			Control[] children = composite.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				children[i].setSize(rect.width, rect.height);
+			for (Control c : composite.getChildren()) {
+				c.setSize(rect.width, rect.height);
 			}
 		}
 	}
@@ -806,7 +795,7 @@ public abstract class ModifyDialogTabPage implements IModifyDialogTabPage {
 	 * Subclasses should implement <code>doCreatePreferences</code> and <code>doCreatePreview</code>
 	 * may also be overridden as necessary.
 	 * </p>
-	 * 
+	 *
 	 * @param parent The parent composite
 	 * @return Created content control
 	 */

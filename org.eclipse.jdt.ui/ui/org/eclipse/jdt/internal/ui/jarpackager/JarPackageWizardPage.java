@@ -33,7 +33,6 @@ import org.eclipse.swt.widgets.TreeItem;
 
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
 import org.eclipse.core.resources.IFile;
@@ -46,8 +45,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.IMessageProvider;
-import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.DecoratingLabelProvider;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -168,12 +165,7 @@ class JarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		restoreResourceSpecificationWidgetValues(); // superclass API defines this hook
 		restoreWidgetValues();
 		if (fInitialSelection != null)
-			BusyIndicator.showWhile(parent.getDisplay(), new Runnable() {
-				@Override
-				public void run() {
-					setupBasedOnInitialSelections();
-				}
-			});
+			BusyIndicator.showWhile(parent.getDisplay(), this::setupBasedOnInitialSelections);
 
 		setControl(composite);
 		update();
@@ -405,14 +397,9 @@ class JarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		SWTUtil.setAccessibilityText(fInputGroup.getTree(), JarPackagerMessages.JarPackageWizardPage_tree_accessibility_message);
 		SWTUtil.setAccessibilityText(fInputGroup.getTable(), JarPackagerMessages.JarPackageWizardPage_table_accessibility_message);
 
-		ICheckStateListener listener = new ICheckStateListener() {
-            @Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-                update();
-            }
-        };
+		ICheckStateListener listener = event -> update();
 
-        fInputGroup.addCheckStateListener(listener);
+		fInputGroup.addCheckStateListener(listener);
 	}
 
 	/**
@@ -483,23 +470,16 @@ class JarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		try {
 			service.connect();
 			final Set<IProject> set= new HashSet<>();
-			final Object[] elements= fJarPackage.getElements();
-			for (int index= 0; index < elements.length; index++) {
-				if (elements[index] instanceof IAdaptable) {
-					final IAdaptable adaptable= (IAdaptable) elements[index];
+			for (Object element : fJarPackage.getElements()) {
+				if (element instanceof IAdaptable) {
+					final IAdaptable adaptable= (IAdaptable) element;
 					final IResource resource= adaptable.getAdapter(IResource.class);
 					if (resource != null)
 						set.add(resource.getProject());
 				}
 			}
 			try {
-				getContainer().run(false, true, new IRunnableWithProgress() {
-
-					@Override
-					public void run(final IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-						history[0]= service.getRefactoringHistory(set.toArray(new IProject[set.size()]), 0, Long.MAX_VALUE, JavaRefactoringDescriptor.JAR_MIGRATION, monitor);
-					}
-				});
+				getContainer().run(false, true, monitor -> history[0]= service.getRefactoringHistory(set.toArray(new IProject[set.size()]), 0, Long.MAX_VALUE, JavaRefactoringDescriptor.JAR_MIGRATION, monitor));
 			} catch (InvocationTargetException exception) {
 				ExceptionHandler.handle(exception, getShell(), JarPackagerMessages.JarPackageWizardPage_error_caption, JarPackagerMessages.JarPackageWizardPage_error_label);
 				return;
@@ -572,7 +552,7 @@ class JarPackageWizardPage extends AbstractJarDestinationWizardPage {
 	 */
 	@Override
 	protected boolean validateSourceGroup() {
-		if (!(fExportClassFilesCheckbox.getSelection() || fExportOutputFoldersCheckbox.getSelection() || fExportJavaFilesCheckbox.getSelection())) {
+		if (!fExportClassFilesCheckbox.getSelection() && !fExportOutputFoldersCheckbox.getSelection() && !fExportJavaFilesCheckbox.getSelection()) {
 			setErrorMessage(JarPackagerMessages.JarPackageWizardPage_error_noExportTypeChecked);
 			return false;
 		}
@@ -765,7 +745,7 @@ class JarPackageWizardPage extends AbstractJarDestinationWizardPage {
 				int type= je.getElementType();
 				if (type == IJavaElement.JAVA_PROJECT || type == IJavaElement.PACKAGE_FRAGMENT || type == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
 					// exclude default package since it is covered by the root
-					if (!(type == IJavaElement.PACKAGE_FRAGMENT && ((IPackageFragment)element).isDefaultPackage())) {
+					if ((type != IJavaElement.PACKAGE_FRAGMENT) || !((IPackageFragment)element).isDefaultPackage()) {
 						Object resource;
 						try {
 							resource= je.getCorrespondingResource();
